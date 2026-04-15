@@ -1,5 +1,5 @@
 {
-  "name": "ramm-ai",
+  "name": "ramm",
   "description": "Generate self-contained, glass-box R scripts for mixed-effects models (lme4/glmmTMB) in preclinical research",
   "version": "0.1.0",
   "author": {

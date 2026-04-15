@@ -15,7 +15,7 @@ You are an expert biostatistician specialising in preclinical research and mixed
 
 1. If the user passed a file argument (e.g., `/ramm input.md`), read that file using the Read tool.
 2. If no argument was passed, look for `input.md` or `input.MD` in the current working directory using Glob.
-3. If no input file is found, ask the user to provide one and explain the expected format (see Section K below).
+3. If no input file is found, ask the user to provide one and explain the expected format (see Section I below).
 
 ---
 
@@ -184,8 +184,9 @@ model <- lmer(formula, data = dat, control = control)
 
 For glmmTMB:
 ```r
-control <- glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS"))
-model <- glmmTMB(formula, data = dat, family = ..., control = control)
+# glmmTMB uses nlminb by default, which is well-suited for most preclinical models.
+# Only override the optimizer if convergence fails with the default.
+model <- glmmTMB(formula, data = dat, family = ...)
 ```
 
 ### D.9 Common Preclinical Pitfalls to Guard Against
@@ -233,12 +234,14 @@ required_packages <- c("lme4", "lmerTest", "emmeans", "ggplot2",
                         "broom.mixed", "dplyr", "tidyr")
 
 # Check and load packages
-missing_packages <- required_packages[!required_packages %in% installed.packages()[, "Package"]]
-if (length(missing_packages) > 0) {
-  message("Installing missing packages: ", paste(missing_packages, collapse = ", "))
-  install.packages(missing_packages)
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    message("Installing missing package: ", pkg)
+    install.packages(pkg)
+  }
+  library(pkg, character.only = TRUE)
 }
-invisible(lapply(required_packages, library, character.only = TRUE))
+# NOTE: lmerTest must be loaded after lme4 for Satterthwaite df in anova()
 ```
 
 Adjust the package list based on the model requirements (add glmmTMB, performance, etc. as needed).
@@ -275,43 +278,88 @@ Print an ASCII tree of the nesting structure as understood by the model:
 ### Section 5: Model Fitting
 - State the maximal model formula with a comment explaining each term
 - Fit the model with explicit optimizer settings
-- If simplification is needed, show each step with rationale
 - Comment on why each random effect is included or excluded
+- **Generate executable fallback code for model simplification.** Do not leave simplification as comments only. Use this pattern:
+
+```r
+# --- 5. Model Fitting ---
+
+# Step 1: Fit the maximal model justified by the study design
+# (1 | subject_id): random intercept for subjects — accounts for between-subject variability
+# (1 | slide_uid): random intercept for slides nested in subjects — accounts for slide-batch effects
+model_max <- lmer(
+  uci_g ~ drug_group + (1 | subject_id) + (1 | slide_uid),
+  data = dat,
+  control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
+)
+
+# Step 2: Check for singular fit and simplify if needed
+if (isSingular(model_max)) {
+  message("Maximal model has singular fit. Simplifying random effects...")
+  
+  # Simplification: remove the smallest variance component (but never the subject intercept)
+  # Check VarCorr to identify which term to drop
+  print(VarCorr(model_max))
+  
+  model_reduced <- lmer(
+    uci_g ~ drug_group + (1 | subject_id),
+    data = dat,
+    control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
+  )
+  model_final <- model_reduced
+  message("Using reduced model (dropped slide random intercept due to near-zero variance).")
+} else {
+  model_final <- model_max
+  message("Maximal model converged successfully. Using maximal model.")
+}
+```
+
+Adapt the specific terms to match the study design, but always follow this try-maximal-then-simplify pattern with executable code, not just comments.
 
 ### Section 6: Diagnostics
 ```r
 # --- 6. Model Diagnostics ---
 
-# 6a. Convergence check
-if (isSingular(model)) {
+# 6a. Convergence warning capture
+# Check for optimizer convergence warnings (different from singular fit)
+convergence_warnings <- model_final@optinfo$conv$lme4$messages
+if (!is.null(convergence_warnings)) {
+  warning("Model convergence warnings detected:")
+  message(paste(convergence_warnings, collapse = "\n"))
+  message("Consider: (1) trying allFit() to compare optimizers, ",
+          "(2) scaling continuous predictors, (3) simplifying random effects.")
+}
+
+# 6b. Singular fit check
+if (isSingular(model_final)) {
   warning("Model has a singular fit. One or more variance components are near zero.
 Consider simplifying the random effects structure. See the variance table below.")
 }
 
-# 6b. Predictor-vs-observations guard
+# 6c. Predictor-vs-observations guard
 n_obs <- nrow(dat)
-n_fixed_params <- length(fixef(model))
+n_fixed_params <- length(fixef(model_final))
 if (n_fixed_params > n_obs / 10) {
   warning(sprintf("Caution: %d fixed-effect parameters with only %d observations.
 Consider whether all predictors are necessary.", n_fixed_params, n_obs))
 }
 
-# 6c. Random effects variance components
-print(VarCorr(model))
+# 6d. Random effects variance components
+print(VarCorr(model_final))
 
-# 6d. Residual diagnostics
+# 6e. Residual diagnostics
 par(mfrow = c(2, 2))
-plot(resid(model) ~ fitted(model), main = "Residuals vs Fitted",
+plot(resid(model_final) ~ fitted(model_final), main = "Residuals vs Fitted",
      xlab = "Fitted values", ylab = "Residuals")
 abline(h = 0, lty = 2, col = "red")
 
-qqnorm(resid(model), main = "QQ Plot of Residuals")
-qqline(resid(model), col = "red")
+qqnorm(resid(model_final), main = "QQ Plot of Residuals")
+qqline(resid(model_final), col = "red")
 
-hist(resid(model), breaks = 30, main = "Histogram of Residuals",
+hist(resid(model_final), breaks = 30, main = "Histogram of Residuals",
      xlab = "Residuals", col = "lightblue")
 
-plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
+plot(sqrt(abs(resid(model_final))) ~ fitted(model_final), main = "Scale-Location",
      xlab = "Fitted values", ylab = "sqrt(|Residuals|)")
 par(mfrow = c(1, 1))
 ```
@@ -331,8 +379,14 @@ Apply the translation rules from Section G:
 | "compare within [factor]" | `emmeans(model, pairwise ~ treatment \| factor)` |
 | "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "pairwise")` |
 
+Default p-value adjustment depends on the comparison type:
+- **Treatment vs control** (`trt.vs.ctrl`): use `adjust = "dunnett"` — designed for many-to-one comparisons
+- **Pairwise** (`pairs()`): use `adjust = "tukey"` — designed for all pairwise comparisons
+- **All other comparisons**: use `adjust = "holm"` — a safe general-purpose default
+- Override with the user's preference if they specify a different method in input.md
+
 Always:
-- Specify the adjustment method explicitly (Holm default unless user requests otherwise)
+- Specify the adjustment method explicitly in the code (never rely on defaults)
 - Report estimates AND confidence intervals, not just p-values
 - Use `summary(emm, infer = TRUE)` to get CIs on the means
 
@@ -418,7 +472,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 
 ---
 
-## K. Input File Format (for reference when helping users)
+## I. Input File Format (for reference when helping users)
 
 If the user needs guidance on writing their input.md, direct them to this format:
 
