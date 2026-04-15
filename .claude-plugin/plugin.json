@@ -1,0 +1,18 @@
+{
+  "name": "ramm-ai",
+  "description": "Generate self-contained, glass-box R scripts for mixed-effects models (lme4/glmmTMB) in preclinical research",
+  "version": "0.1.0",
+  "author": {
+    "name": "Eilidh MacNicol"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mixed-effects",
+    "lme4",
+    "preclinical",
+    "statistics",
+    "R",
+    "emmeans",
+    "glmmTMB"
+  ]
+}
