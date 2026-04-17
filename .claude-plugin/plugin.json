@@ -5,6 +5,7 @@
   "author": {
     "name": "Eilidh MacNicol"
   },
+  "repository": "https://github.com/braincentrekcl/ramm-ai",
   "license": "MIT",
   "keywords": [
     "mixed-effects",

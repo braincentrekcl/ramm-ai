@@ -9,7 +9,7 @@ You describe your study design in plain English. RAMM generates a fully runnable
 In Claude Code:
 
 ```
-/install-plugin eilidhmacnicol/ramm-ai
+/install-plugin braincentrekcl/ramm-ai
 ```
 
 Or from a local directory during development:
