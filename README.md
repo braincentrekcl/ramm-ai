@@ -1,6 +1,6 @@
 # RAMM-AI
 
-**Reproducible Automated Mixed Models** — a Claude Code plugin that generates self-contained, glass-box R scripts for mixed-effects models in preclinical research.
+**Replicate Aware Mixed Models** — a Claude Code plugin that generates self-contained, glass-box R scripts for mixed-effects models in preclinical research.
 
 You describe your study design in plain English. RAMM generates a fully runnable R script with the appropriate lme4/glmmTMB model, estimated marginal means, diagnostics, and QC checks — with every modelling decision explained in inline comments.
 
