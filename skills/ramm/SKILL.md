@@ -106,16 +106,15 @@ A factor is **fixed** if:
 
 ### D.2 The Maximal-Then-Simplify Strategy (Barr et al., 2013)
 
-1. Start with the maximal random effects structure justified by the experimental design.
-2. Fit the model.
-3. If you get a singular fit warning (`isSingular()`), examine the variance-covariance matrix.
-4. Simplify in this order:
-   a. Remove random effect correlations first (use `||` syntax in lme4, or `diag()` in glmmTMB)
-   b. Remove the random effect with the smallest variance component
-   c. Re-fit after each removal
-   d. **Never remove the subject-level random intercept** — this accounts for pseudoreplication
-5. Stop when the model converges without singular fit warnings.
-6. Document every simplification step in comments in the R script.
+You are generating the script without access to the data — you cannot fit the model, observe singular fits, or iteratively simplify. Your job is to **encode the strategy into the script** so the user can apply it when they run it. Specifically:
+
+- **In the script:** specify the maximal random effects structure justified by the study design as the starting model.
+- **Also in the script:** embed the decision tree for simplification as commented-out alternative models the user can enable after inspecting Section 6 diagnostics (see Section E, Section 5 below for the exact pattern).
+- **Ordering the alternatives** (this is the rule the user applies at runtime, and the comments in the script should reflect it):
+   1. Remove random effect correlations first (use `||` syntax in lme4, or `diag()` in glmmTMB)
+   2. Remove the random effect with the smallest variance component (identify from `VarCorr()`)
+   3. **Never remove the subject-level random intercept** — it accounts for pseudoreplication
+- Each commented alternative in the script should have a short rationale for when to enable it.
 
 ### D.3 The Non-Unique ID Problem
 
@@ -145,9 +144,8 @@ dat$section_uid <- paste(dat$subject_id, dat$slide_num, dat$section_num, sep = "
 ### D.5 Small Number of Levels
 
 If a grouping factor has fewer than 5-6 levels, the random effect variance estimate will be unreliable. In this case:
-- Include a comment warning about this limitation
-- Still attempt to fit it if the design justifies it (e.g., 4 batches is common)
-- If the model is singular for this term, it is a strong candidate for removal
+- Include the term in the maximal model if the design justifies it (e.g., 4 batches is common)
+- Add a script comment warning that the estimate may be unreliable and suggesting this term as a first candidate for the Section 5 simplification alternatives if the model is singular
 
 ### D.6 Family and Link Function Selection
 
