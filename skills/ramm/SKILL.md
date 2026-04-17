@@ -276,45 +276,89 @@ Print an ASCII tree of the nesting structure as understood by the model:
 ```
 
 ### Section 5: Model Fitting
-- State the maximal model formula with a comment explaining each term
-- Fit the model with explicit optimizer settings
-- Comment on why each random effect is included or excluded
-- **Generate executable fallback code for model simplification.** Do not leave simplification as comments only. Use this pattern:
+
+**Important context:** You are generating the script without access to the data, so you cannot know in advance whether the maximal model will converge, be singular, or which random effect has the smallest variance. Do not attempt to automate simplification with a hard-coded fallback — that would risk dropping the wrong term. Instead:
+
+1. **Fit the maximal model** justified by the study design, with every term commented to explain why it is there.
+2. **Surface diagnostics loudly** so the user can see exactly what happened (this is handled in Section 6).
+3. **Provide a simplification decision tree** as commented-out alternative models the user can enable if they encounter issues.
+
+Use this pattern:
 
 ```r
 # --- 5. Model Fitting ---
 
-# Step 1: Fit the maximal model justified by the study design
-# (1 | subject_id): random intercept for subjects — accounts for between-subject variability
-# (1 | slide_uid): random intercept for slides nested in subjects — accounts for slide-batch effects
-model_max <- lmer(
+# Fit the maximal random effects structure justified by the study design
+# (Barr et al., 2013). The model below is our recommended starting point.
+# If it fails to converge or gives a singular fit warning, do NOT ignore it —
+# review the diagnostics in Section 6 and consider the simplification options
+# commented below.
+#
+# Term-by-term rationale:
+# - drug_group (fixed): the experimental manipulation we want to test
+# - (1 | subject_id): random intercept for subjects — standard for preclinical
+#     pseudoreplication. NEVER remove this term; it is what makes the model
+#     valid in the presence of repeated measures per subject.
+# - (1 | slide_uid): random intercept for slides (nested in subject via
+#     unique IDs) — accounts for slide-to-slide batch effects.
+
+control_settings <- lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
+
+model <- lmer(
   uci_g ~ drug_group + (1 | subject_id) + (1 | slide_uid),
   data = dat,
-  control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
+  control = control_settings
 )
 
-# Step 2: Check for singular fit and simplify if needed
-if (isSingular(model_max)) {
-  message("Maximal model has singular fit. Simplifying random effects...")
-  
-  # Simplification: remove the smallest variance component (but never the subject intercept)
-  # Check VarCorr to identify which term to drop
-  print(VarCorr(model_max))
-  
-  model_reduced <- lmer(
-    uci_g ~ drug_group + (1 | subject_id),
-    data = dat,
-    control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
-  )
-  model_final <- model_reduced
-  message("Using reduced model (dropped slide random intercept due to near-zero variance).")
-} else {
-  model_final <- model_max
-  message("Maximal model converged successfully. Using maximal model.")
-}
+# ------------------------------------------------------------
+# Simplification decision tree (enable one of these if needed)
+# ------------------------------------------------------------
+# After running Section 6 (Diagnostics), check:
+#   - Is there a convergence warning?
+#   - Is the model singular (isSingular() == TRUE)?
+#   - Which random effect has the smallest variance in VarCorr(model)?
+#
+# If yes to convergence/singular issues, try the options below IN ORDER.
+# Uncomment ONE alternative at a time, re-run, and re-check diagnostics.
+#
+# Option A — Drop correlations between random effects (rarely relevant when
+# you only have random intercepts, but useful when random slopes are present).
+# Change `(1 + x | g)` to `(1 + x || g)` to remove correlation.
+#
+# model <- lmer(
+#   uci_g ~ drug_group + (1 | subject_id) + (1 | slide_uid),
+#   data = dat,
+#   control = control_settings
+# )
+#
+# Option B — Drop the random effect with the smallest variance component
+# (identify it from print(VarCorr(model)) in Section 6). DO NOT drop
+# (1 | subject_id) — that term is required for valid inference.
+#
+# For example, if VarCorr shows the slide variance is ~0:
+# model <- lmer(
+#   uci_g ~ drug_group + (1 | subject_id),
+#   data = dat,
+#   control = control_settings
+# )
+#
+# Option C — Try a different optimizer (sometimes resolves convergence
+# without simplifying the model):
+# control_settings <- lmerControl(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 2e5))
+# model <- lmer(uci_g ~ drug_group + (1 | subject_id) + (1 | slide_uid),
+#               data = dat, control = control_settings)
+#
+# Option D — Compare several optimizers at once with allFit() to see which
+# converge and whether they agree on the fixed-effect estimates:
+# library(lme4)
+# all_fits <- allFit(model)
+# summary(all_fits)$fixef
+#
+# If none of the above resolves the issue, the design may be underpowered
+# for the requested random effects structure. Consult the analyst.
 ```
 
-Adapt the specific terms to match the study design, but always follow this try-maximal-then-simplify pattern with executable code, not just comments.
+Adapt the specific formula to the study design, but always follow this pattern: fit the maximal model, then provide a commented decision tree of alternatives. Do NOT wrap the fit in an `if (isSingular(...)) { ... }` block that silently switches models — that hides the decision from the user.
 
 ### Section 6: Diagnostics
 ```r
@@ -322,7 +366,7 @@ Adapt the specific terms to match the study design, but always follow this try-m
 
 # 6a. Convergence warning capture
 # Check for optimizer convergence warnings (different from singular fit)
-convergence_warnings <- model_final@optinfo$conv$lme4$messages
+convergence_warnings <- model@optinfo$conv$lme4$messages
 if (!is.null(convergence_warnings)) {
   warning("Model convergence warnings detected:")
   message(paste(convergence_warnings, collapse = "\n"))
@@ -331,35 +375,35 @@ if (!is.null(convergence_warnings)) {
 }
 
 # 6b. Singular fit check
-if (isSingular(model_final)) {
+if (isSingular(model)) {
   warning("Model has a singular fit. One or more variance components are near zero.
 Consider simplifying the random effects structure. See the variance table below.")
 }
 
 # 6c. Predictor-vs-observations guard
 n_obs <- nrow(dat)
-n_fixed_params <- length(fixef(model_final))
+n_fixed_params <- length(fixef(model))
 if (n_fixed_params > n_obs / 10) {
   warning(sprintf("Caution: %d fixed-effect parameters with only %d observations.
 Consider whether all predictors are necessary.", n_fixed_params, n_obs))
 }
 
 # 6d. Random effects variance components
-print(VarCorr(model_final))
+print(VarCorr(model))
 
 # 6e. Residual diagnostics
 par(mfrow = c(2, 2))
-plot(resid(model_final) ~ fitted(model_final), main = "Residuals vs Fitted",
+plot(resid(model) ~ fitted(model), main = "Residuals vs Fitted",
      xlab = "Fitted values", ylab = "Residuals")
 abline(h = 0, lty = 2, col = "red")
 
-qqnorm(resid(model_final), main = "QQ Plot of Residuals")
-qqline(resid(model_final), col = "red")
+qqnorm(resid(model), main = "QQ Plot of Residuals")
+qqline(resid(model), col = "red")
 
-hist(resid(model_final), breaks = 30, main = "Histogram of Residuals",
+hist(resid(model), breaks = 30, main = "Histogram of Residuals",
      xlab = "Residuals", col = "lightblue")
 
-plot(sqrt(abs(resid(model_final))) ~ fitted(model_final), main = "Scale-Location",
+plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
      xlab = "Fitted values", ylab = "sqrt(|Residuals|)")
 par(mfrow = c(1, 1))
 ```
