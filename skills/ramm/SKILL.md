@@ -460,6 +460,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
    - What R packages need to be installed
    - How to run it: `Rscript analysis.R` (from the directory containing the data file)
    - Remind them to review the script before running, especially the column names and random effects structure
+3. **Reproducible environment:** If the user specified a `Reproducible environment:` preference in input.md (or if they mentioned wanting a reproducible setup), suggest running `/ramm:reproduce` next to generate pinned-version Docker/renv scaffolding. If they confirm, invoke the reproduce skill. Otherwise, just mention it as an option.
 
 ---
 
@@ -499,4 +500,11 @@ Path: ./data.csv
 - Family: gaussian, Gamma, poisson, etc.
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
+
+# Reproducible environment (optional)
+- Reproducible environment: docker+renv   # or "docker", "renv", or omit
+- R version: 4.4.2                        # optional
+- Snapshot date: 2025-01-15               # optional, pins CRAN package versions
 ```
+
+If any of the `Reproducible environment` preferences are present, after generating the analysis script, suggest running `/ramm:reproduce` to create pinned Docker/renv scaffolding.

@@ -20,17 +20,45 @@ Or from a local directory during development:
 
 ## Usage
 
+This plugin provides two skills:
+
+- **`/ramm:ramm`** — generate a mixed-effects analysis R script from a plain-English study design
+- **`/ramm:reproduce`** — generate a reproducible environment (Docker and/or renv) for an existing analysis script
+
+### Generating the analysis script
+
 1. Create an `input.md` file describing your study design (see format below)
 2. Place your data file (CSV) in the same directory
 3. Run:
 
 ```
-/ramm input.md
+/ramm:ramm input.md
 ```
 
-Or simply `/ramm` if your file is named `input.md`.
+Or simply `/ramm:ramm` if your file is named `input.md`.
 
 RAMM will parse your study design, validate it against your data (if available), and generate a self-contained R script.
+
+### Generating a reproducible environment
+
+After your analysis script has been generated, run:
+
+```
+/ramm:reproduce analysis.R
+```
+
+This produces a pinned environment so collaborators can reproduce your results exactly. Three modes are supported:
+
+- **`docker+renv`** (default) — Docker image + renv lockfile, maximally reproducible
+- **`docker`** — Docker image with pinned CRAN snapshot
+- **`renv`** — R-native lockfile for users with R already installed
+
+You can choose the mode by adding to your `input.md`:
+
+```markdown
+# Reproducible environment
+- Reproducible environment: docker
+```
 
 ## Input File Format
 
@@ -74,6 +102,16 @@ Override defaults if needed:
 - Package: glmmTMB
 - Family: Gamma
 - P-value adjustment: Tukey
+```
+
+### Reproducible environment (optional)
+
+Request a pinned environment alongside the analysis script:
+
+```markdown
+- Reproducible environment: docker+renv
+- R version: 4.4.2
+- Snapshot date: 2025-01-15
 ```
 
 ## What You Get

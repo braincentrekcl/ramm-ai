@@ -27,3 +27,9 @@ Path: ./data.csv
 
 - Package: lme4
 - Alpha: 0.05
+
+# Reproducible environment
+
+- Reproducible environment: docker+renv
+- R version: 4.4.2
+- Snapshot date: 2025-01-15
