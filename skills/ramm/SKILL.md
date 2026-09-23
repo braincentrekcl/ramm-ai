@@ -268,6 +268,37 @@ Choose tidyverse packages over base R, when available, but don't require all of 
 - Histogram or density plot of the DV
 - Missing data report
 - Flag any groups with very low N
+- **Replicate audit**, written to CSV so it is kept with the results (use this pattern):
+
+```r
+# --- 3b. Replicate audit ---
+# The animal is the unit of biological replication; replicates are repeated
+# measurements within it. Extra replicates cannot make up for too few animals.
+# These files record how many animals each group has and how many replicates
+# each animal contributed, so unequal counts are visible before modelling.
+
+# One row per animal. If replicates are also spread across a within-animal
+# factor (e.g. region), add it to count() so each animal x region is counted.
+replicate_audit <- dat |>
+  dplyr::count(drug_group, subject_id, name = "n_replicates")
+write.csv(replicate_audit, "results_replicate_audit_per_animal.csv", row.names = FALSE)
+
+# One row per group. Replicate depth imbalance is the coefficient of
+# variation of replicate counts across animals (SD / mean): 0 means every
+# animal contributed the same number; 0.5 means a typical animal's count
+# differs from the average by about half.
+replicate_summary <- replicate_audit |>
+  dplyr::group_by(drug_group) |>
+  dplyr::summarise(
+    n_animals            = dplyr::n(),
+    total_replicates     = sum(n_replicates),
+    min_replicates       = min(n_replicates),
+    median_replicates    = median(n_replicates),
+    max_replicates       = max(n_replicates),
+    replicate_imbalance  = sd(n_replicates) / mean(n_replicates)
+  )
+write.csv(replicate_summary, "results_replicate_audit_summary.csv", row.names = FALSE)
+```
 
 ### Section 4: Hierarchy Diagram
 Print an ASCII tree of the nesting structure as understood by the model:
@@ -548,6 +579,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The header accurately describes what was specified
 - [ ] Diagnostic plots are generated
 - [ ] Results are exported as CSV via broom/broom.mixed
+- [ ] The replicate audit writes `results_replicate_audit_per_animal.csv` and `results_replicate_audit_summary.csv`
 - [ ] Plots are saved as 300dpi PNG
 
 ---
