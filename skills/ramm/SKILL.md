@@ -518,6 +518,7 @@ Always:
 - Report estimates AND confidence intervals, not just p-values
 - Use `summary(emm, infer = TRUE)` to get CIs on the means
 - Name the objects `emm` and `contrast_output`; Section 10 exports them
+- Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
 - If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ. Only a test of the difference itself (an interaction) shows that. If that question matters to your study, specify it in input.md."
 
 Use this pattern (adapt the formula and comparison):
