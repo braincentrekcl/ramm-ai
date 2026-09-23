@@ -68,6 +68,11 @@ For each level, determine:
 ### B.6 Ambiguity Check
 If ANY of the above cannot be determined from the input file, STOP and ask the user before proceeding. List exactly what is unclear. Do not guess.
 
+### B.7 Implied Interactions
+Interactions follow the study design. Include one only when input.md specifies it or the stated hypothesis requires it; never add one on your own initiative.
+
+If an interaction seems implied but is not specified (for example, the input asks to compare treatment within each sex, or says the effect may "differ by" something), point this out in the confirmation summary and ask whether they want to test it. Explain briefly why: comparing subgroups one at a time does not show that they differ. Include it only if the user says yes.
+
 ---
 
 ## C. Data Validation
@@ -513,6 +518,7 @@ Always:
 - Report estimates AND confidence intervals, not just p-values
 - Use `summary(emm, infer = TRUE)` to get CIs on the means
 - Name the objects `emm` and `contrast_output`; Section 10 exports them
+- If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ. Only a test of the difference itself (an interaction) shows that. If that question matters to your study, specify it in input.md."
 
 Use this pattern (adapt the formula and comparison):
 
@@ -628,6 +634,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
    - What R packages need to be installed
    - How to run it: `Rscript analysis.R` (from the directory containing the data file)
    - Remind them to review the script before running, especially the column names and random effects structure
+   - If the script compares subgroups, repeat the subgroup disclaimer from Section 8 in plain language
 3. **Reproducible environment:** If the user specified a `Reproducible environment:` preference in input.md (or if they mentioned wanting a reproducible setup), suggest running `/ramm:reproduce` next to generate pinned-version Docker/renv scaffolding. If they confirm, invoke the reproduce skill. Otherwise, just mention it as an option.
 
 ---
