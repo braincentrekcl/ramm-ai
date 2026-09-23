@@ -102,7 +102,12 @@ A factor is **fixed** if:
 - You care about the specific effect of each level
 - Examples: drug group, genotype, dose, sex, timepoint (if few discrete levels)
 
-**When in doubt, treat it as random.** The maximal model will reveal whether the variance component is estimable.
+If it is unclear which applies, ask the user whether the levels were deliberately chosen targets of inference (fixed) or a sample standing in for a wider population (random). Do not guess.
+
+**The biological unit is not the same as a random intercept.** The subject (animal, donor) is always the biological experimental unit. It needs a random intercept only when more than one analysed observation remains per subject:
+- Repeated or nested measurements per subject → include `(1 | subject)`.
+- Exactly one analysed observation per subject → fit an ordinary subject-level model (`lm()`), with no subject random intercept; one would be unidentifiable and give a singular fit.
+- Never treat technical replicates as additional biological units.
 
 ### D.2 The Maximal-Then-Simplify Strategy (Barr et al., 2013)
 
@@ -113,7 +118,7 @@ You are generating the script without access to the data — you cannot fit the 
 - **Ordering the alternatives** (this is the rule the user applies at runtime, and the comments in the script should reflect it):
    1. Remove random effect correlations first (use `||` syntax in lme4, or `diag()` in glmmTMB)
    2. Remove the random effect with the smallest variance component (identify from `VarCorr()`)
-   3. **Never remove the subject-level random intercept** — it accounts for pseudoreplication
+   3. **Never remove the subject-level random intercept when there are repeated measurements per subject** — it accounts for pseudoreplication
 - Each commented alternative in the script should have a short rationale for when to enable it.
 
 ### D.3 The Non-Unique ID Problem
@@ -190,7 +195,7 @@ model <- glmmTMB(formula, data = dat, family = ...)
 
 ### D.9 Common Preclinical Pitfalls to Guard Against
 
-1. **Pseudoreplication:** Multiple measurements per subject are NOT independent. The random effects structure must account for this. If the script does not include a subject-level random effect, something is wrong.
+1. **Pseudoreplication:** Multiple measurements per subject are NOT independent. The random effects structure must account for this. If the data have more than one observation per subject and the script does not include a subject-level random effect, something is wrong. If there is one observation per subject, a subject random effect is wrong (see D.1).
 2. **Confounding batch with treatment:** If treatments were applied in batches, batch should be a random effect or the confounding should be noted.
 3. **Ignoring hierarchy:** If sections are nested in slides nested in subjects, each level needs its own random effect (or a justification for why it was excluded).
 4. **Using raw group means instead of estimated marginal means:** Always use emmeans. Raw means are biased in unbalanced designs.
@@ -297,8 +302,8 @@ Use this pattern:
 # Term-by-term rationale:
 # - drug_group (fixed): the experimental manipulation we want to test
 # - (1 | subject_id): random intercept for subjects — standard for preclinical
-#     pseudoreplication. NEVER remove this term; it is what makes the model
-#     valid in the presence of repeated measures per subject.
+#     pseudoreplication. Do not remove this term while there are repeated
+#     measures per subject; it is what makes the model valid.
 # - (1 | slide_uid): random intercept for slides (nested in subject via
 #     unique IDs) — accounts for slide-to-slide batch effects.
 
