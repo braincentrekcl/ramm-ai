@@ -234,7 +234,7 @@ Generate the R script with these sections in this exact order. Each section must
 # --- 1. Environment Setup ---
 set.seed(42)
 
-required_packages <- c("lme4", "lmerTest", "emmeans", "ggplot2",
+required_packages <- c("lme4", "lmerTest", "pbkrtest", "emmeans", "ggplot2",
                         "broom.mixed", "dplyr", "tidyr")
 
 # Check and load packages
@@ -245,7 +245,8 @@ for (pkg in required_packages) {
   }
   library(pkg, character.only = TRUE)
 }
-# NOTE: lmerTest must be loaded after lme4 for Satterthwaite df in anova()
+# NOTE: lmerTest must be loaded after lme4 so anova() reports denominator df.
+# pbkrtest supplies the Kenward-Roger df used for all tests and intervals.
 ```
 
 Adjust the package list based on the model requirements (add glmmTMB, performance, etc. as needed).
@@ -415,8 +416,9 @@ par(mfrow = c(1, 1))
 
 ### Section 7: Model Summary
 - `summary(model)` for full output
-- `anova(model)` for Type III F-tests (via lmerTest)
-- `confint(model, method = "Wald")` for confidence intervals
+- `anova(model, type = 3, ddf = "Kenward-Roger")` for Type III F-tests (via lmerTest)
+- Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few animals. Confidence intervals come from `emmeans` with Kenward-Roger df in Section 8.
+- Kenward-Roger applies to `lmer()` models. For a one-observation-per-subject `lm()` (see D.1), use `anova(model)` and ordinary t-based intervals.
 
 ### Section 8: Post-Hoc Comparisons
 Apply the translation rules from Section G:
@@ -438,6 +440,27 @@ Always:
 - Specify the adjustment method explicitly in the code (never rely on defaults)
 - Report estimates AND confidence intervals, not just p-values
 - Use `summary(emm, infer = TRUE)` to get CIs on the means
+- Name the objects `emm` and `contrast_output`; Section 10 exports them
+
+Use this pattern (adapt the formula and comparison):
+
+```r
+# --- 8. Post-Hoc Comparisons ---
+
+# Kenward-Roger degrees of freedom for all tests and intervals: it corrects
+# for having few animals, which Wald intervals do not.
+# emmeans silently drops Kenward-Roger above 3,000 observations unless the
+# limit is raised. Raising it to the data size keeps Kenward-Roger; on very
+# large datasets this can be slow and memory-hungry.
+emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))
+
+emm <- emmeans(model, ~ drug_group)
+contrast_output <- contrast(emm, method = "trt.vs.ctrl", ref = "vehicle",
+                            adjust = "dunnett")
+
+summary(emm, infer = TRUE)
+summary(contrast_output, infer = TRUE)
+```
 
 ### Section 9: Visualisation
 Generate publication-ready plots using ggplot2:
@@ -451,19 +474,20 @@ Generate publication-ready plots using ggplot2:
 ```r
 # --- 10. Export Results ---
 
-# Tidy model summary
-model_tidy <- broom.mixed::tidy(model, effects = "fixed", conf.int = TRUE)
+# Tidy model summary (no intervals here: broom.mixed would give Wald
+# intervals; the Kenward-Roger intervals are in the emmeans exports below)
+model_tidy <- broom.mixed::tidy(model, effects = "fixed")
 write.csv(model_tidy, "results_model_summary.csv", row.names = FALSE)
 
 # Tidy random effects
 model_random <- broom.mixed::tidy(model, effects = "ran_pars")
 write.csv(model_random, "results_random_effects.csv", row.names = FALSE)
 
-# EMMs and contrasts
-emm_results <- as.data.frame(emm)
+# EMMs and contrasts, with Kenward-Roger confidence intervals
+emm_results <- as.data.frame(summary(emm, infer = TRUE))
 write.csv(emm_results, "results_emmeans.csv", row.names = FALSE)
 
-contrast_results <- as.data.frame(contrast_output)
+contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE))
 write.csv(contrast_results, "results_contrasts.csv", row.names = FALSE)
 
 # Save plots
