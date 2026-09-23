@@ -472,7 +472,12 @@ summary(contrast_output, infer = TRUE)
 ### Section 9: Visualisation
 Generate publication-ready plots using ggplot2:
 - Estimated marginal means with confidence intervals
-- Plots should use a violin plot of raw categorical data points, with points for the estimated marginal means per subject with the size of the symbol indicating how many replicates contributed to the estimate, where appropriate.
+- Plots must show the animal as the unit, so animals with more replicates do not look like more data:
+  - individual replicate observations, small and faint, grouped by animal;
+  - one clearly labelled summary point per animal (the animal's mean), with symbol size showing how many replicates it came from, where appropriate;
+  - the group estimated marginal means with their 95% confidence intervals from Section 8, overlaid.
+- Do not use a violin or box plot of raw replicates as the main display: it visually overweights animals with many replicates.
+- Estimated marginal means are model-based group estimates; never label per-animal values as EMMs.
 - Use a clean theme (`theme_classic()` or `theme_bw()`), with Set2 colours for categorical factors, magma for sequential factors, and RdBu_r for diverging (mean centered) factors.
 - If there is more than one categorical factor (e.g. genotype and drug), use shape for the factor with fewest levels.
 - Label axes clearly with units
