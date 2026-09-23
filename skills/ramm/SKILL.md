@@ -326,12 +326,12 @@ model <- lmer(
 # If yes to convergence/singular issues, try the options below IN ORDER.
 # Uncomment ONE alternative at a time, re-run, and re-check diagnostics.
 #
-# Option A — Drop correlations between random effects (rarely relevant when
-# you only have random intercepts, but useful when random slopes are present).
-# Change `(1 + x | g)` to `(1 + x || g)` to remove correlation.
+# Option A — Drop correlations between random effects. This only applies
+# when the model has random slopes; this example has intercepts only, so
+# skip to Option B. With a slope, change `(1 + x | g)` to `(1 + x || g)`:
 #
 # model <- lmer(
-#   uci_g ~ drug_group + (1 | subject_id) + (1 | slide_uid),
+#   uci_g ~ drug_group * x + (1 + x || subject_id),
 #   data = dat,
 #   control = control_settings
 # )
