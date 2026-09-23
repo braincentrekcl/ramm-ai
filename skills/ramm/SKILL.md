@@ -149,7 +149,6 @@ Then use `(1 | slide_uid)` instead of `(1 | slide_num)` in the model formula. Th
 
 - **Nested:** sections within slides within subjects → `(1 | subject) + (1 | slide_uid) + (1 | section_uid)`
   - Where `slide_uid = paste(subject, slide)` and `section_uid = paste(subject, slide, section)`
-- **Crossed:** regions measured in all subjects → `(1 | subject) + (1 | region)` if region is treated as random
 - **Regions as observation-level:** if regions are the unit of measurement and not a random sample from a larger set, they are typically a within-subject fixed or observation-level factor, not a random effect.
 
 When building unique IDs for nested factors, always nest from the top down:
