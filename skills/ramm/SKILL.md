@@ -68,7 +68,11 @@ For each level, determine:
 ### B.6 Ambiguity Check
 If ANY of the above cannot be determined from the input file, STOP and ask the user before proceeding. List exactly what is unclear. Do not guess.
 
-### B.7 Implied Interactions
+### B.7 QC Rules
+- Extract any QC rules stated in input.md (for example "exclude sections flagged as torn"), with the column each one uses.
+- If none are stated, say so in the confirmation summary. Never invent QC rules, and never remove statistical outliers on your own initiative.
+
+### B.8 Implied Interactions
 Interactions follow the study design. Include one only when input.md specifies it or the stated hypothesis requires it; never add one on your own initiative.
 
 If an interaction seems implied but is not specified (for example, the input asks to compare treatment within each sex, or says the effect may "differ by" something), point this out in the confirmation summary and ask whether they want to test it. Explain briefly why: comparing subgroups one at a time does not show that they differ. Include it only if the user says yes.
@@ -266,6 +270,36 @@ Choose tidyverse packages over base R, when available, but don't require all of 
 - Set reference levels (vehicle/control first)
 - Create unique IDs for nested factors where needed (see D.3)
 - Print a brief data summary: `str()`, dimensions, first few rows
+- **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data. Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line:
+
+```r
+# --- 2b. Quality control ---
+# Only the QC rules stated in input.md remove data; statistical outliers are
+# never removed automatically. "Missing" means never measured; "excluded"
+# means measured, then removed by a QC rule. Both are recorded, with reasons.
+# Mixed models do not replace QC: artefacts must still be removed first.
+dat <- dat |>
+  dplyr::mutate(
+    row_id    = dplyr::row_number(),
+    qc_reason = dplyr::case_when(
+      is.na(uci_g)      ~ "no measurement recorded",
+      qc_flag == "torn" ~ "section torn (QC rule from input.md)",
+      .default = NA_character_
+    ),
+    qc_status = dplyr::case_when(
+      is.na(uci_g)       ~ "missing",
+      !is.na(qc_reason)  ~ "excluded",
+      .default = "kept"
+    )
+  )
+
+exclusions <- dat |>
+  dplyr::filter(qc_status != "kept") |>
+  dplyr::select(row_id, subject_id, qc_status, qc_reason)
+write.csv(exclusions, "results_exclusions.csv", row.names = FALSE)
+
+dat <- dat |> dplyr::filter(qc_status == "kept")
+```
 
 ### Section 3: Data Exploration
 - Summary statistics per group (mean, SD, N, missing count)
@@ -620,6 +654,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] Diagnostic plots are generated
 - [ ] The variability-by-group check writes `results_variance_by_group.csv` and warns, without changing the model
 - [ ] Results are exported as CSV via broom/broom.mixed
+- [ ] QC applies only rules from input.md and writes `results_exclusions.csv` (missing and excluded kept separate)
 - [ ] The replicate audit writes `results_replicate_audit_per_animal.csv` and `results_replicate_audit_summary.csv`
 - [ ] Plots are saved as 300dpi PNG
 
@@ -646,6 +681,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - If you spot potential issues (very small N, likely convergence problems, ambiguous nesting), flag them proactively.
 - Do not overwhelm with statistical jargon — explain decisions in plain language in comments.
 - If the user's input.md is incomplete, be specific about what is missing and provide an example of what to add. Never guess.
+- Never suggest that RAMM makes QC unnecessary.
 
 ---
 
@@ -667,6 +703,9 @@ nesting, any known issues like non-unique IDs or missing data]
 # Post-Hoc Comparisons
 - Compare each treatment to vehicle
 - Pairwise comparisons within genotype
+
+# QC Rules (optional)
+- Exclude rows where `qc_flag` is "torn" (torn sections)
 
 # Preferences (optional)
 - Package: lme4 or glmmTMB
