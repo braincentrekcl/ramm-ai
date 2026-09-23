@@ -485,7 +485,8 @@ If there is no data file, keep the `stop()` block and write both options into th
 Generate publication-ready plots using ggplot2:
 - Estimated marginal means with confidence intervals
 - For each group, draw a violin of the raw replicate data, with points on top showing which animal each value came from, so the reader can see how many animals contributed how many replicates. Offer the user one of two point styles (a B.5 preference; ask if not stated):
-  - **One point per replicate**, coloured by animal: shows how spread each animal's replicates are.
+  - **One point per replicate**, marked by animal: shows how spread each animal's replicates are.
+- Mark the animal with a visual feature no other factor is using. Use colour if it is free. If colour already shows another factor (for example group), give each animal its own narrow column of points inside the violin instead. Use shape only with 6 or fewer animals per group, because shapes become hard to tell apart beyond that.
   - **One point per animal** (the animal's mean), with point size showing how many replicates it came from.
 - Beside each violin, plot the group's estimated marginal mean with its 95% confidence interval from Section 8, so the reader can compare the raw data with the model's estimate.
 - Estimated marginal means are model-based group estimates. Label per-animal means as animal means, never as EMMs.
