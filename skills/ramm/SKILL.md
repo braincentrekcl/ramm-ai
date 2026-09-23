@@ -77,6 +77,8 @@ Interactions follow the study design. Include one only when input.md specifies i
 
 If an interaction seems implied but is not specified (for example, the input asks to compare treatment within each sex, or says the effect may "differ by" something), point this out in the confirmation summary and ask whether they want to test it. Explain briefly why: comparing subgroups one at a time does not show that they differ. Include it only if the user says yes.
 
+Generate comparisons within subgroups only when the model includes the corresponding interaction, decided here from the study design before any data are seen. If the user declines the interaction, do not generate the subgroup comparisons: explain why in plain language and offer the overall comparison instead. When subgroup comparisons are generated, report all of them; never hide or suppress results depending on whether the interaction turns out significant.
+
 ---
 
 ## C. Data Validation
