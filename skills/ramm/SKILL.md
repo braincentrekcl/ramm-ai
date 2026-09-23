@@ -451,7 +451,40 @@ hist(resid(model), breaks = 30, main = "Histogram of Residuals",
 plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
      xlab = "Fitted values", ylab = "sqrt(|Residuals|)")
 par(mfrow = c(1, 1))
+
+# 6f. Variability by group
+# The model assumes every group has the same spread, both between animals
+# and between replicates within an animal. If one group is much more
+# variable, its spread can distort the other groups' results. This check
+# only flags a large difference; it does not change the model. If it
+# triggers, discuss with a statistician before changing anything.
+dat$residual <- resid(model)
+within_sd <- dat |>
+  dplyr::group_by(drug_group) |>
+  dplyr::summarise(within_animal_sd = sd(residual))
+between_sd <- dat |>
+  dplyr::group_by(drug_group, subject_id) |>
+  dplyr::summarise(animal_mean = mean(uci_g), .groups = "drop") |>
+  dplyr::group_by(drug_group) |>
+  dplyr::summarise(between_animal_sd = sd(animal_mean))
+variance_check <- dplyr::left_join(within_sd, between_sd, by = "drug_group")
+write.csv(variance_check, "results_variance_by_group.csv", row.names = FALSE)
+
+# Rule of thumb: flag when the most variable group's SD is more than twice
+# the least variable group's (a four-fold difference in variance).
+sd_ratio_limit <- 2
+for (sd_column in c("within_animal_sd", "between_animal_sd")) {
+  sd_ratio <- max(variance_check[[sd_column]]) / min(variance_check[[sd_column]])
+  if (sd_ratio > sd_ratio_limit) {
+    warning(sprintf("%s differs %.1f-fold between groups (flag above %g). ",
+                    sd_column, sd_ratio, sd_ratio_limit),
+            "Groups may not share the same variability; see ",
+            "results_variance_by_group.csv.")
+  }
+}
 ```
+
+For a one-observation-per-subject `lm()` (see D.1) there is no within-animal spread: report only the SD of values per group, under the same rule.
 
 ### Section 7: Model Summary
 - `summary(model)` for full output
@@ -578,6 +611,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The `set.seed(42)` is present
 - [ ] The header accurately describes what was specified
 - [ ] Diagnostic plots are generated
+- [ ] The variability-by-group check writes `results_variance_by_group.csv` and warns, without changing the model
 - [ ] Results are exported as CSV via broom/broom.mixed
 - [ ] The replicate audit writes `results_replicate_audit_per_animal.csv` and `results_replicate_audit_summary.csv`
 - [ ] Plots are saved as 300dpi PNG
