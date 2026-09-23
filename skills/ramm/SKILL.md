@@ -61,7 +61,7 @@ For each level, determine:
 - Package preference (lme4 default, or glmmTMB)
 - Family/link function (Gaussian default)
 - Alpha level (0.05 default)
-- P-value adjustment (Holm default)
+- P-value adjustment (default depends on the comparison type; see Section 8)
 - Any other preferences stated
 
 ### B.6 Ambiguity Check
