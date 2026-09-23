@@ -456,10 +456,15 @@ Use this pattern (adapt the formula and comparison):
 
 # Kenward-Roger degrees of freedom for all tests and intervals: it corrects
 # for having few animals, which Wald intervals do not.
-# emmeans silently drops Kenward-Roger above 3,000 observations unless the
-# limit is raised. Raising it to the data size keeps Kenward-Roger; on very
-# large datasets this can be slow and memory-hungry.
-emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))
+# Above 3,000 observations emmeans silently drops Kenward-Roger, and running
+# it anyway can be slow and memory-hungry. The script stops rather than
+# choosing for you (see "Large datasets" below).
+if (nrow(dat) > 3000) {
+  stop("This dataset has ", nrow(dat), " observations. Kenward-Roger may be ",
+       "slow or run out of memory at this size. Choose an option in the ",
+       "'Large datasets' comment in Section 8, then re-run.")
+}
+emm_options(lmer.df = "kenward-roger")
 
 emm <- emmeans(model, ~ drug_group)
 contrast_output <- contrast(emm, method = "trt.vs.ctrl", ref = "vehicle",
@@ -468,6 +473,12 @@ contrast_output <- contrast(emm, method = "trt.vs.ctrl", ref = "vehicle",
 summary(emm, infer = TRUE)
 summary(contrast_output, infer = TRUE)
 ```
+
+**Large datasets (more than 3,000 observations).** If Section C found more than 3,000 rows, ask the user before generating the script: does their machine have the memory for Kenward-Roger at this size, or would they prefer Satterthwaite (much cheaper, slightly less conservative with few animals)? Then replace the `stop()` block with their choice, commented with the reason:
+- Keep Kenward-Roger: `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))`
+- Use Satterthwaite: `emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))`, and `ddf = "Satterthwaite"` in Section 7.
+
+If there is no data file, keep the `stop()` block and write both options into the script as a commented "Large datasets" block, so the user chooses if it triggers.
 
 ### Section 9: Visualisation
 Generate publication-ready plots using ggplot2:
