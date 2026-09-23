@@ -308,6 +308,11 @@ Use this pattern:
 # - (1 | slide_uid): random intercept for slides (nested in subject via
 #     unique IDs) — accounts for slide-to-slide batch effects.
 
+# Type III tests (Section 7) are only meaningful with sum-to-zero contrasts,
+# so set them before fitting. The previous setting is restored in Section 11.
+# Estimated marginal means (Section 8) are unaffected by this choice.
+old_contrasts <- options(contrasts = c("contr.sum", "contr.poly"))
+
 control_settings <- lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
 
 model <- lmer(
@@ -500,6 +505,9 @@ ggsave("plot_residuals.png", width = 10, height = 8, dpi = 300)
 # --- 11. Session Information ---
 # For full reproducibility, record the R environment
 sessionInfo()
+
+# Restore the contrast setting changed in Section 5
+options(old_contrasts)
 ```
 
 ---
@@ -515,6 +523,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The script is self-contained — it runs top-to-bottom with only the data file in the working directory
 - [ ] All modelling decisions have inline comments explaining WHY, not just WHAT
 - [ ] `sessionInfo()` is present at the end
+- [ ] Sum-to-zero contrasts are set before fitting and restored at the end
 - [ ] All required packages are listed in Section 1
 - [ ] The `set.seed(42)` is present
 - [ ] The header accurately describes what was specified
