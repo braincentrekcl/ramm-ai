@@ -237,14 +237,16 @@ set.seed(42)
 required_packages <- c("lme4", "lmerTest", "pbkrtest", "emmeans", "ggplot2",
                         "broom.mixed", "dplyr", "tidyr")
 
-# Check and load packages
-for (pkg in required_packages) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-    message("Installing missing package: ", pkg)
-    install.packages(pkg)
-  }
-  library(pkg, character.only = TRUE)
+# Check packages without installing anything: installing inside an analysis
+# can silently change package versions between runs. Stop and say what is
+# missing instead; use /ramm:reproduce for a pinned environment.
+missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
+                                              logical(1), quietly = TRUE)]
+if (length(missing_packages) > 0) {
+  stop("Missing R packages: ", paste(missing_packages, collapse = ", "),
+       ". Install them, or set up the pinned environment from /ramm:reproduce.")
 }
+for (pkg in required_packages) library(pkg, character.only = TRUE)
 # NOTE: lmerTest must be loaded after lme4 so anova() reports denominator df.
 # pbkrtest supplies the Kenward-Roger df used for all tests and intervals.
 ```
@@ -524,7 +526,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] All modelling decisions have inline comments explaining WHY, not just WHAT
 - [ ] `sessionInfo()` is present at the end
 - [ ] Sum-to-zero contrasts are set before fitting and restored at the end
-- [ ] All required packages are listed in Section 1
+- [ ] All required packages are listed in Section 1, and the script never calls `install.packages()`
 - [ ] The `set.seed(42)` is present
 - [ ] The header accurately describes what was specified
 - [ ] Diagnostic plots are generated
