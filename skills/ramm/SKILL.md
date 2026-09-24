@@ -245,7 +245,7 @@ Generate the R script with these sections in this exact order. Each section must
 # --- 1. Environment Setup ---
 set.seed(42)
 
-required_packages <- c("lme4", "lmerTest", "pbkrtest", "emmeans", "ggplot2",
+required_packages <- c("lme4", "lmerTest", "emmeans", "ggplot2",
                         "broom.mixed", "dplyr", "tidyr")
 
 # Check packages without installing anything: installing inside an analysis
@@ -259,7 +259,7 @@ if (length(missing_packages) > 0) {
 }
 for (pkg in required_packages) library(pkg, character.only = TRUE)
 # NOTE: lmerTest must be loaded after lme4 so anova() reports denominator df.
-# pbkrtest supplies the Kenward-Roger df used for all tests and intervals.
+# lmerTest supplies the Satterthwaite df used for all tests and intervals.
 ```
 
 Adjust the package list based on the model requirements (add glmmTMB, performance, etc. as needed).
@@ -528,9 +528,9 @@ For a one-observation-per-subject `lm()` (see D.1) there is no within-animal spr
 
 ### Section 7: Model Summary
 - `summary(model)` for full output
-- `anova(model, type = 3, ddf = "Kenward-Roger")` for Type III F-tests (via lmerTest)
-- Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few animals. Confidence intervals come from `emmeans` with Kenward-Roger df in Section 8.
-- Kenward-Roger applies to `lmer()` models. For a one-observation-per-subject `lm()` (see D.1), use `anova(model)` and ordinary t-based intervals.
+- `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
+- Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few animals. Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
+- Satterthwaite df apply to `lmer()` models. For a one-observation-per-subject `lm()` (see D.1), use `anova(model)` and ordinary t-based intervals.
 
 ### Section 8: Post-Hoc Comparisons
 Apply the translation rules from Section G:
@@ -561,17 +561,11 @@ Use this pattern (adapt the formula and comparison):
 ```r
 # --- 8. Post-Hoc Comparisons ---
 
-# Kenward-Roger degrees of freedom for all tests and intervals: it corrects
+# Satterthwaite degrees of freedom for all tests and intervals: they account
 # for having few animals, which Wald intervals do not.
-# Above 3,000 observations emmeans silently drops Kenward-Roger, and running
-# it anyway can be slow and memory-hungry. The script stops rather than
-# choosing for you (see "Large datasets" below).
-if (nrow(dat) > 3000) {
-  stop("This dataset has ", nrow(dat), " observations. Kenward-Roger may be ",
-       "slow or run out of memory at this size. Choose an option in the ",
-       "'Large datasets' comment in Section 8, then re-run.")
-}
-emm_options(lmer.df = "kenward-roger")
+# Set explicitly: emmeans otherwise uses Kenward-Roger whenever pbkrtest is
+# installed, and above 3,000 observations it silently switches to infinite df.
+emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))
 
 emm <- emmeans(model, ~ drug_group)
 contrast_output <- contrast(emm, method = "trt.vs.ctrl", ref = "vehicle",
@@ -581,11 +575,7 @@ summary(emm, infer = TRUE)
 summary(contrast_output, infer = TRUE)
 ```
 
-**Large datasets (more than 3,000 observations).** If Section C found more than 3,000 rows, ask the user before generating the script: does their machine have the memory for Kenward-Roger at this size, or would they prefer Satterthwaite (much cheaper, slightly less conservative with few animals)? Then replace the `stop()` block with their choice, commented with the reason:
-- Keep Kenward-Roger: `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))`
-- Use Satterthwaite: `emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))`, and `ddf = "Satterthwaite"` in Section 7.
-
-If there is no data file, keep the `stop()` block and write both options into the script as a commented "Large datasets" block, so the user chooses if it triggers.
+**Kenward-Roger, only if the user asks for it.** Offer it as a sensitivity check, never as a way to choose between results. Add `pbkrtest` to the required packages, use `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))` and `ddf = "Kenward-Roger"` in Section 7, and add this comment: "In simulations, Kenward-Roger was conservative when between-animal variation is poorly estimated (few animals, noisy replicates), costing power without improving coverage. Use it to check a result, not to choose between results."
 
 ### Section 9: Visualisation
 Generate publication-ready plots using ggplot2:
@@ -605,7 +595,7 @@ Generate publication-ready plots using ggplot2:
 # --- 10. Export Results ---
 
 # Tidy model summary (no intervals here: broom.mixed would give Wald
-# intervals; the Kenward-Roger intervals are in the emmeans exports below)
+# intervals; the Satterthwaite intervals are in the emmeans exports below)
 model_tidy <- broom.mixed::tidy(model, effects = "fixed")
 write.csv(model_tidy, "results_model_summary.csv", row.names = FALSE)
 
@@ -613,7 +603,7 @@ write.csv(model_tidy, "results_model_summary.csv", row.names = FALSE)
 model_random <- broom.mixed::tidy(model, effects = "ran_pars")
 write.csv(model_random, "results_random_effects.csv", row.names = FALSE)
 
-# EMMs and contrasts, with Kenward-Roger confidence intervals
+# EMMs and contrasts, with Satterthwaite confidence intervals
 emm_results <- as.data.frame(summary(emm, infer = TRUE))
 write.csv(emm_results, "results_emmeans.csv", row.names = FALSE)
 
