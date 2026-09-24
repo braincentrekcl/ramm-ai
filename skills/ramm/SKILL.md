@@ -547,6 +547,7 @@ Default p-value adjustment depends on the comparison type:
 - **Pairwise** (`pairs()`): use `adjust = "tukey"` — designed for all pairwise comparisons
 - **All other comparisons**: use `adjust = "holm"` — a safe general-purpose default
 - Override with the user's preference if they specify a different method in input.md
+- With `dunnett` or `tukey`, check the contrasts' df before summarising and stop if any is below 2 (see the pattern below). Both methods return NaN or an unhelpful error below 2 df, and with so few animals no adjusted p-value would be trustworthy anyway
 
 Always:
 - Specify the adjustment method explicitly in the code (never rely on defaults)
@@ -570,6 +571,16 @@ emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))
 emm <- emmeans(model, ~ drug_group)
 contrast_output <- contrast(emm, method = "trt.vs.ctrl", ref = "vehicle",
                             adjust = "dunnett")
+
+# Dunnett and Tukey adjustments cannot be calculated below 2 degrees of
+# freedom, which happens when very few animals remain in a group.
+contrast_df <- summary(contrast_output, infer = FALSE)$df
+if (any(contrast_df < 2)) {
+  stop("Too few animals remain for a trustworthy adjusted p-value: ",
+       "at least one comparison has fewer than 2 degrees of freedom (lowest ",
+       round(min(contrast_df), 2), "). Report the group means and differences ",
+       "without p-values, or add animals before testing.", call. = FALSE)
+}
 
 summary(emm, infer = TRUE)
 summary(contrast_output, infer = TRUE)
