@@ -12,10 +12,10 @@ In Claude Code:
 /install-plugin braincentrekcl/ramm-ai
 ```
 
-Or from a local directory during development:
+Or load it from a local folder for one session only (nothing is installed), for development or a demo:
 
 ```
-/install-plugin /path/to/ramm-ai
+claude --plugin-dir /path/to/ramm-ai
 ```
 
 ## Usage
