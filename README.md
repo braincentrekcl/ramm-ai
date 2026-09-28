@@ -38,6 +38,14 @@ This plugin provides two skills:
 Or simply `/ramm:ramm` if your file is named `input.md`.
 
 RAMM will parse your study design, validate it against your data (if available), and generate a self-contained R script.
+Everything it tells you is in plain language; the R code stays in the script, with comments explaining each step.
+
+Before running the script, RAMM asks whether you want it to run the analysis for you or run it yourself.
+If R or a required package is missing, it names what is missing and gives you the one command to run once it is installed:
+
+```
+Rscript analysis.R
+```
 
 ### Generating a reproducible environment
 
@@ -124,14 +132,22 @@ An R script (`analysis.R`) containing:
 | Environment | Package loading, reproducibility setup |
 | Data prep | Loading, factor encoding, unique ID creation |
 | Exploration | Summary stats, N per cell, missing data |
-| Hierarchy diagram | ASCII tree of the nesting structure |
+| Hierarchy diagram | Tree of the nesting structure, printed and saved as `plot_hierarchy.png` |
 | Model | Formula with commented rationale for every term |
 | Diagnostics | Convergence, singular fit, residual plots, QQ |
 | Summary | Coefficients, ANOVA, confidence intervals |
-| Post-hoc | emmeans with specified contrasts |
+| Post-hoc | The comparisons you asked for, as differences from the reference group (e.g. het minus WT) with 95% confidence intervals |
 | Plots | Publication-ready (300 dpi PNG) |
-| Export | Tidy results as CSV via broom.mixed |
+| Export | Results as CSV files with readable column names, plus `results_summary.md` |
 | Session info | Full R environment for reproducibility |
+
+Running the script writes:
+
+- `results_summary.md`: start here. The answer to each comparison in plain sentences, warnings, and a guide to the other files
+- `results_group_means.csv`, `results_comparisons.csv`: estimated group means and the differences between groups
+- `results_replicate_audit_per_animal.csv`, `results_replicate_audit_summary.csv`: how many replicates each animal contributed
+- `results_exclusions.csv`: measurements that were missing or removed by your QC rules
+- `plot_hierarchy.png`, `plot_emmeans.png`, `plot_residuals.png` and the other plots
 
 ## Examples
 
@@ -140,10 +156,12 @@ See the `examples/` directory for complete input files:
 - **input-autoradiography.md** — brain region autoradiography with nested slides/sections
 - **input-simple-two-group.md** — minimal two-group comparison
 - **input-repeated-measures.md** — longitudinal repeated measures with group x time interaction
+- **demo-autoradiography/** — simulated receptor autoradiography: three genotypes, three regions, slides and sections, uneven tissue loss (with data)
+- **demo-open-field/** — simulated open-field crossover (vehicle vs diazepam) with missing sessions (with data)
 
 ## R Packages Required
 
-The generated scripts will use some or all of these (installed automatically if missing):
+The generated scripts will use some or all of these. Scripts never install packages: if one is missing, the script stops and lists what to install.
 
 - lme4 / glmmTMB
 - lmerTest

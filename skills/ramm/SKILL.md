@@ -22,7 +22,7 @@ You are an expert biostatistician specialising in preclinical research, mixed-ef
 
 ## B. Input Parsing Checklist
 
-Before writing any code, you MUST extract and confirm all of the following from the input file. Present your understanding to the user as a structured summary and ask them to confirm before proceeding.
+Before writing any code, you MUST extract and confirm all of the following from the input file. Present your understanding to the user as a structured summary and ask them to confirm before proceeding. Write the summary in plain language (see H): the user may never have used R.
 
 ### B.1 Dependent Variable
 - Column name
@@ -341,7 +341,8 @@ write.csv(replicate_summary, "results_replicate_audit_summary.csv", row.names = 
 ```
 
 ### Section 4: Hierarchy Diagram
-Print an ASCII tree of the nesting structure as understood by the model:
+Print an ASCII tree of the nesting structure as understood by the model, and save the same structure as `plot_hierarchy.png` (below).
+Label levels in plain words ("Mouse", "Slide", "Section"), not column names or model terms.
 ```r
 # --- 4. Study Design Hierarchy ---
 # As understood from the study description:
@@ -353,6 +354,30 @@ Print an ASCII tree of the nesting structure as understood by the model:
 #                       └── region (12 ROIs per section, observation-level)
 #
 # Total expected observations: ~48 subjects × ~4 slides × 3 sections × varies regions
+```
+
+Then draw the tree with ggplot2 (already required, so no extra package). Take every count from the data, never from input.md, so the picture shows what was analysed. Add one box per level; note factors measured within a level (for example regions on every section) inside that level's box:
+
+```r
+hierarchy <- data.frame(
+  level  = c("Drug group", "Subject", "Slide", "Section"),
+  detail = c(
+    paste(levels(dat$drug_group), collapse = ", "),
+    paste(dplyr::n_distinct(dat$subject_id), "animals"),
+    paste(dplyr::n_distinct(dat$slide_uid), "slides"),
+    paste(dplyr::n_distinct(dat$section_uid), "sections, 12 regions measured on each")
+  )
+)
+hierarchy$y <- rev(seq_len(nrow(hierarchy)))
+hierarchy_plot <- ggplot(hierarchy, aes(x = 0, y = y)) +
+  geom_segment(data = hierarchy[-nrow(hierarchy), ],
+               aes(x = 0, xend = 0, y = y - 0.25, yend = y - 0.75)) +
+  geom_label(aes(label = paste0(level, "\n", detail)), size = 4, label.padding = unit(0.5, "lines")) +
+  scale_y_continuous(expand = expansion(add = 0.6)) +
+  labs(title = "How the data are organised",
+       subtitle = "Each level sits inside the one above it") +
+  theme_void()
+ggsave("plot_hierarchy.png", hierarchy_plot, width = 5, height = 1.5 * nrow(hierarchy), dpi = 300)
 ```
 
 ### Section 5: Model Fitting
@@ -538,13 +563,13 @@ Apply the translation rules from Section G:
 | User says | emmeans code |
 |-----------|-------------|
 | "compare each group to vehicle/control" | `emmeans(model, trt.vs.ctrl ~ treatment, ref = "vehicle")` |
-| "pairwise comparisons" | `pairs(emmeans(model, ~ treatment))` |
-| "compare within [factor]" | `emmeans(model, pairwise ~ treatment \| factor)` |
+| "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise")` |
+| "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise")` |
 | "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "pairwise")` |
 
 Default p-value adjustment depends on the comparison type:
 - **Treatment vs control** (`trt.vs.ctrl`): use `adjust = "dunnett"` — designed for many-to-one comparisons
-- **Pairwise** (`pairs()`): use `adjust = "tukey"` — designed for all pairwise comparisons
+- **Pairwise** (`revpairwise`): use `adjust = "tukey"` — designed for all pairwise comparisons
 - **All other comparisons**: use `adjust = "holm"` — a safe general-purpose default
 - Override with the user's preference if they specify a different method in input.md
 - With `dunnett` or `tukey`, check the contrasts' df before summarising and stop if any is below 2 (see the pattern below). Both methods return NaN or an unhelpful error below 2 df, and with so few animals no adjusted p-value would be trustworthy anyway
@@ -552,8 +577,9 @@ Default p-value adjustment depends on the comparison type:
 Always:
 - Specify the adjustment method explicitly in the code (never rely on defaults)
 - Report estimates AND confidence intervals, not just p-values
-- Use `summary(emm, infer = TRUE)` to get CIs on the means
 - Name the objects `emm` and `contrast_output`; Section 10 exports them
+- Express every difference relative to the reference level (treatment minus control, het minus WT), so a decrease in the treated group reads as a negative number. `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment
+- Test differences, not means: for the group means use `summary(emm, infer = c(TRUE, FALSE))`, which gives confidence intervals without testing whether each mean is zero (a meaningless test for most measurements)
 - Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
 - If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ. Only a test of the difference itself (an interaction) shows that. If that question matters to your study, specify it in input.md."
 
@@ -582,7 +608,7 @@ if (any(contrast_df < 2)) {
        "without p-values, or add animals before testing.", call. = FALSE)
 }
 
-summary(emm, infer = TRUE)
+summary(emm, infer = c(TRUE, FALSE))
 summary(contrast_output, infer = TRUE)
 ```
 
@@ -600,6 +626,8 @@ Generate publication-ready plots using ggplot2:
 - Use a clean theme (`theme_classic()` or `theme_bw()`), with Set2 colours for categorical factors, magma for sequential factors, and RdBu_r for diverging (mean centered) factors.
 - If there is more than one categorical factor (e.g. genotype and drug), use shape for the factor with fewest levels.
 - Label axes clearly with units
+- Show factor levels as readable words in plots (for example "sensory cortex", not `sensory_cortex`)
+- Give each factor the same colours in every plot: if genotype is coloured in one plot, it keeps those colours everywhere, and no other factor reuses them
 
 ### Section 10: Export Results
 ```r
@@ -614,17 +642,32 @@ write.csv(model_tidy, "results_model_summary.csv", row.names = FALSE)
 model_random <- broom.mixed::tidy(model, effects = "ran_pars")
 write.csv(model_random, "results_random_effects.csv", row.names = FALSE)
 
-# EMMs and contrasts, with Satterthwaite confidence intervals
-emm_results <- as.data.frame(summary(emm, infer = TRUE))
-write.csv(emm_results, "results_emmeans.csv", row.names = FALSE)
+# Group means and differences, with Satterthwaite confidence intervals.
+# Columns are renamed so the files read without knowing R.
+emm_results <- as.data.frame(summary(emm, infer = c(TRUE, FALSE))) |>
+  dplyr::rename(estimated_mean = emmean, standard_error = SE,
+                degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL)
+write.csv(emm_results, "results_group_means.csv", row.names = FALSE)
 
-contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE))
-write.csv(contrast_results, "results_contrasts.csv", row.names = FALSE)
+contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE)) |>
+  dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
+                degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
+                t_value = t.ratio, p_value_adjusted = p.value)
+write.csv(contrast_results, "results_comparisons.csv", row.names = FALSE)
 
 # Save plots
 ggsave("plot_emmeans.png", plot = emm_plot, width = 8, height = 6, dpi = 300)
 ggsave("plot_residuals.png", width = 10, height = 8, dpi = 300)
 ```
+
+Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
+
+Finally, the script writes `results_summary.md`, the file a user opens first. Build it from the fitted results, never from hard-coded numbers, in plain language:
+- One line on the question and the data analysed (animals per group, measurements kept, anything excluded or missing).
+- Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
+- The subgroup disclaimer from Section 8, if subgroups were compared.
+- Any warnings raised (singular fit, convergence, unequal variability, small groups).
+- A list of the other output files and what each contains.
 
 ### Section 11: Session Info
 ```r
@@ -659,6 +702,10 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] QC applies only rules from input.md and writes `results_exclusions.csv` (missing and excluded kept separate)
 - [ ] The replicate audit writes `results_replicate_audit_per_animal.csv` and `results_replicate_audit_summary.csv`
 - [ ] Plots are saved as 300dpi PNG
+- [ ] The hierarchy is printed and saved as `plot_hierarchy.png`, with counts taken from the data
+- [ ] Differences are reference-relative (treatment minus control) and group means are not tested against zero
+- [ ] Exported column names and plot labels are readable words, and each factor keeps its colours across plots
+- [ ] The script writes `results_summary.md`
 
 ---
 
@@ -667,13 +714,15 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 1. Write the R script to `{study_name}_analysis.R` in the working directory.
    - Derive `study_name` from the input file name (e.g., `input.md` → `analysis.R`, `brain_regions.md` → `brain_regions_analysis.R`).
    - If unclear, ask the user what to name it.
-2. After writing, tell the user:
-   - What file was created
+2. **Ask before running the script.** Check whether R is available (`Rscript --version`) and whether the required packages are installed. Then ask the user whether they want you to run the script now or run it themselves.
+   - If they want you to run it and R and the packages are present, run it and report what it produced.
+   - Otherwise (they prefer to run it, or R or packages are missing), give them the single command to run from the folder holding the script and data, `Rscript analysis.R`, and list the files it will write. If packages are missing, name them; never install them.
+3. After writing (and running, if they chose that), tell the user, in plain language (see H):
+   - What file was created, and that `results_summary.md` is the place to start once it has run
    - What R packages need to be installed
-   - How to run it: `Rscript analysis.R` (from the directory containing the data file)
-   - Remind them to review the script before running, especially the column names and random effects structure
+   - Remind them to review the script before trusting it, especially that the hierarchy picture matches how their tissue or animals were handled
    - If the script compares subgroups, repeat the subgroup disclaimer from Section 8 in plain language
-3. **Reproducible environment:** If the user specified a `Reproducible environment:` preference in input.md (or if they mentioned wanting a reproducible setup), suggest running `/ramm:reproduce` next to generate pinned-version Docker/renv scaffolding. If they confirm, invoke the reproduce skill. Otherwise, just mention it as an option.
+4. **Reproducible environment:** If the user specified a `Reproducible environment:` preference in input.md (or if they mentioned wanting a reproducible setup), suggest running `/ramm:reproduce` next to generate pinned-version Docker/renv scaffolding. If they confirm, invoke the reproduce skill. Otherwise, just mention it as an option.
 
 ---
 
@@ -682,6 +731,11 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - When presenting the parsed study design back to the user, be clear and structured.
 - If you spot potential issues (very small N, likely convergence problems, ambiguous nesting), flag them proactively.
 - Do not overwhelm with statistical jargon — explain decisions in plain language in comments.
+- **Every message to the user is plain language.** The user may never have used R. Never show R code, function names, model formulas or variable-construction code in messages; the script holds the code, with comments, for anyone who wants it. Describe what the code does instead:
+  - Not `emmeans(model, pairwise ~ genotype | region, adjust = "tukey")`, but "compare every pair of genotypes within each region, adjusting the p-values for making three comparisons".
+  - Not `section_uid = paste(slide_id, section)`, but "sections are numbered 1-3 on every slide, so the script gives each one a label that includes its slide".
+  - Not `(1 | mouse_id) + (1 | slide_id)`, but "the model allows each mouse and each slide to sit a little higher or lower than average".
+  - Column names are fine when pointing the user at their own data (for example "your `section` column").
 - If the user's input.md is incomplete, be specific about what is missing and provide an example of what to add. Never guess.
 - Never suggest that RAMM makes QC unnecessary.
 
