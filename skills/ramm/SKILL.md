@@ -357,7 +357,10 @@ Label levels in plain words ("Mouse", "Slide", "Section"), not column names or m
 # Total expected observations: ~48 subjects × ~4 slides × 3 sections × varies regions
 ```
 
-Then draw the tree with ggplot2 (already required, so no extra package). Take every count from the data, never from input.md, so the picture shows what was analysed. Add one box per level; note factors measured within a level (for example regions on every section) inside that level's box:
+Then draw the tree with ggplot2 (already required, so no extra package). Take every count from the data, never from input.md, so the picture shows what was analysed. Add one box per level; note factors measured within a level (for example regions on every section) inside that level's box.
+Only a factor that splits the animals into separate groups (for example genotype, or a drug each animal receives alone) gets a box above the animal.
+A factor every animal receives more than one level of (for example both treatments in a crossover, or regions) is not above the animal, because the animals do not sit inside it: note it inside the animal's box or the measurement's box instead.
+If there is no between-animal factor, the animal is the top box.
 
 ```r
 hierarchy <- data.frame(
