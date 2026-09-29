@@ -716,6 +716,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
    - Derive `study_name` from the input file name (e.g., `input.md` → `analysis.R`, `brain_regions.md` → `brain_regions_analysis.R`).
    - If unclear, ask the user what to name it.
 2. **Ask before running the script.** Check whether R is available (`Rscript --version`) and whether the required packages are installed. Then ask the user whether they want you to run the script now or run it themselves.
+   - Wait for their answer. R and the packages being installed is not an answer: never run the script without the user's explicit reply.
    - If they want you to run it and R and the packages are present, run it and report what it produced.
    - Otherwise (they prefer to run it, or R or packages are missing), give them the single command to run from the folder holding the script and data, `Rscript analysis.R`, and list the files it will write. If packages are missing, name them; never install them.
 3. After writing (and running, if they chose that), tell the user, in plain language (see H):
