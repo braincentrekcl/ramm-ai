@@ -674,6 +674,7 @@ Generate publication-ready plots using ggplot2:
 - Use a clean theme (`theme_classic()` or `theme_bw()`), with Set2 colours for categorical factors, magma for sequential factors, and RdBu_r for diverging (mean centered) factors.
 - If there is more than one categorical factor (e.g. genotype and drug), use shape for the factor with fewest levels.
 - Label axes clearly with units
+- Keep titles and subtitles inside the saved image: wrap any line longer than about 70 characters (for example `paste(strwrap(text, 70), collapse = "\n")`), so nothing is cut off at the plot's width
 - Show factor levels as readable words in plots (for example "sensory cortex", not `sensory_cortex`)
 - Give each factor the same colours in every plot: if genotype is coloured in one plot, it keeps those colours everywhere, and no other factor reuses them
 
