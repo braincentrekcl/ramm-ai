@@ -585,7 +585,7 @@ Apply the translation rules from Section G:
 | "compare each group to vehicle/control" | `emmeans(model, trt.vs.ctrl ~ treatment, ref = "vehicle")` |
 | "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise")` |
 | "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise")` |
-| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "pairwise")` |
+| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise")` |
 
 Default p-value adjustment depends on the comparison type:
 - **Treatment vs control** (`trt.vs.ctrl`): use `adjust = "dunnett"` — designed for many-to-one comparisons
@@ -598,7 +598,7 @@ Always:
 - Specify the adjustment method explicitly in the code (never rely on defaults)
 - Report estimates AND confidence intervals, not just p-values
 - Name the objects `emm` and `contrast_output`; Section 10 exports them
-- Express every difference relative to the reference level (treatment minus control, het minus WT), so a decrease in the treated group reads as a negative number. `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment
+- Express every difference relative to the reference level (treatment minus control, het minus WT), so a decrease in the treated group reads as a negative number. `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment. The same holds for interaction contrasts: `interaction = "revpairwise"` labels them as, for example, `diazepam - vehicle` by `second - first`; `"pairwise"` gives the same size with the labels reversed
 - Test differences, not means: for the group means use `summary(emm, infer = c(TRUE, FALSE))`, which gives confidence intervals without testing whether each mean is zero (a meaningless test for most measurements)
 - Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
 - If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ. Only a test of the difference itself (an interaction) shows that. If that question matters to your study, specify it in input.md."
