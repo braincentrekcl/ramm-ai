@@ -688,7 +688,20 @@ write.csv(contrast_results, "results_comparisons.csv", row.names = FALSE)
 
 # Save plots
 ggsave("plot_emmeans.png", plot = emm_plot, width = 8, height = 6, dpi = 300)
-ggsave("plot_residuals.png", width = 10, height = 8, dpi = 300)
+# The residual panels are base-R plots, so ggsave() would save the last
+# ggplot instead: redraw them into a png device.
+png("plot_residuals.png", width = 10, height = 8, units = "in", res = 300)
+par(mfrow = c(2, 2))
+plot(resid(model) ~ fitted(model), main = "Residuals vs Fitted",
+     xlab = "Fitted values", ylab = "Residuals")
+abline(h = 0, lty = 2, col = "red")
+qqnorm(resid(model), main = "QQ Plot of Residuals")
+qqline(resid(model), col = "red")
+hist(resid(model), breaks = 30, main = "Histogram of Residuals",
+     xlab = "Residuals", col = "lightblue")
+plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
+     xlab = "Fitted values", ylab = "sqrt(|Residuals|)")
+dev.off()
 ```
 
 Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
