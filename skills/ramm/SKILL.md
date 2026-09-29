@@ -244,6 +244,22 @@ Generate the R script with these sections in this exact order. Each section must
 ### Section 1: Environment and Reproducibility
 ```r
 # --- 1. Environment Setup ---
+# Keep a record of the run. Everything printed below goes to the screen and
+# to analysis_log.txt; messages, warnings and any error are copied into the
+# log too, so the log holds the whole run even if the script stops early.
+log_con <- file("analysis_log.txt", open = "wt")
+sink(log_con, split = TRUE)
+write_to_log <- function(text) {
+  sink()  # pause the screen copy, so the text is not shown twice
+  cat(text, file = log_con)
+  sink(log_con, split = TRUE)
+}
+globalCallingHandlers(
+  message = function(m) write_to_log(conditionMessage(m)),
+  warning = function(w) write_to_log(paste0("Warning: ", conditionMessage(w), "\n")),
+  error   = function(e) write_to_log(paste0("Error: ", conditionMessage(e), "\n"))
+)
+
 set.seed(42)
 
 required_packages <- c("lme4", "lmerTest", "emmeans", "ggplot2",
@@ -712,7 +728,7 @@ Finally, the script writes `results_summary.md`, the file a user opens first. Bu
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
-- A list of the other output files and what each contains.
+- A list of the other output files and what each contains, including `analysis_log.txt`, the full record of the run.
 
 ### Section 11: Session Info
 ```r
@@ -722,6 +738,10 @@ sessionInfo()
 
 # Restore the contrast setting changed in Section 5
 options(old_contrasts)
+
+# Close the log opened in Section 1
+sink()
+close(log_con)
 ```
 
 ---
@@ -737,6 +757,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The script is self-contained — it runs top-to-bottom with only the data file in the working directory
 - [ ] All modelling decisions have inline comments explaining WHY, not just WHAT
 - [ ] `sessionInfo()` is present at the end
+- [ ] The run is recorded in `analysis_log.txt`: opened at the start of Section 1, closed at the end of Section 11
 - [ ] Sum-to-zero contrasts are set before fitting and restored at the end
 - [ ] All required packages are listed in Section 1, and the script never calls `install.packages()`
 - [ ] The `set.seed(42)` is present
@@ -759,10 +780,11 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 1. Write the R script to `{study_name}_analysis.R` in the working directory.
    - Derive `study_name` from the input file name (e.g., `input.md` → `analysis.R`, `brain_regions.md` → `brain_regions_analysis.R`).
    - If unclear, ask the user what to name it.
+   - Name the log after the script: `analysis.R` writes `analysis_log.txt`, `brain_regions_analysis.R` writes `brain_regions_analysis_log.txt`.
 2. **Ask before running the script.** Check whether R is available (`Rscript --version`) and whether the required packages are installed. Then ask the user whether they want you to run the script now or run it themselves.
    - Wait for their answer. R and the packages being installed is not an answer: never run the script without the user's explicit reply.
    - If they want you to run it and R and the packages are present, run it and report what it produced.
-   - Otherwise (they prefer to run it, or R or packages are missing), give them the single command to run from the folder holding the script and data, `Rscript analysis.R`, and list the files it will write. If packages are missing, name them; never install them.
+   - Otherwise (they prefer to run it, or R or packages are missing), give them the single command to run from the folder holding the script and data, `Rscript analysis.R`, and list the files it will write, including `analysis_log.txt`, which records everything the run prints. If packages are missing, name them; never install them.
 3. After writing (and running, if they chose that), tell the user, in plain language (see H):
    - What file was created, and that `results_summary.md` is the place to start once it has run
    - What R packages need to be installed
