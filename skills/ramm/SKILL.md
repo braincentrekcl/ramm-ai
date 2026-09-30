@@ -14,8 +14,8 @@ You are an expert biostatistician specialising in preclinical research, mixed-ef
 
 ## A. Input Resolution
 
-1. If the user passed a file argument (e.g., `/ramm input.md`), read that file using the Read tool.
-2. If no argument was passed, look for `input.md` or `input.MD` in the current working directory using Glob.
+1. If the user named an input file when starting the skill (e.g., `/ramm:ramm input.md` in Claude Code, `$ramm input.md` in Codex), read that file.
+2. If no file was named, look for `input.md` or `input.MD` in the current working directory.
 3. If no input file is found, ask the user to provide one and explain the expected format (see Section I below).
 
 ---
@@ -86,8 +86,8 @@ Generate comparisons within subgroups only when the model includes the correspon
 
 If a data file (.csv, .tsv, or .xlsx) is mentioned in the input file or is visible in the working directory:
 
-1. Read the first 20 rows using the Read tool to inspect column headers and data types.
-2. Use Bash to run `wc -l` on the file to get total row count.
+1. Read the first 20 rows to inspect column headers and data types.
+2. Count the total number of rows in the file.
 3. Check:
    - Do column names match what input.md describes? Report any mismatches.
    - Are grouping variable IDs unique where they should be? (e.g., do slide numbers repeat across subjects?)
@@ -267,12 +267,12 @@ required_packages <- c("lme4", "lmerTest", "emmeans", "ggplot2",
 
 # Check packages without installing anything: installing inside an analysis
 # can silently change package versions between runs. Stop and say what is
-# missing instead; use /ramm:reproduce for a pinned environment.
+# missing instead; use the RAMM-AI reproduce skill for a pinned environment.
 missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
                                               logical(1), quietly = TRUE)]
 if (length(missing_packages) > 0) {
   stop("Missing R packages: ", paste(missing_packages, collapse = ", "),
-       ". Install them, or set up the pinned environment from /ramm:reproduce.")
+       ". Install them, or set up the pinned environment from the RAMM-AI reproduce skill.")
 }
 for (pkg in required_packages) library(pkg, character.only = TRUE)
 # NOTE: lmerTest must be loaded after lme4 so anova() reports denominator df.
@@ -791,7 +791,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
    - What R packages need to be installed
    - Remind them to review the script before trusting it, especially that the hierarchy picture matches how their tissue or animals were handled
    - If the script compares subgroups, repeat the subgroup disclaimer from Section 8 in plain language
-4. **Reproducible environment:** If the user specified a `Reproducible environment:` preference in input.md (or if they mentioned wanting a reproducible setup), suggest running `/ramm:reproduce` next to generate pinned-version Docker/renv scaffolding. If they confirm, invoke the reproduce skill. Otherwise, just mention it as an option.
+4. **Reproducible environment:** If the user specified a `Reproducible environment:` preference in input.md (or if they mentioned wanting a reproducible setup), suggest the reproduce skill next (`/ramm:reproduce` in Claude Code, `$reproduce` in Codex) to generate pinned-version Docker/renv scaffolding. If they confirm, follow the reproduce skill. Otherwise, just mention it as an option.
 
 ---
 
@@ -839,4 +839,4 @@ nesting, any known issues like non-unique IDs or missing data]
 - Alpha: 0.05
 ```
 
-After generating the analysis script, suggest running `/ramm:reproduce` to create pinned Docker/renv scaffolding.
+After generating the analysis script, suggest the reproduce skill (`/ramm:reproduce` in Claude Code, `$reproduce` in Codex) to create pinned Docker/renv scaffolding.
