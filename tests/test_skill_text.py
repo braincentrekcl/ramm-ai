@@ -146,3 +146,17 @@ def test_no_old_codex_names(ramm_skill: str, reproduce_skill: str) -> None:
     for text in (ramm_skill, reproduce_skill):
         assert "$ramm input.md" not in text
         assert not re.search(r"\$reproduce\b", text)
+
+
+def test_reproduce_uses_study_layout(reproduce_skill: str) -> None:
+    for text in (
+        "code/*_analysis.R",
+        "inputs/input.md",
+        "Rscript code/setup_environment.R",
+        "docker build -f code/Dockerfile",
+        "COPY code/ /analysis/code/",
+        "code/Dockerfile.dockerignore",
+        "Write nothing outside `code/`",
+    ):
+        assert text in reproduce_skill, text
+    assert "#### File: `.dockerignore`" not in reproduce_skill
