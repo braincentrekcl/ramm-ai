@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Change this path to where you put the RAMM-AI folder, keeping /skills at the end.
+  "skills": ["/path/to/ramm-ai/skills"],
+  // RAMM-AI never runs commands, never reads your data, and only writes in code/.
+  // The last matching rule wins, so each exception follows its broad rule.
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "deny" },
+    { "action": "grep", "resource": "*", "effect": "deny" },
+    { "action": "read", "resource": "*.csv", "effect": "deny" },
+    { "action": "read", "resource": "*.tsv", "effect": "deny" },
+    { "action": "read", "resource": "*.xlsx", "effect": "deny" },
+    { "action": "read", "resource": "*.xls", "effect": "deny" },
+    { "action": "read", "resource": "*toy_*", "effect": "allow" },
+    { "action": "edit", "resource": "*", "effect": "deny" },
+    { "action": "edit", "resource": "code/*", "effect": "allow" }
+  ]
+}

@@ -3,7 +3,9 @@
 from pathlib import Path
 
 import tomllib
-from conftest import read_json
+from conftest import read_json, read_jsonc
+
+DATA_EXTENSIONS = ("csv", "tsv", "xlsx", "xls")
 
 
 def test_claude_marketplace_lists_plugin_at_repo_root(repo_root: Path) -> None:
@@ -56,3 +58,20 @@ def test_gemini_commands_activate_each_skill(repo_root: Path) -> None:
         assert set(command) == {"description", "prompt"}
         assert f"`{skill}` skill" in command["prompt"]
         assert "{{args}}" in command["prompt"]
+
+
+def test_opencode_template_rules(repo_root: Path) -> None:
+    config = read_jsonc(repo_root / "opencode" / "opencode.jsonc")
+    assert config["skills"] == ["/path/to/ramm-ai/skills"]
+    assert "providers" not in config and "model" not in config
+    rules = [(r["action"], r["resource"], r["effect"]) for r in config["permissions"]]
+    expected = (
+        [("shell", "*", "deny"), ("grep", "*", "deny")]
+        + [("read", f"*.{ext}", "deny") for ext in DATA_EXTENSIONS]
+        + [
+            ("read", "*toy_*", "allow"),
+            ("edit", "*", "deny"),
+            ("edit", "code/*", "allow"),
+        ]
+    )
+    assert rules == expected
