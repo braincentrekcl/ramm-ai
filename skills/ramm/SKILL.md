@@ -812,22 +812,28 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 
 ## I. Input File Format (for reference when helping users)
 
-If the user needs guidance on writing their input.md, direct them to this format:
+The template is `template/my-study/inputs/input.md` in RAMM-AI.
+When helping a user fill it in, suggest text for each heading for them to add themselves;
+  never write in `inputs/`.
+Users may add headings of their own.
 
 ```markdown
-# Study Design
+# Study Design (required)
 [Plain English: total N, groups, group sizes, what was measured, hierarchy,
 nesting, any known issues like non-unique IDs or missing data]
 
-# Column Mappings
+# Column Mappings (required)
 - Dependent variable: `column_name` (type, units)
 - Fixed effect: `column_name` (levels: a, b, c; reference = a)
 - Subject ID: `column_name` (globally unique)
 - Nesting level: `column_name` (unique or NOT unique across subjects)
 
-# Post-Hoc Comparisons
+# Post-Hoc Comparisons (required)
 - Compare each treatment to vehicle
 - Pairwise comparisons within genotype
+
+# Data File (required)
+- File: `data.csv` (read from inputs/)
 
 # QC Rules (optional)
 - Exclude rows where `qc_flag` is "torn" (torn sections)
@@ -837,6 +843,12 @@ nesting, any known issues like non-unique IDs or missing data]
 - Family: gaussian, Gamma, poisson, etc.
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
+
+# Reproducible Environment (optional)
+- Reproducible environment: docker+renv, docker or renv
+
+# Toy Data (optional)
+- File: `toy_data.csv` (name starts with toy_; sent to the AI provider)
 ```
 
-After generating the analysis script, suggest the reproduce skill (`/ramm:reproduce` in Claude Code, `$reproduce` in Codex) to create pinned Docker/renv scaffolding.
+After writing the analysis script, suggest the reproduce skill (see G.5).

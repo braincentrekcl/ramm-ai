@@ -21,7 +21,7 @@ Most subjects have all the regions but not all regions are on all slides or sect
 
 # Data File
 
-Path: ./data.csv
+- File: `data.csv`
 
 # Preferences
 
