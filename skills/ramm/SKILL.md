@@ -316,7 +316,7 @@ Generate the R script with these sections in this exact order. Each section must
 # --- 1. Environment Setup ---
 # The script expects the study folder layout: inputs/ (input.md and the
 # data), code/ (this script) and outputs/ (everything the script writes).
-if (!file.exists(file.path("inputs", "input.md"))) {
+if (!dir.exists("inputs") || !dir.exists("code")) {
   stop("Run this script from your study folder (the one that holds inputs/, ",
        "code/ and outputs/), for example: Rscript code/analysis.R", call. = FALSE)
 }
@@ -879,6 +879,7 @@ Finally, the script writes `outputs/results_summary.md`, the file a user opens
   `outputs/`, the full record of the run.
 
 ### Section 11: Session Info
+<!-- chunk: session-info -->
 ```r
 # --- 11. Session Information ---
 # For full reproducibility, record the R environment
@@ -887,7 +888,9 @@ sessionInfo()
 # Restore the contrast setting changed in Section 5
 options(old_contrasts)
 
-# Close the log opened in Section 1
+# Close the log opened in Section 1. Stop copying messages into it first,
+# so anything reported after this point cannot fail on the closed log.
+globalCallingHandlers(NULL)
 sink()
 close(log_con)
 ```
@@ -905,6 +908,10 @@ Always the last section, after the log is closed, so the log's checksum is
 # this run wrote to outputs/, plus the R and package versions. If any of
 # these files changes later, its checksum no longer matches this record.
 script_file <- file.path("code", "analysis.R")
+if (!file.exists(script_file)) {
+  stop("script_file does not name this script: ", script_file,
+       " is not in the study folder. Set it to the script's file name.", call. = FALSE)
+}
 input_files <- list.files("inputs", recursive = TRUE, full.names = TRUE)
 output_files <- list.files("outputs", recursive = TRUE, full.names = TRUE)
 # Only files written during this run, never older ones left in outputs/.

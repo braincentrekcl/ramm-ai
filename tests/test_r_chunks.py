@@ -165,3 +165,45 @@ def test_provenance_skips_outputs_from_earlier_runs(
     names = {r["name"] for r in rows}
     assert "outputs/results_old.csv" not in names
     assert "outputs/provenance.csv" not in names
+
+
+def test_setup_chunk_accepts_named_input_file(skill_text: str, tmp_path: Path) -> None:
+    for folder in ("inputs", "code"):
+        (tmp_path / folder).mkdir()
+    (tmp_path / "inputs" / "brain_regions.md").write_text(
+        "# Study Design (required)\n", encoding="utf-8"
+    )
+    code = extract_r_chunk(skill_text, "setup") + "sink()\nclose(log_con)\n"
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+
+
+def test_messages_after_log_closed_do_not_break_provenance(
+    skill_text: str, tmp_path: Path
+) -> None:
+    study = make_study(tmp_path)
+    (study / "code" / "analysis.R").write_text("# script\n", encoding="utf-8")
+    code = (
+        extract_r_chunk(skill_text, "setup")
+        + "old_contrasts <- options()\nrequired_packages <- character(0)\n"
+        + extract_r_chunk(skill_text, "session-info")
+        + 'message("after the log is closed")\n'
+        + extract_r_chunk(skill_text, "provenance")
+    )
+    result = run_r(code, study)
+    assert result.returncode == 0, result.stderr
+    assert (study / "outputs" / "provenance.csv").is_file()
+
+
+def test_provenance_stops_when_script_file_missing(
+    skill_text: str, tmp_path: Path
+) -> None:
+    study = make_study(tmp_path)
+    (study / "outputs").mkdir()
+    code = (
+        "run_started <- Sys.time()\nrequired_packages <- character(0)\n"
+        + extract_r_chunk(skill_text, "provenance")
+    )
+    result = run_r(code, study)
+    assert result.returncode != 0
+    assert "script_file" in result.stderr
