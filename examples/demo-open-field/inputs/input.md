@@ -1,6 +1,6 @@
 # Study Design
 
-SIMULATED DEMO DATA (see make_data.R); not from a real experiment.
+SIMULATED DEMO DATA (see code/make_data.R); not from a real experiment.
 
 Open-field test after acute diazepam, crossover design.
 12 mice were each tested twice, once after vehicle and once after diazepam, with a one-week washout between sessions.
@@ -26,7 +26,7 @@ Three videos were corrupted and could not be scored, so three mice have a result
 
 # Data File
 
-Path: ./data.csv
+- File: `data.csv`
 
 # Preferences
 
