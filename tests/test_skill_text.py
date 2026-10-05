@@ -35,3 +35,41 @@ def test_scope_rule_comes_before_section_a(ramm_skill: str) -> None:
 def test_simpler_model_flagged_in_confirmation(ramm_skill: str) -> None:
     section_b = ramm_skill.split("## B.", 1)[1].split("### B.1", 1)[0]
     assert "no replicates, nesting or random effects" in section_b
+
+
+def section(skill: str, start: str, end: str) -> str:
+    return skill.split(start, 1)[1].split(end, 1)[0]
+
+
+def test_input_md_required(ramm_skill: str) -> None:
+    a = section(ramm_skill, "## A.", "## B.")
+    assert "inputs/input.md" in a
+    assert "registered report" in a
+    assert "Never write in `inputs/`" in a
+    assert "keep real data out of the study folder" in a
+
+
+def test_agent_never_opens_data(ramm_skill: str) -> None:
+    c = section(ramm_skill, "## C.", "## D.")
+    assert "Read the first 20 rows" not in ramm_skill
+    assert "Open no other data file" in c
+    assert "Never search inside data files" in c
+
+
+def test_skill_expects_data_absent(ramm_skill: str) -> None:
+    c = section(ramm_skill, "## C.", "## D.")
+    assert "may not be in the folder when you write the script" in c
+
+
+def test_skill_handles_non_csv_data_file(ramm_skill: str) -> None:
+    c = section(ramm_skill, "## C.", "## D.")
+    assert "readr::read_tsv()" in c and "readxl::read_excel()" in c
+
+
+def test_skill_refuses_unprefixed_toy_file(ramm_skill: str) -> None:
+    c = section(ramm_skill, "## C.", "## D.")
+    assert "does not start with `toy_`, do not open it" in c
+
+
+def test_data_file_item_in_checklist(ramm_skill: str) -> None:
+    assert "### B.9 Data File" in ramm_skill

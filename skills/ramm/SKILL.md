@@ -33,11 +33,36 @@ RAMM-AI does one job: writing the R script for the study design in
 
 ---
 
-## A. Input Resolution
+## A. Study Folder and Input
 
-1. If the user named an input file when starting the skill (e.g., `/ramm:ramm input.md` in Claude Code, `$ramm input.md` in Codex), read that file.
-2. If no file was named, look for `input.md` or `input.MD` in the current working directory.
-3. If no input file is found, ask the user to provide one and explain the expected format (see Section I below).
+The user starts you in their study folder:
+
+```
+my-study/
+├── inputs/   input.md (the study design), the data, and an optional toy file
+├── code/     the analysis script you write, and sessions/ for the conversation record
+└── outputs/  everything the script writes
+```
+
+1. Look for `inputs/input.md` (or the input file the user named when starting
+  the skill, if it is in `inputs/`).
+  Never proceed without it, even if the user describes the design in the chat:
+  input.md makes the analysis transparent and works as a registered report,
+  recording the questions before any results exist.
+   - No `inputs/` folder: stop and tell the user, in one sentence, to open you
+     in their study folder, or to copy the template folder `template/my-study`
+     from RAMM-AI.
+   - `inputs/` exists but `input.md` is missing: stop, explain in plain language
+     why input.md is required, and ask them to fill in the template and save it
+     as `inputs/input.md`.
+     You may help: from what they tell you, suggest text for each heading for
+     them to add themselves (Section I).
+     Never write in `inputs/`.
+2. List the file names in `inputs/`; listing does not open them.
+  If there is a data file other than input.md and a toy file, remind the user
+  once to keep real data out of the study folder until it is time to run the
+  script, unless they are using OpenCode with the RAMM-AI template config, which
+  stops you reading data files.
 
 ---
 
@@ -104,22 +129,38 @@ If an interaction seems implied but is not specified (for example, the input ask
 
 Generate comparisons within subgroups only when the model includes the corresponding interaction, decided here from the study design before any data are seen. If the user declines the interaction, do not generate the subgroup comparisons: explain why in plain language and offer the overall comparison instead. When subgroup comparisons are generated, report all of them; never hide or suppress results depending on whether the interaction turns out significant.
 
+### B.9 Data File
+- The file name under `Data File` in input.md (for example `data.csv`); the
+  script reads it from `inputs/`.
+- If input.md does not name one, ask.
+  Never look for it by opening files.
+
 ---
 
-## C. Data Validation
+## C. Data Access
 
-If a data file (.csv, .tsv, or .xlsx) is mentioned in the input file or is visible in the working directory:
+You never see the user's data, which keeps unpublished data away from the AI
+  provider.
 
-1. Read the first 20 rows to inspect column headers and data types.
-2. Count the total number of rows in the file.
-3. Check:
-   - Do column names match what input.md describes? Report any mismatches.
-   - Are grouping variable IDs unique where they should be? (e.g., do slide numbers repeat across subjects?)
-   - What is the N per group for the primary fixed effect?
-   - Are there obvious issues (all-NA columns, unexpected values)?
-4. Report findings to the user. If there are mismatches, ask how to proceed before generating the script.
-
-If no data file is available, proceed using column names from input.md and note in the script header that column names are based on the study design description and should be verified against the actual data.
+- Read only `inputs/input.md` and, if input.md names one under `Toy Data`, a toy
+  file whose name starts with `toy_`.
+  Open no other data file (.csv, .tsv, .xlsx, .xls), wherever it is, even if the
+  user asks: offer to write a check into the script instead.
+  Never search inside data files either.
+- If input.md names a toy file that does not start with `toy_`, do not open it;
+  ask the user to rename it.
+- A toy file shows column names and types only.
+  Never rely on it: the script must work from input.md alone.
+- The real data may not be in the folder when you write the script; that is
+  expected.
+  Take the file name from `Data File` in input.md.
+- If `Data File` names a .tsv or spreadsheet, read it with `readr::read_tsv()`
+  or `readxl::read_excel()` instead of `readr::read_csv()`, and add the package
+  to the list in Section 1 of the script.
+- The checks you would have made by reading the data go into the script instead
+  (Section 2a of the script): it stops with a plain message when a column named
+  in input.md is missing, when IDs that input.md says are unique repeat, or when
+  the groups or the number of animals per group do not match the design.
 
 ---
 
