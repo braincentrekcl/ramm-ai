@@ -1,15 +1,17 @@
 <!--
 RAMM-AI study design.
-Fill in every heading marked (required) before you start RAMM-AI;
-  headings marked (optional) can be deleted.
+Fill in every heading marked (required) before you start RAMM-AI; headings
+  marked (optional) can be deleted.
 You can add headings of your own for anything else that describes the study.
-This file is your registered report: it records your questions before any results exist.
+This file is your registered report: it records your questions before any
+  results exist.
 -->
 
 # Study Design (required)
 
-In plain English: how many animals are in each group, what was measured,
-  and how the measurements are organised (for example animal, then slide, then section, then region).
+In plain English: how many animals are in each group, what was measured, and how
+  the measurements are organised (for example animal, then slide, then section,
+  then region).
 Mention anything unusual, such as slide numbers that restart for every animal,
   or measurements you know are missing.
 
@@ -26,8 +28,8 @@ Mention anything unusual, such as slide numbers that restart for every animal,
 
 # Data File (required)
 
-- File: `data.csv` (the name of your data file;
-  put it in this inputs folder when you are ready to run the script)
+- File: `data.csv` (the name of your data file; put it in this inputs folder
+  when you are ready to run the script)
 
 # QC Rules (optional)
 
@@ -47,4 +49,5 @@ Mention anything unusual, such as slide numbers that restart for every animal,
 # Toy Data (optional)
 
 - File: `toy_data.csv` (a few made-up rows with the same columns as your data;
-  the name must start with toy_, and everything in it is sent to the AI provider)
+  the name must start with toy_, and everything in it is sent to the AI
+  provider)
