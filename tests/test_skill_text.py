@@ -1,5 +1,6 @@
 """Guards for behaviour-carrying rules in the skill text (spec sections 4-6)."""
 
+import re
 from pathlib import Path
 
 import pytest
@@ -73,3 +74,29 @@ def test_skill_refuses_unprefixed_toy_file(ramm_skill: str) -> None:
 
 def test_data_file_item_in_checklist(ramm_skill: str) -> None:
     assert "### B.9 Data File" in ramm_skill
+
+
+OUTPUT_CALL = re.compile(r'(write\.csv\([^,]+,\s*|ggsave\(|png\(|file\()"([^"]+)"')
+
+
+def r_blocks(skill: str) -> list[str]:
+    return re.findall(r"```r\n(.*?)```", skill, flags=re.DOTALL)
+
+
+def test_outputs_written_under_outputs(ramm_skill_raw: str) -> None:
+    literal_paths = [
+        m.group(2)
+        for block in r_blocks(ramm_skill_raw)
+        for m in OUTPUT_CALL.finditer(block)
+    ]
+    assert literal_paths == [], (
+        f'Output paths not built with file.path("outputs", ...): {literal_paths}'
+    )
+
+
+def test_script_never_prints_data_rows(ramm_skill: str, ramm_skill_raw: str) -> None:
+    assert "first few rows" not in ramm_skill
+    assert "Never print data rows" in ramm_skill
+    for block in r_blocks(ramm_skill_raw):
+        assert not re.search(r"\b(head|str|glimpse|View)\(dat\b", block)
+        assert "print(dat)" not in block

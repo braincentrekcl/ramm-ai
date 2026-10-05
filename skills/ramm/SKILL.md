@@ -298,6 +298,10 @@ Generate the R script with these sections in this exact order. Each section must
 # Post-hoc comparisons: {what was requested}
 # Package: {lme4 or glmmTMB}
 #
+# Run from your study folder (the one holding inputs/, code/ and outputs/),
+# once your data file is in inputs/:
+#   Rscript code/{study_name}_analysis.R
+#
 # IMPORTANT: Review this script before running. Check that:
 #   1. Column names match your actual data file
 #   2. The random effects structure matches your understanding
@@ -307,12 +311,25 @@ Generate the R script with these sections in this exact order. Each section must
 ```
 
 ### Section 1: Environment and Reproducibility
+<!-- chunk: setup -->
 ```r
 # --- 1. Environment Setup ---
+# The script expects the study folder layout: inputs/ (input.md and the
+# data), code/ (this script) and outputs/ (everything the script writes).
+if (!file.exists(file.path("inputs", "input.md"))) {
+  stop("Run this script from your study folder (the one that holds inputs/, ",
+       "code/ and outputs/), for example: Rscript code/analysis.R", call. = FALSE)
+}
+dir.create("outputs", showWarnings = FALSE)
+# Whole second: some file systems store modification times to the second,
+# so files written later in this run are never dated before the start.
+run_started <- as.POSIXct(floor(as.numeric(Sys.time())), origin = "1970-01-01")
+
 # Keep a record of the run. Everything printed below goes to the screen and
-# to analysis_log.txt; messages, warnings and any error are copied into the
-# log too, so the log holds the whole run even if the script stops early.
-log_con <- file("analysis_log.txt", open = "wt")
+# to the log; messages, warnings and any error are copied into the log too,
+# so the log holds the whole run even if the script stops early.
+log_file <- file.path("outputs", "analysis_log.txt")
+log_con <- file(log_file, open = "wt")
 sink(log_con, split = TRUE)
 write_to_log <- function(text) {
   sink()  # pause the screen copy, so the text is not shown twice
@@ -324,7 +341,9 @@ globalCallingHandlers(
   warning = function(w) write_to_log(paste0("Warning: ", conditionMessage(w), "\n")),
   error   = function(e) write_to_log(paste0("Error: ", conditionMessage(e), "\n"))
 )
+```
 
+```r
 set.seed(42)
 
 required_packages <- c("lme4", "lmerTest", "emmeans", "ggplot2",
@@ -344,15 +363,74 @@ for (pkg in required_packages) library(pkg, character.only = TRUE)
 # lmerTest supplies the Satterthwaite df used for all tests and intervals.
 ```
 
+Name the log after the script (`analysis.R` writes `outputs/analysis_log.txt`;
+  `brain_regions_analysis.R` writes `outputs/brain_regions_analysis_log.txt`).
+
 Adjust the package list based on the model requirements (add glmmTMB, performance, etc. as needed).
 Choose tidyverse packages over base R, when available, but don't require all of tidyverse. Add packages as needed.
 
 ### Section 2: Data Loading and Preparation
-- Read the CSV with `readr::read_csv()`
+- Read the data file named under `Data File` in input.md from `inputs/`
+  (`readr::read_csv(file.path("inputs", "data.csv"))`; see C for .tsv and
+  spreadsheets).
+  If the file is missing, stop with a plain message saying to put it in
+  `inputs/`.
+- **Check the data against the design** straight after reading, using this
+  pattern with the column names, unique IDs, groups and animals per group from
+  input.md:
+
+<!-- chunk: data-checks -->
+```r
+# --- 2a. Check the data against the study design in inputs/input.md ---
+# The AI assistant that wrote this script never saw your data, so these
+# checks run here. Each one stops with a message saying what to fix.
+design_columns <- c("subject_id", "slide_id", "section", "drug_group", "uci_g")
+missing_columns <- setdiff(design_columns, names(dat))
+if (length(missing_columns) > 0) {
+  stop("These columns named in inputs/input.md are not in the data file: ",
+       paste(missing_columns, collapse = ", "),
+       ". Check the spelling under 'Column Mappings' in inputs/input.md.", call. = FALSE)
+}
+
+# Subject IDs are globally unique, so each subject belongs to one group only.
+groups_per_subject <- tapply(dat$drug_group, dat$subject_id,
+                             function(g) length(unique(g)))
+subjects_in_several_groups <- names(groups_per_subject)[groups_per_subject > 1]
+if (length(subjects_in_several_groups) > 0) {
+  stop("These subject IDs appear in more than one group: ",
+       paste(subjects_in_several_groups, collapse = ", "),
+       ". inputs/input.md says subject IDs are unique; check the data file.", call. = FALSE)
+}
+
+# Groups and animals per group, as described in inputs/input.md.
+design_subjects_per_group <- c(vehicle = 12, drugA = 12, drugB = 12, drugC = 12)
+unexpected_groups <- setdiff(unique(dat$drug_group), names(design_subjects_per_group))
+if (length(unexpected_groups) > 0) {
+  stop("The data has groups that are not in inputs/input.md: ",
+       paste(unexpected_groups, collapse = ", "), ".", call. = FALSE)
+}
+data_subjects_per_group <- tapply(dat$subject_id, dat$drug_group,
+                                  function(s) length(unique(s)))
+data_subjects_per_group <- data_subjects_per_group[names(design_subjects_per_group)]
+data_subjects_per_group[is.na(data_subjects_per_group)] <- 0
+if (!all(data_subjects_per_group == design_subjects_per_group)) {
+  stop("The number of subjects per group in the data (",
+       paste(names(design_subjects_per_group), data_subjects_per_group,
+             sep = " = ", collapse = ", "),
+       ") does not match inputs/input.md (",
+       paste(names(design_subjects_per_group), design_subjects_per_group,
+             sep = " = ", collapse = ", "),
+       "). If animals were lost, update the Study Design in inputs/input.md and say why.",
+       call. = FALSE)
+}
+```
+
 - Convert grouping variables to factors with explicit levels
 - Set reference levels (vehicle/control first)
 - Create unique IDs for nested factors where needed (see D.3)
-- Print a brief data summary: `str()`, dimensions, first few rows
+- Print the number of rows, columns and animals per group.
+  Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data
+  itself), so the log can be shown to the AI assistant safely.
 - **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data. Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line:
 
 ```r
@@ -379,7 +457,7 @@ dat <- dat |>
 exclusions <- dat |>
   dplyr::filter(qc_status != "kept") |>
   dplyr::select(row_id, subject_id, qc_status, qc_reason)
-write.csv(exclusions, "results_exclusions.csv", row.names = FALSE)
+write.csv(exclusions, file.path("outputs", "results_exclusions.csv"), row.names = FALSE)
 
 dat <- dat |> dplyr::filter(qc_status == "kept")
 ```
@@ -403,7 +481,7 @@ dat <- dat |> dplyr::filter(qc_status == "kept")
 # factor (e.g. region), add it to count() so each animal x region is counted.
 replicate_audit <- dat |>
   dplyr::count(drug_group, subject_id, name = "n_replicates")
-write.csv(replicate_audit, "results_replicate_audit_per_animal.csv", row.names = FALSE)
+write.csv(replicate_audit, file.path("outputs", "results_replicate_audit_per_animal.csv"), row.names = FALSE)
 
 # One row per group. Replicate depth imbalance is the coefficient of
 # variation of replicate counts across animals (SD / mean): 0 means every
@@ -419,7 +497,7 @@ replicate_summary <- replicate_audit |>
     max_replicates       = max(n_replicates),
     replicate_imbalance  = sd(n_replicates) / mean(n_replicates)
   )
-write.csv(replicate_summary, "results_replicate_audit_summary.csv", row.names = FALSE)
+write.csv(replicate_summary, file.path("outputs", "results_replicate_audit_summary.csv"), row.names = FALSE)
 ```
 
 ### Section 4: Hierarchy Diagram
@@ -462,7 +540,7 @@ hierarchy_plot <- ggplot(hierarchy, aes(x = 0, y = y)) +
   labs(title = "How the data are organised",
        subtitle = "Each level sits inside the one above it") +
   theme_void()
-ggsave("plot_hierarchy.png", hierarchy_plot, width = 5, height = 1.5 * nrow(hierarchy), dpi = 300)
+ggsave(file.path("outputs", "plot_hierarchy.png"), hierarchy_plot, width = 5, height = 1.5 * nrow(hierarchy), dpi = 300)
 ```
 
 ### Section 5: Model Fitting
@@ -618,7 +696,7 @@ between_sd <- dat |>
   dplyr::group_by(drug_group) |>
   dplyr::summarise(between_animal_sd = sd(animal_mean))
 variance_check <- dplyr::left_join(within_sd, between_sd, by = "drug_group")
-write.csv(variance_check, "results_variance_by_group.csv", row.names = FALSE)
+write.csv(variance_check, file.path("outputs", "results_variance_by_group.csv"), row.names = FALSE)
 
 # Rule of thumb: flag when the most variable group's SD is more than twice
 # the least variable group's (a four-fold difference in variance).
@@ -750,30 +828,30 @@ Generate publication-ready plots using ggplot2:
 # Tidy model summary (no intervals here: broom.mixed would give Wald
 # intervals; the Satterthwaite intervals are in the emmeans exports below)
 model_tidy <- broom.mixed::tidy(model, effects = "fixed")
-write.csv(model_tidy, "results_model_summary.csv", row.names = FALSE)
+write.csv(model_tidy, file.path("outputs", "results_model_summary.csv"), row.names = FALSE)
 
 # Tidy random effects
 model_random <- broom.mixed::tidy(model, effects = "ran_pars")
-write.csv(model_random, "results_random_effects.csv", row.names = FALSE)
+write.csv(model_random, file.path("outputs", "results_random_effects.csv"), row.names = FALSE)
 
 # Group means and differences, with Satterthwaite confidence intervals.
 # Columns are renamed so the files read without knowing R.
 emm_results <- as.data.frame(summary(emm, infer = c(TRUE, FALSE))) |>
   dplyr::rename(estimated_mean = emmean, standard_error = SE,
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL)
-write.csv(emm_results, "results_group_means.csv", row.names = FALSE)
+write.csv(emm_results, file.path("outputs", "results_group_means.csv"), row.names = FALSE)
 
 contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE)) |>
   dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
                 t_value = t.ratio, p_value_adjusted = p.value)
-write.csv(contrast_results, "results_comparisons.csv", row.names = FALSE)
+write.csv(contrast_results, file.path("outputs", "results_comparisons.csv"), row.names = FALSE)
 
 # Save plots
-ggsave("plot_emmeans.png", plot = emm_plot, width = 8, height = 6, dpi = 300)
+ggsave(file.path("outputs", "plot_emmeans.png"), plot = emm_plot, width = 8, height = 6, dpi = 300)
 # The residual panels are base-R plots, so ggsave() would save the last
 # ggplot instead: redraw them into a png device.
-png("plot_residuals.png", width = 10, height = 8, units = "in", res = 300)
+png(file.path("outputs", "plot_residuals.png"), width = 10, height = 8, units = "in", res = 300)
 par(mfrow = c(2, 2))
 plot(resid(model) ~ fitted(model), main = "Residuals vs Fitted",
      xlab = "Fitted values", ylab = "Residuals")
@@ -789,12 +867,16 @@ dev.off()
 
 Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
 
-Finally, the script writes `results_summary.md`, the file a user opens first. Build it from the fitted results, never from hard-coded numbers, in plain language:
+Finally, the script writes `outputs/results_summary.md`, the file a user opens
+  first.
+  Build it from the fitted results, never from hard-coded numbers, in plain
+  language:
 - One line on the question and the data analysed (animals per group, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
-- A list of the other output files and what each contains, including `analysis_log.txt`, the full record of the run.
+- A list of the other output files and what each contains, including the log in
+  `outputs/`, the full record of the run.
 
 ### Section 11: Session Info
 ```r
