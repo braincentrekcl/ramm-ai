@@ -100,3 +100,49 @@ def test_script_never_prints_data_rows(ramm_skill: str, ramm_skill_raw: str) -> 
     for block in r_blocks(ramm_skill_raw):
         assert not re.search(r"\b(head|str|glimpse|View)\(dat\b", block)
         assert "print(dat)" not in block
+
+
+REPRODUCE_COMMANDS = [
+    "/ramm:reproduce",
+    "$ramm:reproduce",
+    "/reproduce",
+    "/ramm-reproduce",
+    "@reproduce",
+]
+EXPORT_COMMANDS = [
+    "/export code/sessions/",
+    "/share file code/sessions/",
+    "/chat share code/sessions/",
+    "`/export`",
+    "~/.codex/sessions/",
+]
+
+
+def test_agent_never_runs_the_script(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    assert "Rscript --version" not in ramm_skill
+    assert "You never run the script" in g
+    assert "point them to the reproduce skill" in g
+
+
+def test_outputs_read_only(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    assert "Never edit, create or delete a file in `outputs/`" in g
+
+
+def test_reproduce_named_for_every_route(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    for command in REPRODUCE_COMMANDS:
+        assert command in g
+
+
+def test_session_record_requested(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    for command in EXPORT_COMMANDS:
+        assert command in g
+
+
+def test_no_old_codex_names(ramm_skill: str, reproduce_skill: str) -> None:
+    for text in (ramm_skill, reproduce_skill):
+        assert "$ramm input.md" not in text
+        assert not re.search(r"\$reproduce\b", text)

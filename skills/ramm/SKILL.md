@@ -973,20 +973,58 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 
 ## G. Output
 
-1. Write the R script to `{study_name}_analysis.R` in the working directory.
-   - Derive `study_name` from the input file name (e.g., `input.md` → `analysis.R`, `brain_regions.md` → `brain_regions_analysis.R`).
+1. Write the script to `code/{study_name}_analysis.R`.
+   - Derive `study_name` from the input file name (`input.md` →
+     `code/analysis.R`, `brain_regions.md` → `code/brain_regions_analysis.R`).
    - If unclear, ask the user what to name it.
-   - Name the log after the script: `analysis.R` writes `analysis_log.txt`, `brain_regions_analysis.R` writes `brain_regions_analysis_log.txt`.
-2. **Ask before running the script.** Check whether R is available (`Rscript --version`) and whether the required packages are installed. Then ask the user whether they want you to run the script now or run it themselves.
-   - Wait for their answer, as in B: end your turn with the question if you have no working question tool. R and the packages being installed is not an answer: never run the script without the user's explicit reply.
-   - If they want you to run it and R and the packages are present, run it and report what it produced.
-   - Otherwise (they prefer to run it, or R or packages are missing), give them the single command to run from the folder holding the script and data, `Rscript analysis.R`, and list the files it will write, including `analysis_log.txt`, which records everything the run prints. If packages are missing, name them; never install them.
-3. After writing (and running, if they chose that), tell the user, in plain language (see H):
-   - What file was created, and that `results_summary.md` is the place to start once it has run
+   - Write nothing outside `code/`.
+2. **You never run the script.** Give the user the single command to run from
+  their study folder once their data file is in `inputs/`, `Rscript
+  code/analysis.R`, and list the files it will write in `outputs/`, including
+  the log and `provenance.csv`.
+   - Never install packages.
+     If the user needs R or the packages installed, point them to the reproduce
+     skill (step 5).
+   - If the script fails, help from the error text the user pastes in, or from
+     the log in `outputs/`.
+     Fix problems by changing the script; the user reruns it.
+3. **Outputs are read-only to you.** Read them when the user asks you to explain
+  results or an error.
+  Never edit, create or delete a file in `outputs/`: a number that no script
+  produced cannot be traced.
+  If the user asks you to change a result, decline and offer to change the
+  script instead.
+4. After writing, tell the user, in plain language (see H):
+   - What file was created, and that `outputs/results_summary.md` is the place
+     to start once it has run
    - What R packages need to be installed
-   - Remind them to review the script before trusting it, especially that the hierarchy picture matches how their tissue or animals were handled
-   - If the script compares subgroups, repeat the subgroup disclaimer from Section 8 in plain language
-4. **Reproducible environment:** If the user specified a `Reproducible environment:` preference in input.md (or if they mentioned wanting a reproducible setup), suggest the reproduce skill next (`/ramm:reproduce` in Claude Code, `$reproduce` in Codex) to generate pinned-version Docker/renv scaffolding. If they confirm, follow the reproduce skill. Otherwise, just mention it as an option.
+   - Remind them to review the script before trusting it, especially that the
+     hierarchy picture matches how their tissue or animals were handled
+   - If the script compares subgroups, repeat the subgroup disclaimer from
+     Section 8 in plain language
+5. **Reproducible environment:** if the user specified a `Reproducible
+  environment:` preference in input.md, or mentioned wanting a reproducible
+  setup, suggest the reproduce skill next.
+  Otherwise just mention it as an option.
+  Give the command for their agent if you know which agent you are running in;
+  otherwise list them: `/ramm:reproduce` (Claude Code), `$ramm:reproduce`
+  (Codex), `/reproduce` (GitHub Copilot), `/ramm-reproduce` (Gemini CLI),
+  `@reproduce` (OpenCode).
+  If they confirm, follow the reproduce skill.
+6. **Session record:** at the end of the session, ask the user to export this
+  conversation into `code/sessions/`.
+  Say in one sentence why: it records what was asked and done, alongside
+  input.md.
+  You cannot run these commands yourself.
+  Give the command for their agent, or list them:
+
+   | Agent | Command |
+   |---|---|
+   | Claude Code | `/export code/sessions/<date>.txt` |
+   | GitHub Copilot CLI | `/share file code/sessions/<date>.md` |
+   | Gemini CLI | `/chat share code/sessions/<date>.md` |
+   | OpenCode | `/export`, then save the file in `code/sessions/` |
+   | Codex | No export command: every session is saved in full in `~/.codex/sessions/` |
 
 ---
 
