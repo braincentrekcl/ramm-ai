@@ -1,0 +1,14 @@
+{
+  "name": "ramm-ai",
+  "description": "RAMM-AI: Replicate-Aware Mixed Modelling for preclinical research",
+  "owner": {
+    "name": "Eilidh MacNicol"
+  },
+  "plugins": [
+    {
+      "name": "ramm",
+      "source": "./",
+      "description": "Write a glass-box R script for a mixed-effects analysis from a plain-language study design"
+    }
+  ]
+}
