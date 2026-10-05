@@ -892,6 +892,47 @@ sink()
 close(log_con)
 ```
 
+### Section 12: Provenance
+Always the last section, after the log is closed, so the log's checksum is
+  final.
+  Use the script's real file name in `script_file`.
+
+<!-- chunk: provenance -->
+```r
+# --- 12. Provenance ---
+# Record exactly what produced these results: a checksum (a fingerprint of
+# a file's contents) for this script, every file in inputs/, and every file
+# this run wrote to outputs/, plus the R and package versions. If any of
+# these files changes later, its checksum no longer matches this record.
+script_file <- file.path("code", "analysis.R")
+input_files <- list.files("inputs", recursive = TRUE, full.names = TRUE)
+output_files <- list.files("outputs", recursive = TRUE, full.names = TRUE)
+# Only files written during this run, never older ones left in outputs/.
+output_files <- output_files[file.mtime(output_files) >= run_started &
+                               basename(output_files) != "provenance.csv"]
+recorded_files <- c(script_file, input_files, output_files)
+file_rows <- data.frame(
+  type  = c("script", rep("input", length(input_files)),
+            rep("output", length(output_files))),
+  name  = recorded_files,
+  value = unname(tools::md5sum(recorded_files))
+)
+software_rows <- data.frame(
+  type  = "software",
+  name  = c("R", required_packages),
+  value = c(paste(R.version$major, R.version$minor, sep = "."),
+            vapply(required_packages,
+                   function(p) as.character(utils::packageVersion(p)),
+                   character(1)))
+)
+provenance <- rbind(file_rows, software_rows)
+provenance$recorded_at <- format(run_started, "%Y-%m-%d %H:%M:%S")
+write.csv(provenance, file.path("outputs", "provenance.csv"), row.names = FALSE)
+```
+
+DataLad users can run the same script with `datalad run`; nothing in the script
+  depends on it.
+
 ---
 
 ## F. Final Checklist
@@ -902,10 +943,17 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The random effects structure matches the hierarchy described in input.md
 - [ ] Non-unique IDs have been made globally unique with `paste()`
 - [ ] The post-hoc comparisons match what was requested in input.md
-- [ ] The script is self-contained — it runs top-to-bottom with only the data file in the working directory
+- [ ] The script runs from the study folder with `Rscript
+  code/{study_name}_analysis.R`, reads only from `inputs/` and writes only to
+  `outputs/`
+- [ ] Section 2a checks the data against input.md: columns, unique IDs, groups
+  and animals per group
+- [ ] The script never prints data rows
+- [ ] Section 12 writes `outputs/provenance.csv` last, after the log is closed
 - [ ] All modelling decisions have inline comments explaining WHY, not just WHAT
 - [ ] `sessionInfo()` is present at the end
-- [ ] The run is recorded in `analysis_log.txt`: opened at the start of Section 1, closed at the end of Section 11
+- [ ] The run is recorded in the log in `outputs/`: opened at the start of
+  Section 1, closed at the end of Section 11
 - [ ] Sum-to-zero contrasts are set before fitting and restored at the end
 - [ ] All required packages are listed in Section 1, and the script never calls `install.packages()`
 - [ ] The `set.seed(42)` is present

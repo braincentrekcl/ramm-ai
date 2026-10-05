@@ -1,6 +1,10 @@
 """Run the R chunks from the skill's script template (base R only)."""
 
+import csv
+import hashlib
+import os
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -108,3 +112,56 @@ def test_data_checks_stop_on_unexpected_group(skill_text: str, tmp_path: Path) -
     result = run_checks(skill_text, make_study(tmp_path), rows)
     assert result.returncode != 0
     assert "groups that are not in inputs/input.md: drugE" in result.stderr
+
+
+def md5(path: Path) -> str:
+    return hashlib.md5(path.read_bytes()).hexdigest()
+
+
+def run_provenance(skill_text: str, study: Path) -> list[dict[str, str]]:
+    (study / "code" / "analysis.R").write_text("# script\n", encoding="utf-8")
+    (study / "inputs" / "data.csv").write_text("a\n1\n", encoding="utf-8")
+    (study / "outputs").mkdir()
+    old = study / "outputs" / "results_old.csv"
+    old.write_text("stale\n", encoding="utf-8")
+    past = time.time() - 3600
+    os.utime(old, (past, past))
+    code = (
+        'run_started <- as.POSIXct(floor(as.numeric(Sys.time())), origin = "1970-01-01")\n'
+        "required_packages <- character(0)\n"
+        'writeLines("new", file.path("outputs", "results_new.csv"))\n'
+        + extract_r_chunk(skill_text, "provenance")
+    )
+    result = run_r(code, study)
+    assert result.returncode == 0, result.stderr
+    with (study / "outputs" / "provenance.csv").open(
+        newline="", encoding="utf-8"
+    ) as handle:
+        return list(csv.DictReader(handle))
+
+
+def test_provenance_records_script_inputs_outputs(
+    skill_text: str, tmp_path: Path
+) -> None:
+    study = make_study(tmp_path)
+    rows = run_provenance(skill_text, study)
+    files = {
+        (r["type"], r["name"]): r["value"] for r in rows if r["type"] != "software"
+    }
+    assert files[("script", "code/analysis.R")] == md5(study / "code" / "analysis.R")
+    assert files[("input", "inputs/input.md")] == md5(study / "inputs" / "input.md")
+    assert files[("input", "inputs/data.csv")] == md5(study / "inputs" / "data.csv")
+    assert files[("output", "outputs/results_new.csv")] == md5(
+        study / "outputs" / "results_new.csv"
+    )
+    assert {r["name"] for r in rows if r["type"] == "software"} == {"R"}
+    assert len({r["recorded_at"] for r in rows}) == 1
+
+
+def test_provenance_skips_outputs_from_earlier_runs(
+    skill_text: str, tmp_path: Path
+) -> None:
+    rows = run_provenance(skill_text, make_study(tmp_path))
+    names = {r["name"] for r in rows}
+    assert "outputs/results_old.csv" not in names
+    assert "outputs/provenance.csv" not in names
