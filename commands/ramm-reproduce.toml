@@ -1,0 +1,5 @@
+description = "Start RAMM-AI reproduce: set up a pinned R environment for the analysis script"
+prompt = """
+Activate the `reproduce` skill and follow its instructions exactly.
+{{args}}
+"""
