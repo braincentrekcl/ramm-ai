@@ -1,5 +1,5 @@
 {
   "name": "ramm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "RAMM-AI: write a glass-box R script for a mixed-effects analysis from a plain-language study design"
 }
