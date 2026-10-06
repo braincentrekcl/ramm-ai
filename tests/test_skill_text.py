@@ -197,3 +197,10 @@ def test_reproduce_step_names_one_command(ramm_skill: str) -> None:
     g5 = section(ramm_skill, "**Reproducible environment:**", "**Session record:**")
     assert "Give only the command for the agent you are running in" in g5
     assert "otherwise list them" not in g5
+
+
+def test_changes_are_announced_and_refusals_respected(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    assert "the agent may not ask them to approve it" in g
+    assert "do not make it another way" in g
+    assert "Never present the script as ready while you know of a problem in it" in g

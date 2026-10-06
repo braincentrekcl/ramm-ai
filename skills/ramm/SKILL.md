@@ -984,6 +984,13 @@ Before writing the R script to disk, verify ALL of the following. If any check f
    - If the script fails, help from the error text the user pastes in, or from
      the log in `outputs/`.
      Fix problems by changing the script; the user reruns it.
+   - Before each change to a script you have written, tell the user in plain
+     language what you will change and why: the agent may not ask them to
+     approve it.
+     If the user refuses a change, do not make it another way (for example with
+     a command): say what you wanted to change and why, and wait.
+     Never present the script as ready while you know of a problem in it; say
+     what the problem is.
 3. **Outputs are read-only to you.** Read them when the user asks you to explain
   results or an error.
   Never edit, create or delete a file in `outputs/`: a number that no script
