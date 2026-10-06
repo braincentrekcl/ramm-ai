@@ -178,3 +178,16 @@ def test_session_record_names_one_dated_command(ramm_skill: str) -> None:
     assert "<date>" not in g
     assert "code/sessions/YYYY-MM-DD" in g
     assert "Give only the command for the agent you are running in" in g
+
+
+BASE_PLOT = re.compile(r"^\s*(plot|hist|qqnorm|boxplot|barplot)\(", flags=re.MULTILINE)
+
+
+def test_base_plots_drawn_into_output_files(ramm_skill_raw: str) -> None:
+    for block in r_blocks(ramm_skill_raw):
+        unsaved = re.sub(
+            r"png\(file\.path\(\"outputs\".*?dev\.off\(\)", "", block, flags=re.DOTALL
+        )
+        assert not BASE_PLOT.search(unsaved), (
+            "Base plot drawn outside a png() device: writes Rplots.pdf"
+        )

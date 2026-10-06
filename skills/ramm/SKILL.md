@@ -667,20 +667,9 @@ Consider whether all predictors are necessary.", n_fixed_params, n_obs))
 print(VarCorr(model))
 
 # 6e. Residual diagnostics
-par(mfrow = c(2, 2))
-plot(resid(model) ~ fitted(model), main = "Residuals vs Fitted",
-     xlab = "Fitted values", ylab = "Residuals")
-abline(h = 0, lty = 2, col = "red")
-
-qqnorm(resid(model), main = "QQ Plot of Residuals")
-qqline(resid(model), col = "red")
-
-hist(resid(model), breaks = 30, main = "Histogram of Residuals",
-     xlab = "Residuals", col = "lightblue")
-
-plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
-     xlab = "Fitted values", ylab = "sqrt(|Residuals|)")
-par(mfrow = c(1, 1))
+# The four residual plots are drawn into outputs/plot_residuals.png in
+# Section 10. Drawing them here as well would make R save them to
+# Rplots.pdf in the study folder, outside outputs/.
 
 # 6f. Variability by group
 # The model assumes every group has the same spread, both between animals
