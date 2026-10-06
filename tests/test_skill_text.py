@@ -160,3 +160,14 @@ def test_reproduce_uses_study_layout(reproduce_skill: str) -> None:
     ):
         assert text in reproduce_skill, text
     assert "#### File: `.dockerignore`" not in reproduce_skill
+
+
+def test_confirmation_leads_straight_to_script(ramm_skill: str) -> None:
+    section_b = section(ramm_skill, "## B.", "### B.1")
+    assert "write the script (Section G) in the same turn" in section_b
+
+
+def test_script_name_has_a_default(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    assert "unless the user asks for another name" in g
+    assert "ask the user what to name it" not in g

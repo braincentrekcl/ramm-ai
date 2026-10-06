@@ -73,6 +73,8 @@ End the summary with an explicit question, never with a statement or a list of p
 If the design has no replicates, nesting or random effects, say so in the
   summary and propose the simpler model (see Scope) as one of the open
   decisions.
+Once the user confirms, write the script (Section G) in the same turn; never
+  reply with only an acknowledgement.
 
 ### B.1 Dependent Variable
 - Column name
@@ -300,7 +302,7 @@ Generate the R script with these sections in this exact order. Each section must
 #
 # Run from your study folder (the one holding inputs/, code/ and outputs/),
 # once your data file is in inputs/:
-#   Rscript code/{study_name}_analysis.R
+#   Rscript code/analysis.R
 #
 # IMPORTANT: Review this script before running. Check that:
 #   1. Column names match your actual data file
@@ -951,7 +953,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] Non-unique IDs have been made globally unique with `paste()`
 - [ ] The post-hoc comparisons match what was requested in input.md
 - [ ] The script runs from the study folder with `Rscript
-  code/{study_name}_analysis.R`, reads only from `inputs/` and writes only to
+  code/analysis.R`, reads only from `inputs/` and writes only to
   `outputs/`
 - [ ] Section 2a checks the data against input.md: columns, unique IDs, groups
   and animals per group
@@ -980,10 +982,8 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 
 ## G. Output
 
-1. Write the script to `code/{study_name}_analysis.R`.
-   - Derive `study_name` from the input file name (`input.md` →
-     `code/analysis.R`, `brain_regions.md` → `code/brain_regions_analysis.R`).
-   - If unclear, ask the user what to name it.
+1. Write the script to `code/analysis.R`, unless the user asks for another name;
+  never stop to ask for one.
    - Write nothing outside `code/`.
 2. **You never run the script.** Give the user the single command to run from
   their study folder once their data file is in `inputs/`, `Rscript
