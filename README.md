@@ -36,6 +36,9 @@ Use whichever your AI provider offers; OpenCode works with almost any provider,
 
 OpenCode: RAMM-AI supports OpenCode v2 only (`brew install
   anomalyco/tap/opencode-v2` or `npm install -g @opencode/cli`).
+OpenCode cannot currently use a GitHub Copilot Free or Student plan: it lists
+  no models for them ([anomalyco/opencode#34644](https://github.com/anomalyco/opencode/issues/34644)).
+With those plans, use the GitHub Copilot route instead.
 For institutionally hosted or local models, see
   [docs/institutional-models.md](docs/institutional-models.md).
 
