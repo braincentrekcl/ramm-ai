@@ -204,3 +204,14 @@ def test_changes_are_announced_and_refusals_respected(ramm_skill: str) -> None:
     assert "the agent may not ask them to approve it" in g
     assert "do not make it another way" in g
     assert "Never present the script as ready while you know of a problem in it" in g
+
+
+def test_reproduce_changes_announced_and_refusals_respected(
+    reproduce_skill: str,
+) -> None:
+    assert "the agent may not ask them to approve it" in reproduce_skill
+    assert "do not make it another way" in reproduce_skill
+    assert (
+        "Never present the files as ready while you know of a problem in them"
+        in reproduce_skill
+    )

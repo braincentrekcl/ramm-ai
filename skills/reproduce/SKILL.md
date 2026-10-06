@@ -30,6 +30,12 @@ Write nothing outside `code/`.
 Every file this skill creates goes in `code/`, and every command you give is
   run from the study folder (the one holding inputs/, code/ and outputs/).
 You never run these commands yourself.
+Before each change to a file you have written, tell the user in plain language
+  what you will change and why: the agent may not ask them to approve it.
+If the user refuses a change, do not make it another way (for example with a
+  command): say what you wanted to change and why, and wait.
+Never present the files as ready while you know of a problem in them; say what
+  the problem is.
 
 ---
 
