@@ -1002,10 +1002,13 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   environment:` preference in input.md, or mentioned wanting a reproducible
   setup, suggest the reproduce skill next.
   Otherwise just mention it as an option.
-  Give the command for their agent if you know which agent you are running in;
-  otherwise list them: `/ramm:reproduce` (Claude Code), `$ramm:reproduce`
-  (Codex), `/reproduce` (GitHub Copilot), `/ramm-reproduce` (Gemini CLI),
-  `@reproduce` (OpenCode).
+  Give only the command for the agent you are running in.
+  Never list the other agents' commands: a user can pick the wrong one.
+  If you cannot tell which agent you are running in, ask the user which one they
+  are using.
+  The commands are `/ramm:reproduce` (Claude Code), `$ramm:reproduce` (Codex),
+  `/reproduce` (GitHub Copilot), `/ramm-reproduce` (Gemini CLI) and `@reproduce`
+  (OpenCode).
   If they confirm, follow the reproduce skill.
 6. **Session record:** at the end of the session, ask the user to export this
   conversation into `code/sessions/`.

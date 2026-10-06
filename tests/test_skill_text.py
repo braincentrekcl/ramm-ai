@@ -191,3 +191,9 @@ def test_base_plots_drawn_into_output_files(ramm_skill_raw: str) -> None:
         assert not BASE_PLOT.search(unsaved), (
             "Base plot drawn outside a png() device: writes Rplots.pdf"
         )
+
+
+def test_reproduce_step_names_one_command(ramm_skill: str) -> None:
+    g5 = section(ramm_skill, "**Reproducible environment:**", "**Session record:**")
+    assert "Give only the command for the agent you are running in" in g5
+    assert "otherwise list them" not in g5
