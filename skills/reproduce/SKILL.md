@@ -27,9 +27,9 @@ You are generating a reproducible computing environment for an R analysis script
   reproducibility mechanism.
 
 Write nothing outside `code/`.
-  Every file this skill creates goes in `code/`, and every command you give is
+Every file this skill creates goes in `code/`, and every command you give is
   run from the study folder (the one holding inputs/, code/ and outputs/).
-  You never run these commands yourself.
+You never run these commands yourself.
 
 ---
 

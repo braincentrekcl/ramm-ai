@@ -860,7 +860,7 @@ Rename columns in every other exported table the same way (for example the ANOVA
 
 Finally, the script writes `outputs/results_summary.md`, the file a user opens
   first.
-  Build it from the fitted results, never from hard-coded numbers, in plain
+Build it from the fitted results, never from hard-coded numbers, in plain
   language:
 - One line on the question and the data analysed (animals per group, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
@@ -889,7 +889,7 @@ close(log_con)
 ### Section 12: Provenance
 Always the last section, after the log is closed, so the log's checksum is
   final.
-  Use the script's real file name in `script_file`.
+Use the script's real file name in `script_file`.
 
 <!-- chunk: provenance -->
 ```r
