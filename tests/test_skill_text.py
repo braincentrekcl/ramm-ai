@@ -171,3 +171,10 @@ def test_script_name_has_a_default(ramm_skill: str) -> None:
     g = section(ramm_skill, "## G.", "## H.")
     assert "unless the user asks for another name" in g
     assert "ask the user what to name it" not in g
+
+
+def test_session_record_names_one_dated_command(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    assert "<date>" not in g
+    assert "code/sessions/YYYY-MM-DD" in g
+    assert "Give only the command for the agent you are running in" in g

@@ -1023,13 +1023,17 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   Say in one sentence why: it records what was asked and done, alongside
   input.md.
   You cannot run these commands yourself.
-  Give the command for their agent, or list them:
+  Give only the command for the agent you are running in, with today's date in
+  place of YYYY-MM-DD.
+  Never list the other agents' commands: a user can pick the wrong one.
+  If you cannot tell which agent you are running in, ask the user which one
+  they are using, then give that one command.
 
    | Agent | Command |
    |---|---|
-   | Claude Code | `/export code/sessions/<date>.txt` |
-   | GitHub Copilot CLI | `/share file code/sessions/<date>.md` |
-   | Gemini CLI | `/chat share code/sessions/<date>.md` |
+   | Claude Code | `/export code/sessions/YYYY-MM-DD.txt` |
+   | GitHub Copilot CLI | `/share file code/sessions/YYYY-MM-DD.md` |
+   | Gemini CLI | `/chat share code/sessions/YYYY-MM-DD.md` |
    | OpenCode | `/export`, then save the file in `code/sessions/` |
    | Codex | No export command: every session is saved in full in `~/.codex/sessions/` |
 
