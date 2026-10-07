@@ -8,15 +8,20 @@ RAMM-AI runs through OpenCode v2 with any model that supports tool calling,
 
 Most institutional deployments offer an OpenAI-compatible endpoint (for example
   vLLM or LiteLLM).
-Ask your IT or research computing team for the endpoint address and a model
-  name, then add a provider to the `opencode.jsonc` in your study folder:
+Ask your IT or research computing team for the endpoint address and the name of
+  a model that supports tool calling.
+
+1. Add the provider to OpenCode's own settings file,
+  `~/.config/opencode/opencode.jsonc`, not to the `opencode.jsonc` in your study
+  folder.
+  It then works in every study folder, and the address stays out of folders you
+  share:
 
 ```jsonc
 {
   "providers": {
     "institution": {
       "name": "My institution",
-      "env": ["INSTITUTION_API_KEY"],
       "package": "@opencode/ai/providers/openai-compatible",
       "settings": { "baseURL": "https://<host>/v1" },
       "models": { "<model-id>": { "name": "<display name>" } }
@@ -26,8 +31,24 @@ Ask your IT or research computing team for the endpoint address and a model
 }
 ```
 
-Put your key in the `INSTITUTION_API_KEY` environment variable, never in the
-  file: the file sits in your study folder, which you may share.
+2. Restart OpenCode's background service, so it reads the new settings:
+
+```bash
+opencode service restart
+```
+
+3. Give OpenCode your key, once:
+
+```bash
+opencode auth login institution
+```
+
+OpenCode keeps the key in its own data in your home folder, readable only by
+  your user account but not encrypted.
+- Use this only on your own computer, not a shared one.
+- If your computer is lost or the key may have leaked, ask your institution to
+  revoke it.
+- Check your institution's guidance on storing keys.
 
 ## Local models
 
