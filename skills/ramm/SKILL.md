@@ -978,6 +978,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   their study folder once their data file is in `inputs/`, `Rscript
   code/analysis.R`, and list the files it will write in `outputs/`, including
   the log and `provenance.csv`.
+   - Do not run R in any form, not even a syntax check: the user runs it.
    - Never install packages.
      If the user needs R or the packages installed, point them to the reproduce
      skill (step 5).

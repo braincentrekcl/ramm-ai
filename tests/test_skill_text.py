@@ -218,3 +218,8 @@ def test_reproduce_changes_announced_and_refusals_respected(
 def test_session_record_is_verbatim(ramm_skill: str) -> None:
     g6 = ramm_skill.split("**Session record:**", 1)[1]
     assert "Never write your own summary in its place" in g6
+
+
+def test_agent_never_runs_r(ramm_skill: str) -> None:
+    g = section(ramm_skill, "## G.", "## H.")
+    assert "Do not run R in any form, not even a syntax check" in g
