@@ -5,6 +5,8 @@
   // RAMM-AI never runs commands, never reads your data, and only writes in code/.
   // The last matching rule wins, so each exception follows its broad rule.
   "permissions": [
+    // OpenCode's free models stop working while shell is denied. To use one,
+    // change "deny" to "ask" here and decline any command that reads your data.
     { "action": "shell", "resource": "*", "effect": "deny" },
     { "action": "grep", "resource": "*", "effect": "deny" },
     { "action": "read", "resource": "*.csv", "effect": "deny" },
@@ -12,7 +14,17 @@
     { "action": "read", "resource": "*.xlsx", "effect": "deny" },
     { "action": "read", "resource": "*.xls", "effect": "deny" },
     { "action": "read", "resource": "*toy_*", "effect": "allow" },
+    // In inputs/, only input.md and files whose names start with toy_ can be read.
+    { "action": "read", "resource": "*inputs/*", "effect": "deny" },
+    { "action": "read", "resource": "*inputs/input.md", "effect": "allow" },
+    { "action": "read", "resource": "*inputs/toy_*", "effect": "allow" },
     { "action": "edit", "resource": "*", "effect": "deny" },
-    { "action": "edit", "resource": "code/*", "effect": "allow" }
+    { "action": "edit", "resource": "code/*", "effect": "allow" },
+    // No Code Mode, helper agents or web access: Code Mode can read files
+    // that the read rules above deny.
+    { "action": "execute", "resource": "*", "effect": "deny" },
+    { "action": "subagent", "resource": "*", "effect": "deny" },
+    { "action": "webfetch", "resource": "*", "effect": "deny" },
+    { "action": "websearch", "resource": "*", "effect": "deny" }
   ]
 }

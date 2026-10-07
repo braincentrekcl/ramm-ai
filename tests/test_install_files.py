@@ -48,8 +48,15 @@ def test_opencode_template_rules(repo_root: Path) -> None:
         + [("read", f"*.{ext}", "deny") for ext in DATA_EXTENSIONS]
         + [
             ("read", "*toy_*", "allow"),
+            ("read", "*inputs/*", "deny"),
+            ("read", "*inputs/input.md", "allow"),
+            ("read", "*inputs/toy_*", "allow"),
             ("edit", "*", "deny"),
             ("edit", "code/*", "allow"),
+            ("execute", "*", "deny"),
+            ("subagent", "*", "deny"),
+            ("webfetch", "*", "deny"),
+            ("websearch", "*", "deny"),
         ]
     )
     assert rules == expected
