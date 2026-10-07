@@ -1026,6 +1026,8 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   Never list the other agents' commands: a user can pick the wrong one.
   If you cannot tell which agent you are running in, ask the user which one
   they are using, then give that one command.
+  The record must be the agent's own verbatim export.
+  Never write your own summary in its place, even if the export fails.
 
    | Agent | Command |
    |---|---|

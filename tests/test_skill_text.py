@@ -213,3 +213,8 @@ def test_reproduce_changes_announced_and_refusals_respected(
         "Never present the files as ready while you know of a problem in them"
         in reproduce_skill
     )
+
+
+def test_session_record_is_verbatim(ramm_skill: str) -> None:
+    g6 = ramm_skill.split("**Session record:**", 1)[1]
+    assert "Never write your own summary in its place" in g6
