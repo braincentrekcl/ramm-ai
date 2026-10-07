@@ -10,8 +10,8 @@ RAMM-AI writes an R script with the appropriate lme4/glmmTMB model, estimated
   explained in comments.
 You run the script yourself: the AI assistant never sees your data.
 
-RAMM-AI works with five coding agents: Claude Code, Codex, GitHub Copilot,
-  Gemini CLI and OpenCode.
+RAMM-AI works with four coding agents: Claude Code, Codex, GitHub Copilot and
+  OpenCode.
 Use whichever your AI provider offers; OpenCode works with almost any provider,
   including institutionally hosted and local models.
 
@@ -31,7 +31,6 @@ Use whichever your AI provider offers; OpenCode works with almost any provider,
 | Claude Code | `claude plugin marketplace add braincentrekcl/ramm-ai`, then `claude plugin install ramm@ramm-ai` | `/ramm:ramm` | `/ramm:reproduce` |
 | Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` | `$ramm:ramm` | `$ramm:reproduce` |
 | GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` | `/ramm` | `/reproduce` |
-| Gemini CLI | `gemini extensions install https://github.com/braincentrekcl/ramm-ai` | `/ramm` | `/ramm-reproduce` |
 | OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it | `@ramm` | `@reproduce` |
 
 OpenCode: RAMM-AI supports OpenCode v2 only (`brew install
@@ -118,7 +117,7 @@ The script writes into `outputs/`:
   `code/`.
   Do not mark your study folder as trusted in Codex, and do not use "allow
   everything" modes for RAMM-AI (Claude Code auto or bypass, Copilot
-  `--allow-all`, Gemini auto_edit or yolo).
+  `--allow-all`).
 - It never runs R and never installs packages.
   For a pinned environment, use the reproduce skill.
 

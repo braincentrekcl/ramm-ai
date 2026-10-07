@@ -13,5 +13,4 @@ Record the agent version, the model and the date for every test.
 | Claude Code | | | | | |
 | Codex | | | | | |
 | GitHub Copilot CLI | | | | | |
-| Gemini CLI | | | | | |
 | OpenCode v2 | | | | | |

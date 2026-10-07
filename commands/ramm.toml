@@ -1,5 +1,0 @@
-description = "Start RAMM-AI: write the R analysis script for the study design in inputs/input.md"
-prompt = """
-Activate the `ramm` skill and follow its instructions exactly.
-{{args}}
-"""

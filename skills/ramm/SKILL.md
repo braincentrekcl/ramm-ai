@@ -1014,8 +1014,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   If you cannot tell which agent you are running in, ask the user which one they
   are using.
   The commands are `/ramm:reproduce` (Claude Code), `$ramm:reproduce` (Codex),
-  `/reproduce` (GitHub Copilot), `/ramm-reproduce` (Gemini CLI) and `@reproduce`
-  (OpenCode).
+  `/reproduce` (GitHub Copilot) and `@reproduce` (OpenCode).
   If they confirm, follow the reproduce skill.
 6. **Session record:** at the end of the session, ask the user to export this
   conversation into `code/sessions/`.
@@ -1032,7 +1031,6 @@ Before writing the R script to disk, verify ALL of the following. If any check f
    |---|---|
    | Claude Code | `/export code/sessions/YYYY-MM-DD.txt` |
    | GitHub Copilot CLI | `/share file code/sessions/YYYY-MM-DD.md` |
-   | Gemini CLI | `/chat share code/sessions/YYYY-MM-DD.md` |
    | OpenCode | `/export`, then save the file in `code/sessions/` |
    | Codex | No export command: every session is saved in full in `~/.codex/sessions/` |
 

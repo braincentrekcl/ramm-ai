@@ -106,13 +106,11 @@ REPRODUCE_COMMANDS = [
     "/ramm:reproduce",
     "$ramm:reproduce",
     "/reproduce",
-    "/ramm-reproduce",
     "@reproduce",
 ]
 EXPORT_COMMANDS = [
     "/export code/sessions/",
     "/share file code/sessions/",
-    "/chat share code/sessions/",
     "`/export`",
     "~/.codex/sessions/",
 ]

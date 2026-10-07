@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import tomllib
 from conftest import read_json, read_jsonc
 
 DATA_EXTENSIONS = ("csv", "tsv", "xlsx", "xls")
@@ -37,27 +36,6 @@ def test_codex_marketplace_points_at_repo_root(repo_root: Path) -> None:
     assert entry["name"] == "ramm"
     assert entry["source"] == {"source": "local", "path": "./"}
     assert entry["policy"]["installation"] == "AVAILABLE"
-
-
-def test_gemini_extension_matches_plugin(repo_root: Path) -> None:
-    extension = read_json(repo_root / "gemini-extension.json")
-    plugin = read_json(repo_root / ".claude-plugin" / "plugin.json")
-    assert extension["name"] == plugin["name"]
-    assert extension["version"] == plugin["version"]
-    assert extension["description"]
-
-
-def test_gemini_commands_activate_each_skill(repo_root: Path) -> None:
-    for file_name, skill in (
-        ("ramm.toml", "ramm"),
-        ("ramm-reproduce.toml", "reproduce"),
-    ):
-        command = tomllib.loads(
-            (repo_root / "commands" / file_name).read_text(encoding="utf-8")
-        )
-        assert set(command) == {"description", "prompt"}
-        assert f"`{skill}` skill" in command["prompt"]
-        assert "{{args}}" in command["prompt"]
 
 
 def test_opencode_template_rules(repo_root: Path) -> None:
