@@ -38,6 +38,12 @@ OpenCode: RAMM-AI supports OpenCode v2 only (`brew install
 OpenCode cannot currently use a GitHub Copilot Free or Student plan: it lists
   no models for them ([anomalyco/opencode#34644](https://github.com/anomalyco/opencode/issues/34644)).
 With those plans, use the GitHub Copilot route instead.
+OpenCode's free models do not work while the template denies shell commands
+  ([anomalyco/opencode#51241](https://github.com/anomalyco/opencode/issues/51241)).
+To use one, change `deny` to `ask` on the shell line, keep your data out of the
+  study folder as on the other agents, and decline any command that would read
+  your data.
+Free models may keep or learn from what you send, so check their terms.
 For institutionally hosted or local models, see
   [docs/institutional-models.md](docs/institutional-models.md).
 
@@ -63,7 +69,8 @@ my-study/
   file whose name starts with `toy_`; everything in that file is sent to the AI
   provider.
   (OpenCode users with the template config can leave their data in place: the
-  config stops the assistant reading data files.)
+  config stops the assistant reading data files.
+  This does not hold if you switched shell to `ask` for a free model.)
 3. Open your agent in the study folder and start RAMM-AI with the command in the
   table above.
 
