@@ -707,7 +707,8 @@ for (sd_column in c("within_individual_sd", "between_individual_sd")) {
 }
 ```
 
-For a one-observation-per-subject `lm()` (see D.1) there is no within-individual spread: report only the SD of values per group, under the same rule.
+For a one-observation-per-individual `lm()` (see D.1), leave out 6a, 6b and 6d: an ordinary linear model has no optimiser, no singular fit and no variance components.
+Keep 6c, and in 6f there is no within-individual spread: report only the SD of values per group, under the same rule.
 
 ### Section 7: Model Summary
 - `summary(model)` for full output
@@ -860,6 +861,8 @@ plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
 dev.off()
 ```
 
+For an `lm()`, export the fixed effects with `broom::tidy(model)` (add `broom` to the required packages instead of `broom.mixed`) and skip `results_random_effects.csv`; say in `results_summary.md` that the model has no random effects because each individual was measured once.
+
 Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
 
 Finally, the script writes `outputs/results_summary.md`, the file a user opens
@@ -961,6 +964,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The `set.seed(42)` is present
 - [ ] The header accurately describes what was specified
 - [ ] Diagnostic plots are generated
+- [ ] For an `lm()`, the script calls no lme4-only functions (`isSingular()`, `VarCorr()`, `@optinfo`, `ran_pars`)
 - [ ] The variability-by-group check writes `results_variance_by_group.csv` and warns, without changing the model
 - [ ] Results are exported as CSV via broom/broom.mixed
 - [ ] QC applies only rules from input.md and writes `results_exclusions.csv` (missing and excluded kept separate)
