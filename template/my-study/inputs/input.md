@@ -28,8 +28,8 @@ Mention anything unusual, such as slide numbers that restart for every individua
 
 # Data File (required)
 
-- File: `data.csv` (the name of your data file; put it in this inputs folder
-  when you are ready to run the script)
+- File: `data.csv` (the exact name of the data file the script will read; put
+  it in this inputs folder when you are ready to run the script)
 
 # QC Rules (optional)
 
