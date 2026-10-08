@@ -41,8 +41,11 @@ The user starts you in their study folder:
 my-study/
 ├── inputs/   input.md (the study design), the data, and an optional toy file
 ├── code/     the analysis script you write, and sessions/ for the conversation record
-└── outputs/  everything the script writes
+├── outputs/  everything the script writes
+└── envs/     the reproducible environment, if the user runs the reproduce skill
 ```
+
+This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-yoda.html): inputs, code and outputs kept apart, so anyone can see what produced each result.
 
 1. Look for `inputs/input.md` (or the input file the user named when starting
   the skill, if it is in `inputs/`).
@@ -320,8 +323,9 @@ Generate the R script with these sections in this exact order. Each section must
 <!-- chunk: setup -->
 ```r
 # --- 1. Environment Setup ---
-# The script expects the study folder layout: inputs/ (input.md and the
-# data), code/ (this script) and outputs/ (everything the script writes).
+# The script expects the study folder layout (YODA: inputs, code and outputs
+# kept apart): inputs/ (input.md and the data), code/ (this script) and
+# outputs/ (everything the script writes).
 if (!dir.exists("inputs") || !dir.exists("code")) {
   stop("Run this script from your study folder (the one that holds inputs/, ",
        "code/ and outputs/), for example: Rscript code/analysis.R", call. = FALSE)
@@ -935,8 +939,8 @@ provenance$recorded_at <- format(run_started, "%Y-%m-%d %H:%M:%S")
 write.csv(provenance, file.path("outputs", "provenance.csv"), row.names = FALSE)
 ```
 
-DataLad users can run the same script with `datalad run`; nothing in the script
-  depends on it.
+DataLad (https://www.datalad.org) users can run the same script with
+  `datalad run`; nothing in the script depends on it.
 
 ---
 
