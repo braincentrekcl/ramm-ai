@@ -665,7 +665,7 @@ Consider simplifying the random effects structure. See the variance table below.
 
 # 6c. Predictor-vs-observations guard
 n_obs <- nrow(dat)
-n_fixed_params <- length(fixef(model))
+n_fixed_params <- ncol(model.matrix(model))  # works for lmer() and lm()
 if (n_fixed_params > n_obs / 10) {
   warning(sprintf("Caution: %d fixed-effect parameters with only %d observations.
 Consider whether all predictors are necessary.", n_fixed_params, n_obs))
@@ -968,7 +968,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The `set.seed(42)` is present
 - [ ] The header accurately describes what was specified
 - [ ] Diagnostic plots are generated
-- [ ] For an `lm()`, the script calls no lme4-only functions (`isSingular()`, `VarCorr()`, `@optinfo`, `ran_pars`)
+- [ ] For an `lm()`, the script calls no lme4-only functions (`isSingular()`, `VarCorr()`, `fixef()`, `@optinfo`, `ran_pars`)
 - [ ] The variability-by-group check writes `results_variance_by_group.csv` and warns, without changing the model
 - [ ] Results are exported as CSV via broom/broom.mixed
 - [ ] QC applies only rules from input.md and writes `results_exclusions.csv` (missing and excluded kept separate)
