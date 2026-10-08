@@ -5,3 +5,4 @@ examples/*/code/sessions/*
 examples/*/outputs/*
 !examples/*/outputs/.gitkeep
 Rplots.pdf
+__pycache__/
