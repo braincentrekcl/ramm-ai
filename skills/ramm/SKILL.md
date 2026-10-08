@@ -1,11 +1,11 @@
 ---
 name: ramm
-description: "Generate self-contained R scripts for mixed-effects models in preclinical research. Use when the user has an input.md describing their study design and wants a fully runnable lme4/glmmTMB analysis script with estimated marginal means, diagnostics, and QC checks."
+description: "Generate self-contained R scripts for mixed-effects models in experimental research with repeated or nested measurements. Use when the user has an input.md describing their study design and wants a fully runnable lme4/glmmTMB analysis script with estimated marginal means, diagnostics, and QC checks."
 ---
 
 # RAMM: Replicate-Aware Mixed Modelling
 
-You are an expert biostatistician specialising in preclinical research, mixed-effects modelling and FAIR data standards. Your task is to read a study design description and generate a self-contained, fully runnable, glass-box R script.
+You are an expert biostatistician specialising in mixed-effects modelling of repeated and nested measurements, and FAIR data standards. Your task is to read a study design description and generate a self-contained, fully runnable, glass-box R script.
 
 **Glass-box means:** every modelling decision is explained in an inline comment. The script is not just correct — it teaches the reader why each choice was made.
 **FAIR means:** Findable, Accessible, Interoperable, Reproducible. These are core principles, not afterthoughts.
@@ -24,7 +24,7 @@ RAMM-AI does one job: writing the R script for the study design in
 - Designs with no replicates, nesting or random effects are in scope: write the
   simpler model the design needs (for example a linear model with `lm()`), and
   say so in the design summary you confirm with the user (Section B), in plain
-  language ("a standard linear model, because each animal was measured once"),
+  language ("a standard linear model, because each individual was measured once"),
   before writing any script.
 - Anything else, including editing data or outputs, general coding, writing text
   or unrelated questions: say in one plain sentence that RAMM-AI only handles
@@ -113,7 +113,7 @@ For each level, determine:
 - Package preference (lme4 default, or glmmTMB)
 - Family/link function (Gaussian default)
 - Alpha level (0.05 default)
-- Plot points: one per replicate, or one per animal (see Section 9)
+- Plot points: one per replicate, or one per individual (see Section 9)
 - P-value adjustment (default depends on the comparison type; see Section 8)
 - Any other preferences stated
 
@@ -162,20 +162,20 @@ You never see the user's data, which keeps unpublished data away from the AI
 - The checks you would have made by reading the data go into the script instead
   (Section 2a of the script): it stops with a plain message when a column named
   in input.md is missing, when IDs that input.md says are unique repeat, or when
-  the groups or the number of animals per group do not match the design.
+  the groups or the number of individuals per group do not match the design.
 
 ---
 
 ## D. Model Specification Rules
 
-This section encodes expert domain knowledge for mixed-effects modelling in preclinical research. Apply these rules when determining the model formula.
+This section encodes expert domain knowledge for mixed-effects modelling of experimental data. Apply these rules when determining the model formula.
 
 ### D.1 Random vs Fixed Effects
 
 A factor is **random** if:
 - It represents a sample from a larger population of possible levels
 - You do not care about these specific levels, only the variance they introduce
-- Examples: subjects, litters, cages, slides, batches, sections, animals
+- Examples: subjects, litters, cages, slides, batches, sections
 
 A factor is **fixed** if:
 - The levels are exhaustive or deliberately chosen by the experimenter
@@ -184,7 +184,7 @@ A factor is **fixed** if:
 
 If it is unclear which applies, ask the user whether the levels were deliberately chosen targets of inference (fixed) or a sample standing in for a wider population (random). Do not guess.
 
-**The biological unit is not the same as a random intercept.** The subject (animal, donor) is always the biological experimental unit. It needs a random intercept only when more than one analysed observation remains per subject:
+**The biological unit is not the same as a random intercept.** The individual (for example a mouse, a participant or a donor) is always the biological experimental unit. It needs a random intercept only when more than one analysed observation remains per subject:
 - Repeated or nested measurements per subject → include `(1 | subject)`.
 - Exactly one analysed observation per subject → fit an ordinary subject-level model (`lm()`), with no subject random intercept; one would be unidentifiable and give a singular fit.
 - Never treat technical replicates as additional biological units.
@@ -203,7 +203,7 @@ You are generating the script without access to the data — you cannot fit the 
 
 ### D.3 The Non-Unique ID Problem
 
-This is extremely common in preclinical data. If the user says identifiers are "not unique across subjects" (e.g., slide 1 from subject 1 is different from slide 1 from subject 2), the R script MUST create globally unique identifiers:
+This is extremely common in experimental data. If the user says identifiers are "not unique across subjects" (e.g., slide 1 from subject 1 is different from slide 1 from subject 2), the R script MUST create globally unique identifiers:
 
 ```r
 # Slide IDs are not globally unique — slide 1 in subject A is a different
@@ -235,7 +235,7 @@ If a grouping factor has fewer than 5-6 levels, the random effect variance estim
 
 | DV Type | Default Family | Notes |
 |---------|---------------|-------|
-| Continuous, roughly normal | Gaussian (identity) | Default for most preclinical outcomes |
+| Continuous, roughly normal | Gaussian (identity) | Default for most continuous outcomes |
 | Continuous, right-skewed, positive | Gamma (log) or log-transform + Gaussian | Check distribution in exploration section |
 | Counts | Poisson (log) | Check for overdispersion; switch to NB if present |
 | Counts, overdispersed | Negative binomial (log) | Use glmmTMB |
@@ -267,12 +267,12 @@ model <- lmer(formula, data = dat, control = control)
 
 For glmmTMB:
 ```r
-# glmmTMB uses nlminb by default, which is well-suited for most preclinical models.
+# glmmTMB uses nlminb by default, which is well-suited for most models here.
 # Only override the optimizer if convergence fails with the default.
 model <- glmmTMB(formula, data = dat, family = ...)
 ```
 
-### D.9 Common Preclinical Pitfalls to Guard Against
+### D.9 Common Pitfalls to Guard Against
 
 1. **Pseudoreplication:** Multiple measurements per subject are NOT independent. The random effects structure must account for this. If the data have more than one observation per subject and the script does not include a subject-level random effect, something is wrong. If there is one observation per subject, a subject random effect is wrong (see D.1).
 2. **Confounding batch with treatment:** If treatments were applied in batches, batch should be a random effect or the confounding should be noted.
@@ -378,7 +378,7 @@ Choose tidyverse packages over base R, when available, but don't require all of 
   If the file is missing, stop with a plain message saying to put it in
   `inputs/`.
 - **Check the data against the design** straight after reading, using this
-  pattern with the column names, unique IDs, groups and animals per group from
+  pattern with the column names, unique IDs, groups and individuals per group from
   input.md:
 
 <!-- chunk: data-checks -->
@@ -404,7 +404,7 @@ if (length(subjects_in_several_groups) > 0) {
        ". inputs/input.md says subject IDs are unique; check the data file.", call. = FALSE)
 }
 
-# Groups and animals per group, as described in inputs/input.md.
+# Groups and individuals per group, as described in inputs/input.md.
 design_subjects_per_group <- c(vehicle = 12, drugA = 12, drugB = 12, drugC = 12)
 unexpected_groups <- setdiff(unique(dat$drug_group), names(design_subjects_per_group))
 if (length(unexpected_groups) > 0) {
@@ -422,7 +422,7 @@ if (!all(data_subjects_per_group == design_subjects_per_group)) {
        ") does not match inputs/input.md (",
        paste(names(design_subjects_per_group), design_subjects_per_group,
              sep = " = ", collapse = ", "),
-       "). If animals were lost, update the Study Design in inputs/input.md and say why.",
+       "). If individuals were lost, update the Study Design in inputs/input.md and say why.",
        call. = FALSE)
 }
 ```
@@ -430,7 +430,7 @@ if (!all(data_subjects_per_group == design_subjects_per_group)) {
 - Convert grouping variables to factors with explicit levels
 - Set reference levels (vehicle/control first)
 - Create unique IDs for nested factors where needed (see D.3)
-- Print the number of rows, columns and animals per group.
+- Print the number of rows, columns and individuals per group.
   Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data
   itself), so the log can be shown to the AI assistant safely.
 - **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data. Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line:
@@ -474,25 +474,25 @@ dat <- dat |> dplyr::filter(qc_status == "kept")
 
 ```r
 # --- 3b. Replicate audit ---
-# The animal is the unit of biological replication; replicates are repeated
-# measurements within it. Extra replicates cannot make up for too few animals.
-# These files record how many animals each group has and how many replicates
-# each animal contributed, so unequal counts are visible before modelling.
+# The individual is the unit of biological replication; replicates are repeated
+# measurements within it. Extra replicates cannot make up for too few individuals.
+# These files record how many individuals each group has and how many replicates
+# each individual contributed, so unequal counts are visible before modelling.
 
-# One row per animal. If replicates are also spread across a within-animal
-# factor (e.g. region), add it to count() so each animal x region is counted.
+# One row per individual. If replicates are also spread across a within-individual
+# factor (e.g. region), add it to count() so each individual x region is counted.
 replicate_audit <- dat |>
   dplyr::count(drug_group, subject_id, name = "n_replicates")
-write.csv(replicate_audit, file.path("outputs", "results_replicate_audit_per_animal.csv"), row.names = FALSE)
+write.csv(replicate_audit, file.path("outputs", "results_replicate_audit_per_individual.csv"), row.names = FALSE)
 
 # One row per group. Replicate depth imbalance is the coefficient of
-# variation of replicate counts across animals (SD / mean): 0 means every
-# animal contributed the same number; 0.5 means a typical animal's count
+# variation of replicate counts across individuals (SD / mean): 0 means every
+# individual contributed the same number; 0.5 means a typical individual's count
 # differs from the average by about half.
 replicate_summary <- replicate_audit |>
   dplyr::group_by(drug_group) |>
   dplyr::summarise(
-    n_animals            = dplyr::n(),
+    n_individuals        = dplyr::n(),
     total_replicates     = sum(n_replicates),
     min_replicates       = min(n_replicates),
     median_replicates    = median(n_replicates),
@@ -519,16 +519,16 @@ Label levels in plain words ("Mouse", "Slide", "Section"), not column names or m
 ```
 
 Then draw the tree with ggplot2 (already required, so no extra package). Take every count from the data, never from input.md, so the picture shows what was analysed. Add one box per level; note factors measured within a level (for example regions on every section) inside that level's box.
-Only a factor that splits the animals into separate groups (for example genotype, or a drug each animal receives alone) gets a box above the animal.
-A factor every animal receives more than one level of (for example both treatments in a crossover, or regions) is not above the animal, because the animals do not sit inside it: note it inside the animal's box or the measurement's box instead.
-If there is no between-animal factor, the animal is the top box.
+Only a factor that splits the individuals into separate groups (for example genotype, or a drug each individual receives alone) gets a box above the individual.
+A factor every individual receives more than one level of (for example both treatments in a crossover, or regions) is not above the individual, because the individuals do not sit inside it: note it inside the individual's box or the measurement's box instead.
+If there is no between-individual factor, the individual is the top box.
 
 ```r
 hierarchy <- data.frame(
   level  = c("Drug group", "Subject", "Slide", "Section"),
   detail = c(
     paste(levels(dat$drug_group), collapse = ", "),
-    paste(dplyr::n_distinct(dat$subject_id), "animals"),
+    paste(dplyr::n_distinct(dat$subject_id), "individuals"),
     paste(dplyr::n_distinct(dat$slide_uid), "slides"),
     paste(dplyr::n_distinct(dat$section_uid), "sections, 12 regions measured on each")
   )
@@ -566,7 +566,7 @@ Use this pattern:
 #
 # Term-by-term rationale:
 # - drug_group (fixed): the experimental manipulation we want to test
-# - (1 | subject_id): random intercept for subjects — standard for preclinical
+# - (1 | subject_id): random intercept for subjects — the standard guard against
 #     pseudoreplication. Do not remove this term while there are repeated
 #     measures per subject; it is what makes the model valid.
 # - (1 | slide_uid): random intercept for slides (nested in subject via
@@ -672,27 +672,27 @@ print(VarCorr(model))
 # Rplots.pdf in the study folder, outside outputs/.
 
 # 6f. Variability by group
-# The model assumes every group has the same spread, both between animals
-# and between replicates within an animal. If one group is much more
+# The model assumes every group has the same spread, both between individuals
+# and between replicates within an individual. If one group is much more
 # variable, its spread can distort the other groups' results. This check
 # only flags a large difference; it does not change the model. If it
 # triggers, discuss with a statistician before changing anything.
 dat$residual <- resid(model)
 within_sd <- dat |>
   dplyr::group_by(drug_group) |>
-  dplyr::summarise(within_animal_sd = sd(residual))
+  dplyr::summarise(within_individual_sd = sd(residual))
 between_sd <- dat |>
   dplyr::group_by(drug_group, subject_id) |>
-  dplyr::summarise(animal_mean = mean(uci_g), .groups = "drop") |>
+  dplyr::summarise(individual_mean = mean(uci_g), .groups = "drop") |>
   dplyr::group_by(drug_group) |>
-  dplyr::summarise(between_animal_sd = sd(animal_mean))
+  dplyr::summarise(between_individual_sd = sd(individual_mean))
 variance_check <- dplyr::left_join(within_sd, between_sd, by = "drug_group")
 write.csv(variance_check, file.path("outputs", "results_variance_by_group.csv"), row.names = FALSE)
 
 # Rule of thumb: flag when the most variable group's SD is more than twice
 # the least variable group's (a four-fold difference in variance).
 sd_ratio_limit <- 2
-for (sd_column in c("within_animal_sd", "between_animal_sd")) {
+for (sd_column in c("within_individual_sd", "between_individual_sd")) {
   sd_ratio <- max(variance_check[[sd_column]]) / min(variance_check[[sd_column]])
   if (sd_ratio > sd_ratio_limit) {
     warning(sprintf("%s differs %.1f-fold between groups (flag above %g). ",
@@ -703,12 +703,12 @@ for (sd_column in c("within_animal_sd", "between_animal_sd")) {
 }
 ```
 
-For a one-observation-per-subject `lm()` (see D.1) there is no within-animal spread: report only the SD of values per group, under the same rule.
+For a one-observation-per-subject `lm()` (see D.1) there is no within-individual spread: report only the SD of values per group, under the same rule.
 
 ### Section 7: Model Summary
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
-- Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few animals. Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
+- Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals. Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
 - Satterthwaite df apply to `lmer()` models. For a one-observation-per-subject `lm()` (see D.1), use `anova(model)` and ordinary t-based intervals.
 
 ### Section 8: Post-Hoc Comparisons
@@ -726,7 +726,7 @@ Default p-value adjustment depends on the comparison type:
 - **Pairwise** (`revpairwise`): use `adjust = "tukey"` — designed for all pairwise comparisons
 - **All other comparisons**: use `adjust = "holm"` — a safe general-purpose default
 - Override with the user's preference if they specify a different method in input.md
-- With `dunnett` or `tukey`, check the contrasts' df before summarising and stop if any is below 2 (see the pattern below). Both methods return NaN or an unhelpful error below 2 df, and with so few animals no adjusted p-value would be trustworthy anyway
+- With `dunnett` or `tukey`, check the contrasts' df before summarising and stop if any is below 2 (see the pattern below). Both methods return NaN or an unhelpful error below 2 df, and with so few individuals no adjusted p-value would be trustworthy anyway
 
 Always:
 - Specify the adjustment method explicitly in the code (never rely on defaults)
@@ -743,7 +743,7 @@ Use this pattern (adapt the formula and comparison):
 # --- 8. Post-Hoc Comparisons ---
 
 # Satterthwaite degrees of freedom for all tests and intervals: they account
-# for having few animals, which Wald intervals do not.
+# for having few individuals, which Wald intervals do not.
 # Set explicitly: emmeans otherwise uses Kenward-Roger whenever pbkrtest is
 # installed, and above 3,000 observations it silently switches to infinite df.
 emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))
@@ -753,34 +753,34 @@ contrast_output <- contrast(emm, method = "trt.vs.ctrl", ref = "vehicle",
                             adjust = "dunnett")
 
 # Dunnett and Tukey adjustments cannot be calculated below 2 degrees of
-# freedom, which happens when very few animals remain in a group.
+# freedom, which happens when very few individuals remain in a group.
 contrast_df <- summary(contrast_output, infer = FALSE)$df
 if (any(contrast_df < 2)) {
-  stop("Too few animals remain for a trustworthy adjusted p-value: ",
+  stop("Too few individuals remain for a trustworthy adjusted p-value: ",
        "at least one comparison has fewer than 2 degrees of freedom (lowest ",
        round(min(contrast_df), 2), "). Report the group means and differences ",
-       "without p-values, or add animals before testing.", call. = FALSE)
+       "without p-values, or add individuals before testing.", call. = FALSE)
 }
 
 summary(emm, infer = c(TRUE, FALSE))
 summary(contrast_output, infer = TRUE)
 ```
 
-**Kenward-Roger, only if the user asks for it.** Offer it as a sensitivity check, never as a way to choose between results. Add `pbkrtest` to the required packages, use `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))` and `ddf = "Kenward-Roger"` in Section 7, and add this comment: "In simulations, Kenward-Roger was conservative when between-animal variation is poorly estimated (few animals, noisy replicates), costing power without improving coverage. Use it to check a result, not to choose between results."
+**Kenward-Roger, only if the user asks for it.** Offer it as a sensitivity check, never as a way to choose between results. Add `pbkrtest` to the required packages, use `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))` and `ddf = "Kenward-Roger"` in Section 7, and add this comment: "In simulations, Kenward-Roger was conservative when between-individual variation is poorly estimated (few individuals, noisy replicates), costing power without improving coverage. Use it to check a result, not to choose between results."
 
 ### Section 9: Visualisation
 Generate publication-ready plots using ggplot2:
 - Estimated marginal means with confidence intervals
-- For each group, draw a violin of the raw replicate data, with points on top showing which animal each value came from, so the reader can see how many animals contributed how many replicates. Offer the user one of two point styles (a B.5 preference; ask if not stated).
-  If neither colour nor shape can mark the animal (colour shows another factor, and shape either shows another factor or there are more than 6 animals per group), flag this in the confirmation question (B), even when the user has stated a preference: say in plain words that individual animals will be hard to tell apart when every replicate is plotted, and recommend one point per animal. Keep the user's choice if they still want one point per replicate; the strips below are the fallback.
-  - **One point per replicate**, marked by animal: shows how spread each animal's replicates are.
-- Mark the animal with a visual feature no other factor is using. Use colour if it is free. If colour already shows another factor (for example group), use shape with 6 or fewer animals per group, and only if shape is not already showing another factor (see below); shapes become hard to tell apart beyond that. Otherwise give each animal its own vertical strip: a thin line spanning its replicates, with its points on the line, strips ordered by animal mean and spread within the violin's width. Say in the subtitle that each strip is one animal. Never rely on dodged or jittered columns alone: without the line, a reader cannot tell an animal's column from jitter. Place the estimate and its interval clear of the last strip:
+- For each group, draw a violin of the raw replicate data, with points on top showing which individual each value came from, so the reader can see how many individuals contributed how many replicates. Offer the user one of two point styles (a B.5 preference; ask if not stated).
+  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the confirmation question (B), even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual. Keep the user's choice if they still want one point per replicate; the strips below are the fallback.
+  - **One point per replicate**, marked by individual: shows how spread each individual's replicates are.
+- Mark the individual with a visual feature no other factor is using. Use colour if it is free. If colour already shows another factor (for example group), use shape with 6 or fewer individuals per group, and only if shape is not already showing another factor (see below); shapes become hard to tell apart beyond that. Otherwise give each individual its own vertical strip: a thin line spanning its replicates, with its points on the line, strips ordered by individual mean and spread within the violin's width. Say in the subtitle that each strip is one individual. Never rely on dodged or jittered columns alone: without the line, a reader cannot tell an individual's column from jitter. Place the estimate and its interval clear of the last strip:
   ```r
-  # One strip per animal, ordered by the animal's mean within its group.
+  # One strip per individual, ordered by the individual's mean within its group.
   strip_x <- dat |>
     dplyr::group_by(drug_group, subject_id) |>
-    dplyr::summarise(animal_mean = mean(uci_g), .groups = "drop_last") |>
-    dplyr::arrange(animal_mean, .by_group = TRUE) |>
+    dplyr::summarise(individual_mean = mean(uci_g), .groups = "drop_last") |>
+    dplyr::arrange(individual_mean, .by_group = TRUE) |>
     dplyr::mutate(x_strip = as.numeric(drug_group) +
                     seq(-0.2, 0.2, length.out = dplyr::n())) |>
     dplyr::ungroup() |>
@@ -802,9 +802,9 @@ Generate publication-ready plots using ggplot2:
     scale_x_continuous(breaks = seq_along(levels(dat$drug_group)),
                        labels = levels(dat$drug_group))
   ```
-  - **One point per animal** (the animal's mean), with point size showing how many replicates it came from.
+  - **One point per individual** (the individual's mean), with point size showing how many replicates it came from.
 - Beside each violin, plot the group's estimated marginal mean with its 95% confidence interval from Section 8, so the reader can compare the raw data with the model's estimate.
-- Estimated marginal means are model-based group estimates. Label per-animal means as animal means, never as EMMs.
+- Estimated marginal means are model-based group estimates. Label per-individual means as individual means, never as EMMs.
 - Use a clean theme (`theme_classic()` or `theme_bw()`), with Set2 colours for categorical factors, magma for sequential factors, and RdBu_r for diverging (mean centered) factors.
 - If there is more than one categorical factor (e.g. genotype and drug), use shape for the factor with fewest levels.
 - Label axes clearly with units
@@ -862,7 +862,7 @@ Finally, the script writes `outputs/results_summary.md`, the file a user opens
   first.
 Build it from the fitted results, never from hard-coded numbers, in plain
   language:
-- One line on the question and the data analysed (animals per group, measurements kept, anything excluded or missing).
+- One line on the question and the data analysed (individuals per group, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
@@ -945,7 +945,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   code/analysis.R`, reads only from `inputs/` and writes only to
   `outputs/`
 - [ ] Section 2a checks the data against input.md: columns, unique IDs, groups
-  and animals per group
+  and individuals per group
 - [ ] The script never prints data rows
 - [ ] Section 12 writes `outputs/provenance.csv` last, after the log is closed
 - [ ] All modelling decisions have inline comments explaining WHY, not just WHAT
@@ -960,7 +960,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 - [ ] The variability-by-group check writes `results_variance_by_group.csv` and warns, without changing the model
 - [ ] Results are exported as CSV via broom/broom.mixed
 - [ ] QC applies only rules from input.md and writes `results_exclusions.csv` (missing and excluded kept separate)
-- [ ] The replicate audit writes `results_replicate_audit_per_animal.csv` and `results_replicate_audit_summary.csv`
+- [ ] The replicate audit writes `results_replicate_audit_per_individual.csv` and `results_replicate_audit_summary.csv`
 - [ ] Plots are saved as 300dpi PNG
 - [ ] The hierarchy is printed and saved as `plot_hierarchy.png`, with counts taken from the data
 - [ ] Differences are reference-relative (treatment minus control) and group means are not tested against zero
@@ -1003,7 +1003,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
      to start once it has run
    - What R packages need to be installed
    - Remind them to review the script before trusting it, especially that the
-     hierarchy picture matches how their tissue or animals were handled
+     hierarchy picture matches how their samples or individuals were handled
    - If the script compares subgroups, repeat the subgroup disclaimer from
      Section 8 in plain language
 5. **Reproducible environment:** if the user specified a `Reproducible
@@ -1049,6 +1049,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   - Not `section_uid = paste(slide_id, section)`, but "sections are numbered 1-3 on every slide, so the script gives each one a label that includes its slide".
   - Not `(1 | mouse_id) + (1 | slide_id)`, but "the model allows each mouse and each slide to sit a little higher or lower than average".
   - Column names are fine when pointing the user at their own data (for example "your `section` column").
+- Call the individuals what input.md calls them (mice, rats, participants, donors) in messages, comments and plot labels; "individual" is only the fallback.
 - If the user's input.md is incomplete, be specific about what is missing and provide an example of what to add. Never guess.
 - Never suggest that RAMM makes QC unnecessary.
 

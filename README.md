@@ -1,8 +1,8 @@
 # RAMM-AI
 
 **Replicate-Aware Mixed Modelling**: an AI assistant skill that writes
-  self-contained, glass-box R scripts for mixed-effects models in preclinical
-  research.
+  self-contained, glass-box R scripts for mixed-effects models in experimental
+  research with repeated or nested measurements.
 
 You describe your study design in plain English in `inputs/input.md`.
 RAMM-AI writes an R script with the appropriate lme4/glmmTMB model, estimated
@@ -102,8 +102,8 @@ The script writes into `outputs/`:
   other files
 - `results_group_means.csv`, `results_comparisons.csv`: estimated group means
   and the differences between groups
-- `results_replicate_audit_per_animal.csv`,
-  `results_replicate_audit_summary.csv`: how many replicates each animal
+- `results_replicate_audit_per_individual.csv`,
+  `results_replicate_audit_summary.csv`: how many replicates each individual
   contributed
 - `results_exclusions.csv`: measurements that were missing or removed by your QC
   rules

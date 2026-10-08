@@ -9,10 +9,10 @@ This file is your registered report: it records your questions before any
 
 # Study Design (required)
 
-In plain English: how many animals are in each group, what was measured, and how
-  the measurements are organised (for example animal, then slide, then section,
-  then region).
-Mention anything unusual, such as slide numbers that restart for every animal,
+In plain English: how many individuals (mice, participants, donors…) are in
+  each group, what was measured, and how the measurements are organised (for
+  example mouse, then slide, then section, then region).
+Mention anything unusual, such as slide numbers that restart for every individual,
   or measurements you know are missing.
 
 # Column Mappings (required)
