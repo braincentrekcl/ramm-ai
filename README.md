@@ -45,7 +45,7 @@ To use one, change `deny` to `ask` on the shell line, keep your data out of the
   your data.
 Free models may keep or learn from what you send, so check their terms.
 For institutionally hosted or local models, see
-  [docs/institutional-models.md](docs/institutional-models.md).
+  [docs/institutional-and-local-models.md](docs/institutional-and-local-models.md).
 
 ## Set up your study folder
 

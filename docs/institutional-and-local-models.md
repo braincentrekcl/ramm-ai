@@ -8,8 +8,8 @@ RAMM-AI runs through OpenCode v2 with any model that supports tool calling,
 
 Most institutional deployments offer an OpenAI-compatible endpoint (for example
   vLLM or LiteLLM).
-Ask your IT or research computing team for the endpoint address and the name of
-  a model that supports tool calling.
+Ask your IT or research computing team, or check their documentation, for the
+  endpoint address and the name of a model that supports tool calling.
 
 1. Add the provider to OpenCode's own settings file,
   `~/.config/opencode/opencode.jsonc`, not to the `opencode.jsonc` in your study
@@ -46,8 +46,8 @@ opencode auth login institution
 OpenCode keeps the key in its own data in your home folder, readable only by
   your user account but not encrypted.
 - Use this only on your own computer, not a shared one.
-- If your computer is lost or the key may have leaked, ask your institution to
-  revoke it.
+- If your computer is lost or the key may have leaked, revoke the key yourself
+  if your institution lets you, or ask them to revoke it.
 - Check your institution's guidance on storing keys.
 
 ## Local models
