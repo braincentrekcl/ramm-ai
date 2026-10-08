@@ -53,6 +53,7 @@ def test_opencode_template_rules(repo_root: Path) -> None:
             ("read", "*inputs/toy_*", "allow"),
             ("edit", "*", "deny"),
             ("edit", "code/*", "allow"),
+            ("edit", "envs/*", "allow"),
             ("execute", "*", "deny"),
             ("subagent", "*", "deny"),
             ("webfetch", "*", "deny"),

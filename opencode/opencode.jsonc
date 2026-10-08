@@ -2,7 +2,8 @@
   "$schema": "https://opencode.ai/config.json",
   // Change this path to where you put the RAMM-AI folder, keeping /skills at the end.
   "skills": ["/path/to/ramm-ai/skills"],
-  // RAMM-AI never runs commands, never reads your data, and only writes in code/.
+  // RAMM-AI never runs commands, never reads your data, and only writes in code/
+  // and envs/.
   // The last matching rule wins, so each exception follows its broad rule.
   "permissions": [
     // OpenCode's free models stop working while shell is denied. To use one,
@@ -20,6 +21,7 @@
     { "action": "read", "resource": "*inputs/toy_*", "effect": "allow" },
     { "action": "edit", "resource": "*", "effect": "deny" },
     { "action": "edit", "resource": "code/*", "effect": "allow" },
+    { "action": "edit", "resource": "envs/*", "effect": "allow" },
     // No Code Mode, helper agents or web access: Code Mode can read files
     // that the read rules above deny.
     { "action": "execute", "resource": "*", "effect": "deny" },
