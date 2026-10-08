@@ -99,6 +99,9 @@ Treatment Group (fixed)
                     └── Region (observation-level, 12 ROIs)
 ```
 
+Show this tree in the confirmation summary (B), labelled in plain words ("Mouse", "Slide", "Section") with the counts input.md gives, so the user can check the structure before any script exists.
+It is the same structure the script prints and saves as `plot_hierarchy.png` (Section 4); if the user corrects it, use the corrected tree in both.
+
 For each level, determine:
 - Is it random or fixed? (See Section D.1)
 - Are its identifiers globally unique? (See Section D.3)
