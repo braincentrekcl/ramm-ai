@@ -79,14 +79,16 @@ Read the `Reproducible environment:` preference from input.md if present. Possib
 - `docker` — Docker only
 - `renv` — renv only
 
-If input.md gives no preference, ask the user whether R is installed on their
-  computer:
-- Yes: `docker+renv`.
-- No: `docker`.
-  It needs only Docker, and pins packages by the snapshot date; `docker+renv`
-  needs R once, to write the lockfile.
-- Neither R nor Docker: say they need one of the two, and suggest asking their
-  IT team which one they can install.
+If input.md gives no preference (the template's unedited line, listing all
+  three, is no preference), ask the user whether R and Docker are installed on
+  their computer:
+- Both: `docker+renv`.
+- R only: `renv`.
+- Docker only: `docker`.
+  It needs no R, and pins packages by the snapshot date; `docker+renv` needs R
+  once, to write the lockfile.
+- Neither: say they need one of the two, and suggest asking their IT team
+  which one they can install.
 
 Also read optional preferences:
 - `R version:` (default: `4.4.2`).
@@ -247,7 +249,7 @@ Results will be written to `outputs/` (CSV tables, PNG plots).
 
 ### E.2 Mode: `docker`
 
-#### File: `Dockerfile`
+#### File: `envs/Dockerfile`
 
 ```dockerfile
 # ============================================================
@@ -422,9 +424,13 @@ Add a section at the top about the two-step workflow:
 ```markdown
 ## Workflow
 
-1. **One-time local setup** — run `Rscript envs/setup_environment.R` to
-  produce `envs/renv.lock`.
-  This step needs R installed locally; without R, use the `docker` mode.
+1. **One-time setup, only if `envs/renv.lock` does not exist yet** — whoever
+  creates the environment runs `Rscript envs/setup_environment.R` to produce
+  `envs/renv.lock`, and commits it.
+  This step needs R.
+  If you received the study folder with `envs/renv.lock` already in it, skip
+  this step: running it again would replace the pinned versions.
+  From step 2 on you need only Docker, not R.
 2. **Build the Docker image** — `docker build -f envs/Dockerfile -t myanalysis
   .`
 3. **Run the analysis** — `docker run --rm -v "$(pwd)":/analysis myanalysis`
