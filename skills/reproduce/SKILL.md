@@ -89,7 +89,11 @@ If input.md gives no preference, ask the user whether R is installed on their
   IT team which one they can install.
 
 Also read optional preferences:
-- `R version:` (default: `4.4.2`)
+- `R version:` (default: `4.4.2`).
+  In `docker+renv` mode, use the R version installed on the user's computer
+  instead (ask them; `R --version` prints it): the lockfile records the
+  packages that come with their R, and an older R in Docker cannot restore
+  them.
 - `Snapshot date:` (default: pick the most recent Monday from the quarter before the current date, so it's stable and won't change underneath you)
 
 **Confirm with the user** before generating files. Show them:
@@ -126,6 +130,8 @@ Mixed-effects modelling packages in R have C++ dependencies. The Dockerfile must
 - `libfontconfig1-dev`, `libharfbuzz-dev`, `libfribidi-dev`, `libfreetype6-dev` — for ggplot2/systemfonts
 - `libpng-dev`, `libtiff5-dev`, `libjpeg-dev` — for image output
 - `libgit2-dev` — for renv/remotes
+- `cmake` — for nloptr (needed by lme4) when it is built from source, as on
+  ARM computers such as Apple Silicon Macs
 
 Include all of these unless you have a reason not to.
 
@@ -265,6 +271,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtiff5-dev \
     libjpeg-dev \
     libgit2-dev \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Pin CRAN to a dated Posit Package Manager snapshot for full reproducibility.
@@ -272,11 +279,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2025-01-15"))' \
     >> /usr/local/lib/R/etc/Rprofile.site
 
-# Install the R packages the analysis script needs
-RUN R -e "install.packages(c( \
-    'readr', 'lme4', 'lmerTest', 'emmeans', 'ggplot2', \
-    'broom.mixed', 'dplyr', 'tidyr' \
-    ))"
+# Install the R packages the analysis script needs. install.packages() only
+# warns when a package fails, so check they all load and stop the build if not.
+RUN R -e "pkgs <- c('readr', 'lme4', 'lmerTest', 'emmeans', 'ggplot2', \
+    'broom.mixed', 'dplyr', 'tidyr'); \
+    install.packages(pkgs); \
+    missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]; \
+    if (length(missing) > 0) stop('Packages failed to install: ', paste(missing, collapse = ', '))"
 
 WORKDIR /analysis
 
@@ -389,6 +398,22 @@ RUN R -e "renv::restore(lockfile = '/tmp/renv.lock', library = .libPaths()[1], p
 ```
 
 This is maximally reproducible: the lockfile records exact package versions and their source URLs/hashes.
+
+Use the user's own R version on the `FROM rocker/r-ver:` line (see C).
+Add this check to `envs/setup_environment.R`, straight after bootstrapping
+  renv, with the same version as the Dockerfile:
+
+```r
+# The Docker image uses R 4.5.1. The lockfile records the packages that come
+# with your R, so it must be written with the same version.
+docker_r_version <- "4.5.1"
+if (format(getRversion()) != docker_r_version) {
+  stop("You have R ", format(getRversion()), " but the Docker image uses R ",
+       docker_r_version, ". Change the version on the FROM line of ",
+       "envs/Dockerfile and in this file to ", format(getRversion()),
+       ", then run this again.", call. = FALSE)
+}
+```
 
 #### Modified README_environment.md (docker+renv mode)
 
