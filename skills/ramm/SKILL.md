@@ -1018,36 +1018,49 @@ Before writing the R script to disk, verify ALL of the following. If any check f
      hierarchy picture matches how their samples or individuals were handled
    - If the script compares subgroups, repeat the subgroup disclaimer from
      Section 8 in plain language
-5. **Reproducible environment:** if the user specified a `Reproducible
-  environment:` preference in input.md, or mentioned wanting a reproducible
-  setup, suggest the reproduce skill next.
+5. **Reproducible environment:** suggest the reproduce skill next if the user
+  specified a `Reproducible environment:` preference in input.md, mentioned
+  wanting a reproducible setup, or does not have R or the packages installed
+  (the Docker route needs no R on their computer).
   Otherwise just mention it as an option.
-  Give only the command for the agent you are running in.
-  Never list the other agents' commands: a user can pick the wrong one.
-  If you cannot tell which agent you are running in, ask the user which one they
-  are using.
-  The commands are `/ramm:reproduce` (Claude Code), `$ramm:reproduce` (Codex),
-  `/reproduce` (GitHub Copilot) and `@reproduce` (OpenCode).
+  Give the command as in step 7.
   If they confirm, follow the reproduce skill.
 6. **Session record:** at the end of the session, ask the user to export this
   conversation into `code/sessions/`.
   Say in one sentence why: it records what was asked and done, alongside
   input.md.
   You cannot run these commands yourself.
-  Give only the command for the agent you are running in, with today's date in
-  place of YYYY-MM-DD.
-  Never list the other agents' commands: a user can pick the wrong one.
-  If you cannot tell which agent you are running in, ask the user which one
-  they are using, then give that one command.
+  Give the command as in step 7, with today's date in place of YYYY-MM-DD.
   The record must be the agent's own verbatim export.
   Never write your own summary in its place, even if the export fails.
-
-   | Agent | Command |
-   |---|---|
-   | Claude Code | `/export code/sessions/YYYY-MM-DD.txt` |
-   | GitHub Copilot CLI | `/share file code/sessions/YYYY-MM-DD.md` |
-   | OpenCode | `/export`, then save the file in `code/sessions/` |
-   | Codex | No export command: every session is saved in full in `~/.codex/sessions/` |
+7. **Agent commands:** whenever you give the user a RAMM-AI command, give only
+  the one for the agent you are running in.
+  Never list the other agents' commands: a user can pick the wrong one.
+  If you cannot tell which agent you are running in, ask the user which one they
+  are using, then give that one command.
+   - **Claude Code:** start reproduce with `/ramm:reproduce`; save the session
+     with `/export code/sessions/YYYY-MM-DD.txt`.
+   - **Codex:** start reproduce with `$ramm:reproduce`.
+     Codex has no export command; it keeps every session in a hidden folder.
+     To save the session, the user closes Codex, then runs this in a terminal
+     in the study folder (macOS or Linux), which copies this folder's newest
+     Codex session:
+     `cp "$(grep -l "\"cwd\":\"$PWD\"" ~/.codex/sessions/*/*/*/rollout-*.jsonl | sort | tail -1)" code/sessions/YYYY-MM-DD.jsonl`
+     On Windows, tell them to open `%USERPROFILE%\.codex\sessions` in File
+     Explorer, find today's newest `rollout-*.jsonl` file in the dated
+     folders, and copy it into `code\sessions\`.
+   - **GitHub Copilot CLI:** start reproduce with `/reproduce`; save the session
+     with `/share file code/sessions/YYYY-MM-DD.md`.
+   - **OpenCode:** start reproduce with `@reproduce`.
+     Do not suggest `/export` inside OpenCode: it saves to a temporary folder,
+     not the study.
+     To save the session, the user closes OpenCode, then runs this in a
+     terminal in the study folder (macOS or Linux), which exports this
+     folder's newest OpenCode session:
+     `opencode session export "$(opencode session list -n 1 | cut -f1)" > code/sessions/YYYY-MM-DD.json`
+     On Windows (Command Prompt), two steps: `opencode session list -n 1`
+     shows the session ID first on the line; then
+     `opencode session export <session ID> > code\sessions\YYYY-MM-DD.json`.
 
 ---
 

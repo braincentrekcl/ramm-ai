@@ -13,16 +13,20 @@ You are generating a reproducible computing environment for an R analysis script
 
 ## A. Input Resolution
 
-1. If the user named an R script when starting the skill (e.g., `/ramm:reproduce
-  code/analysis.R` in Claude Code, `$ramm:reproduce code/analysis.R` in Codex),
-  use that path.
+1. If the user named an R script when starting the skill (for example
+  `code/analysis.R` after the start command), use that path.
 2. Otherwise, look for `code/*_analysis.R` or `code/analysis.R` in the study
   folder.
   If multiple matches exist, use the most recently modified one and tell the
   user which one you chose.
-3. If no script is found, tell the user to run the RAMM skill first
-  (`/ramm:ramm` in Claude Code, `$ramm:ramm` in Codex) or specify a path
-  explicitly.
+3. If no script is found, tell the user to run RAMM-AI first, or to name a
+  path.
+  Give only the start command for the agent you are running in: `/ramm:ramm`
+  (Claude Code), `$ramm:ramm` (Codex), `/ramm` (GitHub Copilot) or `@ramm`
+  (OpenCode).
+  Never list the other agents' commands: a user can pick the wrong one.
+  If you cannot tell which agent you are running in, ask the user which one
+  they are using.
 4. Also read `inputs/input.md` to find user preferences about the
   reproducibility mechanism.
 
