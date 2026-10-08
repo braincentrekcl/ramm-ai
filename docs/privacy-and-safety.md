@@ -10,5 +10,9 @@
   Do not mark your study folder as trusted in Codex, and do not use "allow
   everything" modes for RAMM-AI (Claude Code auto or bypass, Copilot
   `--allow-all`).
+  In those modes the agent can change or delete files anywhere in the study
+  folder, including your data and results, and run commands that read your
+  data, without asking you first.
+  RAMM-AI tells it not to, but nothing stops it if it gets that wrong.
 - It never runs R and never installs packages.
   For a pinned environment, use the reproduce skill.

@@ -8,7 +8,8 @@ You describe your study design in plain English in `inputs/input.md`.
 RAMM-AI writes an R script with the appropriate lme4/glmmTMB model, estimated
   marginal means, diagnostics and QC checks, with every modelling decision
   explained in comments.
-You run the script yourself: the AI assistant never sees your data.
+You run the script yourself: the AI assistant never sees your data, but it can
+  help you run the script and explain its output.
 
 RAMM-AI works with four coding agents: Claude Code, Codex, GitHub Copilot and
   OpenCode.
@@ -17,12 +18,16 @@ Use whichever your AI provider offers; OpenCode works with almost any provider,
 
 ## Before you start
 
-- R, to run the script RAMM-AI writes.
-- Git, for the install commands below.
-  Without git (common on managed computers), download this repository as a ZIP
-  from GitHub, unzip it, and use the path of that folder wherever the commands
-  below say `braincentrekcl/ramm-ai` or a GitHub URL.
+- An AI coding agent: Claude Code, Codex, GitHub Copilot or OpenCode.
+- R to run the script, or Docker if you would rather not install R (see
+  [Reproducible environment](docs/reproducible-environment.md)).
+- Git is optional.
+  Without it, download this repository as a ZIP from GitHub, unzip it, and use
+  the path of that folder wherever the commands below say
+  `braincentrekcl/ramm-ai` or a GitHub URL.
   To update, download the ZIP again.
+  Version control is good practice for your study when you are ready for it,
+  but you do not need to learn git to use RAMM-AI.
 
 ## Install
 
@@ -40,6 +45,8 @@ For app installs and OpenCode notes, see [docs/install.md](docs/install.md).
 1. Copy `template/my-study` and rename it for your study.
 2. Fill in `inputs/input.md`.
 3. Keep your real data out of the study folder until you run the script.
+  This is for privacy: anything the assistant opens is sent to your AI
+  provider, a third party.
 4. Open your agent in the study folder and start RAMM-AI with the command above.
 
 ## Documentation
