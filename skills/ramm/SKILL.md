@@ -157,8 +157,9 @@ You never see the user's data, which keeps unpublished data away from the AI
   expected.
   Take the file name from `Data File` in input.md.
 - If `Data File` names a .tsv or spreadsheet, read it with `readr::read_tsv()`
-  or `readxl::read_excel()` instead of `readr::read_csv()`, and add the package
-  to the list in Section 1 of the script.
+  or `readxl::read_excel()` instead of `readr::read_csv()`, and add `readxl` to
+  the list in Section 1 of the script (`readr` is always listed, so the
+  missing-package check and `provenance.csv` cover it).
 - The checks you would have made by reading the data go into the script instead
   (Section 2a of the script): it stops with a plain message when a column named
   in input.md is missing, when IDs that input.md says are unique repeat, or when
@@ -348,7 +349,7 @@ globalCallingHandlers(
 ```r
 set.seed(42)
 
-required_packages <- c("lme4", "lmerTest", "emmeans", "ggplot2",
+required_packages <- c("readr", "lme4", "lmerTest", "emmeans", "ggplot2",
                         "broom.mixed", "dplyr", "tidyr")
 
 # Check packages without installing anything: installing inside an analysis

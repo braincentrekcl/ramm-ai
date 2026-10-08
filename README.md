@@ -159,8 +159,8 @@ Each demo is a study folder: copy it somewhere new, open your agent in it and
 
 ## R packages
 
-Scripts use some or all of: lme4 or glmmTMB, lmerTest, emmeans, ggplot2,
-  broom.mixed, dplyr, tidyr.
+Scripts use some or all of: readr, lme4 or glmmTMB, lmerTest, emmeans,
+  ggplot2, broom.mixed, dplyr, tidyr (and readxl for spreadsheets).
 Scripts never install packages: if one is missing, the script stops and lists
   what to install.
 
