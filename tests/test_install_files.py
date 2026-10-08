@@ -67,6 +67,9 @@ def opencode_rules(repo_root: Path) -> list[dict]:
         f"{STUDY}/outputs/analysis_log.txt",
         f"{STUDY}/outputs/results_comparisons.csv",
         f"{STUDY}/outputs/results_summary.md",
+        f"{STUDY}/outputs/provenance.csv",
+        f"{STUDY}/outputs/plot_emmeans.png",
+        f"{STUDY}/outputs/brain_regions_analysis_log.txt",
         f"{STUDY}/code/analysis.R",
     ],
 )
@@ -88,6 +91,15 @@ def test_opencode_allows_reading(opencode_rules: list[dict], path: str) -> None:
         "/home/user/elsewhere/data.sav",
         "/home/user/elsewhere/data.parquet",
         "/home/user/elsewhere/data.RData",
+        "/home/user/elsewhere/DATA.CSV",
+        "/home/user/elsewhere/data.XLSX",
+        "/home/user/elsewhere/data.xlsm",
+        "/home/user/elsewhere/data.Rdata",
+        "/home/user/elsewhere/data.csv.gz",
+        f"{STUDY}/inputs/toy_old/real_data.csv",
+        "/home/user/other-project/outputs/participant_data.xlsx",
+        "/home/user/pipeline_outputs/subject_scores.csv",
+        f"{STUDY}/outputs/old/data.csv",
     ],
 )
 def test_opencode_denies_reading_data(opencode_rules: list[dict], path: str) -> None:
