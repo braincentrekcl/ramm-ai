@@ -162,10 +162,10 @@ You never see the user's data, which keeps unpublished data away from the AI
 - The real data may not be in the folder when you write the script; that is
   expected.
   Take the file name from `Data File` in input.md.
-- If `Data File` names a .tsv or spreadsheet, read it with `readr::read_tsv()`
-  or `readxl::read_excel()` instead of `readr::read_csv()`, and add `readxl` to
-  the list in Section 1 of the script (`readr` is always listed, so the
-  missing-package check and `provenance.csv` cover it).
+- If `Data File` names a .tsv, read it with `readr::read_tsv()` instead of
+  `readr::read_csv()`.
+- If it names a spreadsheet, read it with `readxl::read_excel()` and add
+  `readxl` to the list in Section 1 of the script.
 - The checks you would have made by reading the data go into the script instead
   (Section 2a of the script): it stops with a plain message when a column named
   in input.md is missing, when IDs that input.md says are unique repeat, or when
@@ -242,7 +242,7 @@ If a grouping factor has fewer than 5-6 levels, the random effect variance estim
 
 | DV Type | Default Family | Notes |
 |---------|---------------|-------|
-| Continuous, roughly normal | Gaussian (identity) | Default for most continuous outcomes |
+| Continuous, roughly normal | Gaussian (identity) | The usual default; check the residual plots |
 | Continuous, right-skewed, positive | Gamma (log) or log-transform + Gaussian | Check distribution in exploration section |
 | Counts | Poisson (log) | Check for overdispersion; switch to NB if present |
 | Counts, overdispersed | Negative binomial (log) | Use glmmTMB |
