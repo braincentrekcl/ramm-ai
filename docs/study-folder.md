@@ -29,7 +29,7 @@ This is the [YODA layout](https://handbook.datalad.org/en/latest/basics/101-127-
   file whose name starts with `toy_`; everything in that file is sent to the AI
   provider.
   (OpenCode users with the template config can leave their data in place: the
-  config stops the assistant reading data files.
+  config lets the assistant read only `input.md` and `toy_` files in `inputs/`.
   This does not hold if you switched shell to `ask` for a free model.)
 3. Open your agent in the study folder and start RAMM-AI with the command in the
   table in [install.md](install.md).
