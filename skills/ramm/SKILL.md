@@ -1041,27 +1041,14 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   are using, then give that one command.
    - **Claude Code:** start reproduce with `/ramm:reproduce`; save the session
      with `/export code/sessions/YYYY-MM-DD.txt`.
-   - **Codex:** start reproduce with `$ramm:reproduce`.
-     Codex has no export command; it keeps every session in a hidden folder.
-     To save the session, the user closes Codex, then runs this in a terminal
-     in the study folder (macOS or Linux), which copies this folder's newest
-     Codex session:
-     `cp "$(grep -l "\"cwd\":\"$PWD\"" ~/.codex/sessions/*/*/*/rollout-*.jsonl | sort | tail -1)" code/sessions/YYYY-MM-DD.jsonl`
-     On Windows, tell them to open `%USERPROFILE%\.codex\sessions` in File
-     Explorer, find today's newest `rollout-*.jsonl` file in the dated
-     folders, and copy it into `code\sessions\`.
+   - **Codex:** start reproduce with `$ramm:reproduce`; save the session with
+     `/export code/sessions/YYYY-MM-DD.md`.
    - **GitHub Copilot CLI:** start reproduce with `/reproduce`; save the session
      with `/share file code/sessions/YYYY-MM-DD.md`.
    - **OpenCode:** start reproduce with `@reproduce`.
-     Do not suggest `/export` inside OpenCode: it saves to a temporary folder,
-     not the study.
-     To save the session, the user closes OpenCode, then runs this in a
-     terminal in the study folder (macOS or Linux), which exports this
-     folder's newest OpenCode session:
-     `opencode session export "$(opencode session list -n 1 | cut -f1)" > code/sessions/YYYY-MM-DD.json`
-     On Windows (Command Prompt), two steps: `opencode session list -n 1`
-     shows the session ID first on the line; then
-     `opencode session export <session ID> > code\sessions\YYYY-MM-DD.json`.
+     OpenCode's `/export` cannot choose where it saves, so: type `/export`,
+     choose Markdown, then copy to the clipboard; open a new file in any text
+     editor, paste, and save it as `code/sessions/YYYY-MM-DD.md`.
 
 ---
 
