@@ -391,15 +391,16 @@ if (file.exists(file.path("envs", "renv.lock"))) {
   # instead of counting packages you already have elsewhere.
   renv::load("envs")
   renv::restore(project = "envs", prompt = FALSE)
-  # The script may have gained packages since the lockfile was written.
+  # The script may have gained packages since the lockfile was written: add
+  # them from the same snapshot date, keeping every version already pinned.
   missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
                                                 logical(1), quietly = TRUE)]
   if (length(missing_packages) > 0) {
-    stop("envs/renv.lock does not include ", paste(missing_packages, collapse = ", "),
-         ", which code/analysis.R now needs. If you made this environment, delete ",
-         "envs/renv.lock and run this again: it pins every package from the same ",
-         "snapshot date. Otherwise ask whoever made it to update envs/renv.lock.",
-         call. = FALSE)
+    options(repos = snapshot_repo)
+    renv::install(missing_packages, project = "envs", prompt = FALSE)
+    renv::snapshot(project = "envs", packages = required_packages, prompt = FALSE)
+    message("Added ", paste(missing_packages, collapse = ", "),
+            " to envs/renv.lock. Commit the updated file.")
   }
 } else {
   renv::init(project = "envs", bare = TRUE, restart = FALSE, load = FALSE)
@@ -454,7 +455,11 @@ Rscript code/setup_environment.R
 ```
 
 If `envs/renv.lock` already exists (you received this study from someone
-  else), this installs exactly the versions it records.
+  else, or you are setting up again), this installs exactly the versions it
+  records.
+If the analysis script now needs a package the lockfile lacks, it adds that
+  package from the same snapshot date, keeping every other version, and updates
+  `envs/renv.lock`; commit the updated file.
 If not, it installs the packages from a dated snapshot and writes
   `envs/renv.lock`; commit that file.
 Expect this to take 5-15 minutes the first time depending on your machine and connection.
