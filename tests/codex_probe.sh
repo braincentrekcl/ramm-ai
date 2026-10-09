@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install the plugin into a throwaway Codex home and check that the model
-# sees both skills. Needs no login (checked with codex-cli 0.159.2).
+# sees both skills. Needs no login (checked with codex-cli 0.160.1).
 set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 probe="$(mktemp -d)"
