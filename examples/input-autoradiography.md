@@ -30,6 +30,6 @@ Most subjects have all the regions but not all regions are on all slides or sect
 
 # Reproducible environment
 
-- Reproducible environment: docker
+- Reproducible environment: container
 - R version: 4.4.2
 - Snapshot date: 2025-01-15

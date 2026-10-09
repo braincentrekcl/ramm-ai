@@ -19,7 +19,8 @@ Use whichever your AI provider offers; OpenCode works with almost any provider,
 ## Before you start
 
 - An AI coding agent: Claude Code, Codex, GitHub Copilot or OpenCode.
-- R to run the script, or Docker if you would rather not install R (see
+- R to run the script, or a container instead of installing R: Docker, or
+  Apptainer on an HPC cluster (see
   [Reproducible environment](docs/reproducible-environment.md)).
 - Git is optional.
   Without it, download this repository as a ZIP from GitHub, unzip it, and use

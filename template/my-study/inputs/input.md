@@ -44,7 +44,7 @@ Mention anything unusual, such as slide numbers that restart for every individua
 
 # Reproducible Environment (optional)
 
-- Reproducible environment: docker or renv
+- Reproducible environment: container or renv
 
 # Toy Data (optional)
 
