@@ -37,8 +37,11 @@ The `docker+renv` mode was dropped on 2026-10-09: Docker alone already fixes
 
 On 2026-10-09 the template's read rules were checked in OpenCode 2.0.24 with
   Muse Spark 1.3 Free (shell set to `ask`, as free models need).
-It read `inputs/input.md`, a `toy_` file, `code/` and the script's outputs;
-  it was denied the data file, other files in `inputs/`, a folder named `toy_*`
-  inside `inputs/`, a folder inside `outputs/`, data elsewhere in the study
-  folder, and a file outside it.
+OpenCode matches the rules against paths inside the study folder, even when
+  the model asks for a full path.
+It read `inputs/input.md`, a `toy_` file, `code/`, `envs/` and the script's
+  outputs; it was denied the data file, other files in `inputs/`, a folder
+  named `toy_*` inside `inputs/`, folders inside `outputs/`, data elsewhere in
+  the study folder (including another folder called `inputs`), and a file
+  outside it.
 The `ramm` skill still loaded.
