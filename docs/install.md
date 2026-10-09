@@ -11,12 +11,10 @@
 
 ## From an app, without the command line
 
-Each app has its own steps for plugins; follow its documentation, using these
-  values:
-
-- **Marketplace** (add this first): `braincentrekcl/ramm-ai`, or
-  `https://github.com/braincentrekcl/ramm-ai`
-- **Plugin** (then install this): `ramm`
+Each app has its own steps for plugins; follow its documentation below.
+When it asks for a marketplace, add RAMM-AI's: `braincentrekcl/ramm-ai` (some
+  apps want the full address, `https://github.com/braincentrekcl/ramm-ai`).
+Then install the plugin called `ramm` from it.
 
 | App | Its documentation |
 |---|---|
