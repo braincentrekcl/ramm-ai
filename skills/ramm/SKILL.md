@@ -1037,6 +1037,9 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   input.md.
   You cannot run these commands yourself.
   Give the command as in step 7, with today's date in place of YYYY-MM-DD.
+  If `code/sessions/` already has a record from today, add `-2` (then `-3`,
+  and so on) before the extension: Codex will not overwrite an existing file,
+  and the other agents would replace the earlier record.
   The record must be the agent's own verbatim export.
   Never write your own summary in its place, even if the export fails.
 7. **Agent commands:** whenever you give the user a RAMM-AI command, give only
