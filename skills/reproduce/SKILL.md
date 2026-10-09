@@ -116,6 +116,13 @@ https://packagemanager.posit.co/cran/YYYY-MM-DD
 
 This URL freezes CRAN to the state it was in on that date. Package installs from this URL will always resolve to the same versions.
 
+In the Dockerfile and the Apptainer definition, use the binary form of the same
+  snapshot, `https://packagemanager.posit.co/cran/__linux__/<codename>/YYYY-MM-DD`,
+  where `<codename>` is the Ubuntu release of the rocker/r-ver image (`noble`
+  for R 4.4.2).
+It serves the same package versions already built for that Ubuntu, so the
+  image builds in minutes instead of compiling every package.
+
 ### R version
 
 - `docker`: use `rocker/r-ver:X.Y.Z` with the newest R release from before the
@@ -173,7 +180,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Pin CRAN to a dated Posit Package Manager snapshot for full reproducibility.
 # Change this date only if you intend to update package versions.
-RUN echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2025-01-15"))' \
+RUN echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/noble/2025-01-15"))' \
     >> /usr/local/lib/R/etc/Rprofile.site
 
 # Install the R packages the analysis script needs. install.packages() only
@@ -231,7 +238,7 @@ From: rocker/r-ver:4.4.2
         && rm -rf /var/lib/apt/lists/*
 
     # Pin CRAN to a dated Posit Package Manager snapshot.
-    echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2025-01-15"))' \
+    echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/noble/2025-01-15"))' \
         >> /usr/local/lib/R/etc/Rprofile.site
 
     # Install the packages; stop the build if any fails to load.
