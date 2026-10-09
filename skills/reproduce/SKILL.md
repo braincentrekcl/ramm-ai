@@ -369,6 +369,13 @@ if (!requireNamespace("renv", quietly = TRUE)) {
   install.packages("renv")
 }
 
+# The packages code/analysis.R needs.
+required_packages <- c(
+  # fill in from the analysis script's required_packages vector
+  "readr", "lme4", "lmerTest", "emmeans", "ggplot2",
+  "broom.mixed", "dplyr", "tidyr"
+)
+
 # 2. envs/ is the renv project, not the study folder, so nothing is written
 # beside inputs/, code/ and outputs/.
 if (file.exists(file.path("envs", "renv.lock"))) {
@@ -377,16 +384,20 @@ if (file.exists(file.path("envs", "renv.lock"))) {
   # instead of counting packages you already have elsewhere.
   renv::load("envs")
   renv::restore(project = "envs", prompt = FALSE)
+  # The script may have gained packages since the lockfile was written.
+  missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
+                                                logical(1), quietly = TRUE)]
+  if (length(missing_packages) > 0) {
+    stop("envs/renv.lock does not include ", paste(missing_packages, collapse = ", "),
+         ", which code/analysis.R now needs. If you made this environment, delete ",
+         "envs/renv.lock and run this again: it pins every package from the same ",
+         "snapshot date. Otherwise ask whoever made it to update envs/renv.lock.",
+         call. = FALSE)
+  }
 } else {
   renv::init(project = "envs", bare = TRUE, restart = FALSE, load = FALSE)
   renv::load("envs")
   options(repos = snapshot_repo)
-
-  required_packages <- c(
-    # fill in from the analysis script's required_packages vector
-    "readr", "lme4", "lmerTest", "emmeans", "ggplot2",
-    "broom.mixed", "dplyr", "tidyr"
-  )
   renv::install(required_packages, project = "envs", prompt = FALSE)
   renv::snapshot(project = "envs", packages = required_packages, prompt = FALSE)
 }
