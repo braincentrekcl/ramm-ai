@@ -1,8 +1,10 @@
 name: checks
 
+# One run per change: pull requests, and pushes to main once merged.
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
 
 jobs:
   checks:
