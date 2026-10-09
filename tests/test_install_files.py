@@ -72,7 +72,13 @@ def opencode_rules(repo_root: Path) -> list[dict]:
         "outputs/provenance.csv",
         "outputs/plot_emmeans.png",
         "code/analysis.R",
+        "code/run_analysis.R",
+        "code/setup_environment.R",
         "envs/Dockerfile",
+        "envs/Dockerfile.dockerignore",
+        "envs/apptainer.def",
+        "envs/README.md",
+        "envs/renv.lock",
     ],
 )
 def test_opencode_allows_reading(opencode_rules: list[dict], path: str) -> None:
@@ -96,6 +102,9 @@ def test_opencode_allows_reading(opencode_rules: list[dict], path: str) -> None:
         "archive/inputs/input.md",
         "pipeline_outputs/results_scores.csv",
         "old/code/data.csv",
+        "code/data.csv",
+        "code/sessions/data.xlsx",
+        "envs/data.csv",
     ],
 )
 def test_opencode_denies_reading_data(opencode_rules: list[dict], path: str) -> None:

@@ -17,9 +17,14 @@
     // In the study folder, read nothing except what is allowed below.
     // OpenCode matches these against paths inside the study folder.
     { "action": "read", "resource": "*", "effect": "deny" },
-    // The script and the environment files RAMM-AI writes.
-    { "action": "read", "resource": "code/*", "effect": "allow" },
-    { "action": "read", "resource": "envs/*", "effect": "allow" },
+    // The scripts and environment files RAMM-AI writes, by name, so a data
+    // file kept beside them stays unreadable.
+    { "action": "read", "resource": "code/*.R", "effect": "allow" },
+    { "action": "read", "resource": "envs/Dockerfile", "effect": "allow" },
+    { "action": "read", "resource": "envs/Dockerfile.dockerignore", "effect": "allow" },
+    { "action": "read", "resource": "envs/apptainer.def", "effect": "allow" },
+    { "action": "read", "resource": "envs/README.md", "effect": "allow" },
+    { "action": "read", "resource": "envs/renv.lock", "effect": "allow" },
     // The files the script writes in outputs/, so RAMM-AI can explain them,
     // and nothing in folders inside outputs/.
     { "action": "read", "resource": "outputs/results_*", "effect": "allow" },
