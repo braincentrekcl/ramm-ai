@@ -31,3 +31,13 @@ A mode passes when nothing is written beside `inputs/`, `code/`, `outputs/` and
 The `docker+renv` mode was dropped on 2026-10-09: Docker alone already fixes
   every version, and the mode needed R on the host with the same version as
   the image.
+
+## OpenCode template
+
+On 2026-10-09 the template's read rules were checked in OpenCode 2.0.24 with
+  Muse Spark 1.3 Free (shell set to `ask`, as free models need).
+It read `inputs/input.md`, a `toy_` file, `code/` and the script's outputs;
+  it was denied the data file, other files in `inputs/`, a folder named `toy_*`
+  inside `inputs/`, a folder inside `outputs/`, data elsewhere in the study
+  folder, and a file outside it.
+The `ramm` skill still loaded.
