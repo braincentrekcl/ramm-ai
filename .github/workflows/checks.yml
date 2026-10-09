@@ -22,13 +22,15 @@ jobs:
       - name: Check car is installed, so the lm() test is not skipped
         run: Rscript -e "stopifnot(requireNamespace('car', quietly = TRUE))"
       - uses: astral-sh/setup-uv@v10.2.0
-      - name: Install Claude Code, Codex and GitHub Copilot CLI
-        run: npm install -g @anthropic-ai/claude-code@2.1.277 @openai/codex@0.160.1 @github/copilot@1.0.93
+      - name: Install Claude Code, Codex, GitHub Copilot CLI and OpenCode
+        run: npm install -g @anthropic-ai/claude-code@2.1.277 @openai/codex@0.160.1 @github/copilot@1.0.93 @opencode/cli@2.0.24
       - name: Validate the Claude Code plugin
         run: claude plugin validate --strict .
       - name: Check Codex sees both skills
         run: bash tests/codex_probe.sh
       - name: Check Copilot installs both skills
         run: bash tests/copilot_probe.sh
+      - name: Check OpenCode loads every template rule
+        run: bash tests/opencode_probe.sh
       - name: Repository checks
         run: uv run --with pytest pytest tests -v
