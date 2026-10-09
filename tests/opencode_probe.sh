@@ -25,19 +25,26 @@ print(f"OpenCode loads all {len(kept)} rules and the skills setting")
 PY
 
 # With the skills path set to this repository, OpenCode must list both skills.
-# The first request for a new folder only starts OpenCode there, so retry.
+# The first requests for a new folder only start OpenCode there, so retry, and
+# treat a failed or non-JSON answer as "not yet".
 skills_study="$(mktemp -d)"
 sed "s|/path/to/ramm-ai/skills|$repo_root/skills|" \
   "$repo_root/opencode/opencode.jsonc" > "$skills_study/opencode.jsonc"
 opencode service start > /dev/null
-for attempt in 1 2 3 4 5 6 7 8 9 10; do
-  skills="$(opencode api GET "/api/skill?location%5Bdirectory%5D=$skills_study" |
-    python3 -c 'import json, sys; print(" ".join(s["id"] for s in json.load(sys.stdin)["data"]))')"
+skills=""
+for attempt in $(seq 1 10); do
+  skills="$(opencode api GET "/api/skill?location%5Bdirectory%5D=$skills_study" 2> /dev/null |
+    python3 -c '
+import json, sys
+try:
+    print(" ".join(s["id"] for s in json.load(sys.stdin)["data"]))
+except (ValueError, KeyError, TypeError):
+    pass' || true)"
   if [[ " $skills " == *" ramm "* && " $skills " == *" reproduce "* ]]; then
     echo "OpenCode loads the ramm and reproduce skills"
     exit 0
   fi
   sleep 3
 done
-echo "OpenCode did not list the ramm and reproduce skills; it listed: $skills" >&2
+echo "OpenCode did not list the ramm and reproduce skills; it listed: ${skills:-nothing}" >&2
 exit 1
