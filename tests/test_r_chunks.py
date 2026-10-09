@@ -1,9 +1,9 @@
 """Run the R chunks from the skill's script template (base R only)."""
 
 import csv
-import re
 import hashlib
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -225,12 +225,16 @@ def test_predictor_guard_runs_on_an_lm(skill_text: str, tmp_path: Path) -> None:
 
 
 def test_lm_anova_is_type_three(skill_text: str, tmp_path: Path) -> None:
-    """lm() gets Type III tests like lmer(), not sequential Type I."""
+    """lm() gets Type III tests like lmer(), checked against the definition."""
+    if run_r(
+        'quit(status = !requireNamespace("car", quietly = TRUE))', tmp_path
+    ).returncode:
+        pytest.skip("the car package is not installed")
     section_7 = skill_text.split("### Section 7: Model Summary", 1)[1].split(
         "### Section 8", 1
     )[0]
-    match = re.search(r"`(drop1\(model[^`]*\))`", section_7)
-    assert match, "Section 7 gives no drop1() call for lm() designs"
+    match = re.search(r"`(car::Anova\(model[^`]*\))`", section_7)
+    assert match, "Section 7 gives no car::Anova() call for lm() designs"
     code = (
         'options(contrasts = c("contr.sum", "contr.poly"))\n'
         "set.seed(1)\n"
@@ -239,9 +243,16 @@ def test_lm_anova_is_type_three(skill_text: str, tmp_path: Path) -> None:
         "dat$y <- rnorm(20) + (dat$a == 'y') + (dat$b == 'q')\n"
         "model <- lm(y ~ a * b, data = dat)\n"
         f"type_three <- {match.group(1)}\n"
-        "type_one <- anova(model)\n"
-        'stopifnot(all(c("a", "b", "a:b") %in% rownames(type_three)))\n'
-        'stopifnot(abs(type_three["a", "F value"] - type_one["a", "F value"]) > 1e-6)\n'
+        "# Type III by definition: drop the columns for 'a' from the model\n"
+        "# matrix, keeping 'b' and 'a:b', and compare residual sums of squares.\n"
+        "X <- model.matrix(model)\n"
+        "a_term <- which(attr(terms(model), 'term.labels') == 'a')\n"
+        "keep <- attr(X, 'assign') != a_term\n"
+        "rss_full <- sum(resid(model)^2)\n"
+        "rss_without_a <- sum(lm.fit(X[, keep], dat$y)$residuals^2)\n"
+        "f_definition <- ((rss_without_a - rss_full) / sum(!keep)) /\n"
+        "  (rss_full / df.residual(model))\n"
+        'stopifnot(abs(type_three["a", "F value"] - f_definition) < 1e-8)\n'
         'cat("type three ok\\n")\n'
     )
     result = run_r(code, tmp_path)
