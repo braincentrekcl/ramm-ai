@@ -92,6 +92,9 @@ def test_opencode_allows_reading(opencode_rules: list[dict], path: str) -> None:
         "/home/user/elsewhere/data.parquet",
         "/home/user/elsewhere/data.RData",
         "/home/user/elsewhere/DATA.CSV",
+        f"{STUDY}/DATA.CSV",
+        f"{STUDY}/data/barcode/x.csv",
+        f"{STUDY}/notes/participants.json",
         "/home/user/elsewhere/data.XLSX",
         "/home/user/elsewhere/data.xlsm",
         "/home/user/elsewhere/data.Rdata",
@@ -122,7 +125,16 @@ def test_opencode_edit_rules(
 
 
 @pytest.mark.parametrize(
-    "action", ["shell", "grep", "execute", "subagent", "webfetch", "websearch"]
+    "action",
+    [
+        "shell",
+        "grep",
+        "execute",
+        "subagent",
+        "webfetch",
+        "websearch",
+        "external_directory",
+    ],
 )
 def test_opencode_denies_other_tools(opencode_rules: list[dict], action: str) -> None:
     assert decide(opencode_rules, action, "anything") == "deny"
