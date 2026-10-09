@@ -15,23 +15,22 @@
     // Nothing outside the study folder.
     { "action": "external_directory", "resource": "*", "effect": "deny" },
     // In the study folder, read nothing except what is allowed below.
+    // OpenCode matches these against paths inside the study folder.
     { "action": "read", "resource": "*", "effect": "deny" },
     // The script and the environment files RAMM-AI writes.
     { "action": "read", "resource": "code/*", "effect": "allow" },
-    { "action": "read", "resource": "*/code/*", "effect": "allow" },
     { "action": "read", "resource": "envs/*", "effect": "allow" },
-    { "action": "read", "resource": "*/envs/*", "effect": "allow" },
     // The files the script writes in outputs/, so RAMM-AI can explain them,
     // and nothing in folders inside outputs/.
-    { "action": "read", "resource": "*outputs/results_*", "effect": "allow" },
-    { "action": "read", "resource": "*outputs/plot_*", "effect": "allow" },
-    { "action": "read", "resource": "*outputs/*_log.txt", "effect": "allow" },
-    { "action": "read", "resource": "*outputs/provenance.csv", "effect": "allow" },
-    { "action": "read", "resource": "*outputs/*/*", "effect": "deny" },
+    { "action": "read", "resource": "outputs/results_*", "effect": "allow" },
+    { "action": "read", "resource": "outputs/plot_*", "effect": "allow" },
+    { "action": "read", "resource": "outputs/*_log.txt", "effect": "allow" },
+    { "action": "read", "resource": "outputs/provenance.csv", "effect": "allow" },
+    { "action": "read", "resource": "outputs/*/*", "effect": "deny" },
     // In inputs/, only input.md and files whose names start with toy_.
-    { "action": "read", "resource": "*inputs/input.md", "effect": "allow" },
-    { "action": "read", "resource": "*inputs/toy_*", "effect": "allow" },
-    { "action": "read", "resource": "*inputs/toy_*/*", "effect": "deny" },
+    { "action": "read", "resource": "inputs/input.md", "effect": "allow" },
+    { "action": "read", "resource": "inputs/toy_*", "effect": "allow" },
+    { "action": "read", "resource": "inputs/toy_*/*", "effect": "deny" },
     { "action": "edit", "resource": "*", "effect": "deny" },
     { "action": "edit", "resource": "code/*", "effect": "allow" },
     { "action": "edit", "resource": "envs/*", "effect": "allow" },

@@ -47,7 +47,9 @@ def decide(rules: list[dict], action: str, resource: str) -> str:
     return effect
 
 
-STUDY = "/home/user/my-study"
+# OpenCode matches read and edit rules against the path relative to the study
+# folder, even when the model asks for a full path (checked in 2.0.24).
+# Paths outside the study folder are stopped by external_directory instead.
 
 
 @pytest.fixture
@@ -61,16 +63,16 @@ def opencode_rules(repo_root: Path) -> list[dict]:
 @pytest.mark.parametrize(
     "path",
     [
-        f"{STUDY}/inputs/input.md",
-        f"{STUDY}/inputs/toy_data.csv",
+        "inputs/input.md",
         "inputs/toy_data.csv",
-        f"{STUDY}/outputs/analysis_log.txt",
-        f"{STUDY}/outputs/results_comparisons.csv",
-        f"{STUDY}/outputs/results_summary.md",
-        f"{STUDY}/outputs/provenance.csv",
-        f"{STUDY}/outputs/plot_emmeans.png",
-        f"{STUDY}/outputs/brain_regions_analysis_log.txt",
-        f"{STUDY}/code/analysis.R",
+        "outputs/analysis_log.txt",
+        "outputs/brain_regions_analysis_log.txt",
+        "outputs/results_comparisons.csv",
+        "outputs/results_summary.md",
+        "outputs/provenance.csv",
+        "outputs/plot_emmeans.png",
+        "code/analysis.R",
+        "envs/Dockerfile",
     ],
 )
 def test_opencode_allows_reading(opencode_rules: list[dict], path: str) -> None:
@@ -80,29 +82,20 @@ def test_opencode_allows_reading(opencode_rules: list[dict], path: str) -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        f"{STUDY}/inputs/data.csv",
         "inputs/data.csv",
-        f"{STUDY}/inputs/notes.md",
-        f"{STUDY}/inputs/data.rds",
-        f"{STUDY}/inputs/data.txt",
-        "/home/user/toy_project/real_data.csv",
-        "/home/user/elsewhere/data.xlsx",
-        "/home/user/elsewhere/data.txt",
-        "/home/user/elsewhere/data.sav",
-        "/home/user/elsewhere/data.parquet",
-        "/home/user/elsewhere/data.RData",
-        "/home/user/elsewhere/DATA.CSV",
-        f"{STUDY}/DATA.CSV",
-        f"{STUDY}/data/barcode/x.csv",
-        f"{STUDY}/notes/participants.json",
-        "/home/user/elsewhere/data.XLSX",
-        "/home/user/elsewhere/data.xlsm",
-        "/home/user/elsewhere/data.Rdata",
-        "/home/user/elsewhere/data.csv.gz",
-        f"{STUDY}/inputs/toy_old/real_data.csv",
-        "/home/user/other-project/outputs/participant_data.xlsx",
-        "/home/user/pipeline_outputs/subject_scores.csv",
-        f"{STUDY}/outputs/old/data.csv",
+        "inputs/notes.md",
+        "inputs/data.rds",
+        "inputs/toy_old/real_data.csv",
+        "outputs/old/data.csv",
+        "outputs/results_old/data.csv",
+        "DATA.CSV",
+        "data.xlsx",
+        "data/barcode/x.csv",
+        "notes/participants.json",
+        "toy_project/real_data.csv",
+        "archive/inputs/input.md",
+        "pipeline_outputs/results_scores.csv",
+        "old/code/data.csv",
     ],
 )
 def test_opencode_denies_reading_data(opencode_rules: list[dict], path: str) -> None:
