@@ -27,6 +27,7 @@ A mode passes when nothing is written beside `inputs/`, `code/`, `outputs/` and
 |---|---|---|---|---|---|---|
 | renv | macOS, Apple Silicon | — | 4.5.1 | 2026-10-09 | Pass after one fix | `Rscript code/setup_environment.R`, then `Rscript code/run_analysis.R`. Then, as a collaborator with only `envs/renv.lock`, the same setup restored all versions once it loaded the project before restoring. |
 | container (Docker) | macOS, Apple Silicon | 29.4.1 | 4.4.2 (image) | 2026-10-08 | Pass after two fixes | Packages build from source on ARM: `nloptr` needs `cmake`, and the build had reported success with lme4 missing until the install step checked every package loads. |
+| container (Docker), binary snapshot | macOS, Apple Silicon | 29.8.2 | 4.4.2 (image) | 2026-10-09 | Pass | Same Dockerfile with the snapshot's prebuilt Linux packages (`__linux__/noble/2025-01-15`): built in under 5 minutes instead of about 10, and matched the reference. |
 | container (Apptainer) | Ubuntu 24.04 in Docker (privileged), Apple Silicon | — | 4.4.2 (image) | 2026-10-09 | Pass | `apptainer build envs/analysis.sif envs/apptainer.def`, then `apptainer run envs/analysis.sif` from the study folder, with Apptainer 1.5.4 from its Ubuntu PPA. Built as root, not with `--fakeroot` as on most HPC clusters. |
 
 The `docker+renv` mode was dropped on 2026-10-09: Docker alone already fixes
