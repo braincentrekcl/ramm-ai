@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 # Load the OpenCode template in a throwaway folder and check that OpenCode
-# keeps every rule and finds both skills. A syntax error drops the whole file, and an invalid rule
-# is dropped, both without an error (checked with OpenCode 2.0.24).
+# keeps every rule and finds both skills (checked with OpenCode 2.0.24).
+# A syntax error drops the whole file and an invalid rule is dropped, both
+# without an error, so the rules are counted.
+# OpenCode runs under a throwaway home on its own port, so the probe never
+# touches the user's own OpenCode service or settings.
 set -euo pipefail
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-study="$(mktemp -d)"
-cp "$repo_root/opencode/opencode.jsonc" "$study/"
-cd "$study"
-opencode api --standalone GET /api/config > config.json
-python3 - "$repo_root/opencode/opencode.jsonc" config.json <<'PY'
+probe="$(mktemp -d)"
+export HOME="$probe/home"
+mkdir -p "$HOME" "$probe/rules" "$probe/skills"
+trap 'opencode service stop > /dev/null 2>&1 || true; rm -rf "$probe"' EXIT
+
+cp "$repo_root/opencode/opencode.jsonc" "$probe/rules/"
+(cd "$probe/rules" && opencode api --standalone GET /api/config) > "$probe/config.json"
+python3 - "$repo_root/opencode/opencode.jsonc" "$probe/config.json" <<'PY'
 import json, sys
 template = json.loads("\n".join(
     line for line in open(sys.argv[1]) if not line.lstrip().startswith("//")))
@@ -27,13 +33,14 @@ PY
 # With the skills path set to this repository, OpenCode must list both skills.
 # The first requests for a new folder only start OpenCode there, so retry, and
 # treat a failed or non-JSON answer as "not yet".
-skills_study="$(mktemp -d)"
 sed "s|/path/to/ramm-ai/skills|$repo_root/skills|" \
-  "$repo_root/opencode/opencode.jsonc" > "$skills_study/opencode.jsonc"
+  "$repo_root/opencode/opencode.jsonc" > "$probe/skills/opencode.jsonc"
+port="$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')"
+opencode service set port "$port" > /dev/null
 opencode service start > /dev/null
 skills=""
 for attempt in $(seq 1 10); do
-  skills="$(opencode api GET "/api/skill?location%5Bdirectory%5D=$skills_study" 2> /dev/null |
+  skills="$(opencode api GET "/api/skill?location%5Bdirectory%5D=$probe/skills" 2> /dev/null |
     python3 -c '
 import json, sys
 try:
