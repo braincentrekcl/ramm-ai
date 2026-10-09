@@ -151,12 +151,12 @@ You never see the user's data, which keeps unpublished data away from the AI
   provider.
 
 - Read only `inputs/input.md` and, if input.md names one under `Toy Data`, a toy
-  file whose name starts with `toy_`.
+  file in `inputs/` whose name starts with `toy_`.
   Open no other data file (.csv, .tsv, .xlsx, .xls), wherever it is, even if the
   user asks: offer to write a check into the script instead.
   Never search inside data files either.
-- If input.md names a toy file that does not start with `toy_`, do not open it;
-  ask the user to rename it.
+- If input.md names a toy file that is not in `inputs/` or does not start with
+  `toy_`, do not open it; ask the user to move or rename it.
 - A toy file shows column names and types only.
   Never rely on it: the script must work from input.md alone.
 - The real data may not be in the folder when you write the script; that is

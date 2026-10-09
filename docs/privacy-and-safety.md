@@ -2,7 +2,8 @@
 
 Anything the assistant opens is sent to your AI provider.
 
-- It reads `inputs/input.md`, and a `toy_` file if you name one.
+- It reads `inputs/input.md`, and a `toy_` file in `inputs/` if `input.md`
+  names one.
   It is told never to open any other file in `inputs/`.
 - It reads the files it writes in `code/`.
 - When you ask it to explain results or an error, it reads what the script
