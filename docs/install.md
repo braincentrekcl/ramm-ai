@@ -11,52 +11,19 @@
 
 ## From an app, without the command line
 
-These steps come from each vendor's documentation (checked 2026-10-08); we have
-  not yet tried them by hand, so tell us if a step has changed.
+Each app has its own steps for plugins; follow its documentation, using these
+  values:
 
-### Claude desktop app (Code tab)
+- **Marketplace** (add this first): `braincentrekcl/ramm-ai`, or
+  `https://github.com/braincentrekcl/ramm-ai`
+- **Plugin** (then install this): `ramm`
 
-1. Open a local session in your study folder.
-2. Click the **+** button next to the prompt box, select **Plugins**, then
-  **Add plugin**.
-3. Find `ramm`, select it, and choose a scope (your user account is simplest).
-
-The plugin browser lists plugins from marketplaces you have already added, and
-  the desktop app's documentation gives no button for adding a new one.
-If `ramm` is not listed, add the RAMM-AI marketplace once with the first
-  command in the table above (or from the Claude Code panel in VS Code, below);
-  the desktop app, the command line and VS Code share the same plugins.
-
-### Claude Code in VS Code
-
-1. In the Claude Code panel, type `/plugins` to open **Manage plugins**.
-2. On the **Marketplaces** tab, add `braincentrekcl/ramm-ai`.
-3. On the **Plugins** tab, search for `ramm`, click **Install** and choose a
-  scope.
-
-### Codex app
-
-The Codex app's **Plugins** page lists plugins from OpenAI, your workspace and
-  your own account; its documentation gives no way to add a marketplace from a
-  GitHub repository.
-Use the Codex command in the table above, or ask your workspace admin to import
-  the `braincentrekcl/ramm-ai` marketplace for your team.
-
-### GitHub Copilot in VS Code
-
-1. Open the Command Palette and run **Chat: Install Plugin From Source**.
-2. Enter `https://github.com/braincentrekcl/ramm-ai` and confirm that you trust
-  it.
-
-Or add the marketplace in your VS Code settings (`settings.json`):
-
-```json
-"chat.plugins.marketplaces": ["braincentrekcl/ramm-ai"]
-```
-
-then open the Chat view, select the cog, open **Agent Customizations**, choose
-  **Plugins**, and install `ramm`.
-Your organisation may need to turn on `chat.plugins.enabled` first.
+| App | Its documentation |
+|---|---|
+| Claude desktop app (Code tab) and Claude Code in VS Code | [Install and manage plugins](https://code.claude.com/docs/en/plugins/install): "Add a marketplace", then "Install a plugin" |
+| GitHub Copilot app | [Customizing the GitHub Copilot app](https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app): add the marketplace from the Plugins view, then install |
+| GitHub Copilot in VS Code | [Agent plugins in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-plugins): add the marketplace to `chat.plugins.marketplaces`, or run **Chat: Install Plugin From Source** with the GitHub address |
+| Codex app | [Plugins](https://learn.chatgpt.com/docs/plugins): the app installs from OpenAI's and your workspace's plugin lists, so ask your workspace admin to import the marketplace, or use the command line above once |
 
 ## OpenCode notes
 
@@ -70,6 +37,7 @@ OpenCode's free models do not work while the template denies shell commands
 To use one, change `deny` to `ask` on the shell line, keep your data out of the
   study folder as on the other agents, and decline any command that would read
   your data.
-Free models may keep or learn from what you send, so check their terms.
+Free models may keep or learn from what you send, so check their terms; see
+  [What the AI assistant can see and change](privacy-and-safety.md).
 For institutionally hosted or local models, see
   [institutional-and-local-models.md](institutional-and-local-models.md).
