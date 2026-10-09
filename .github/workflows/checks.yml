@@ -16,7 +16,9 @@ jobs:
         with:
           use-public-rspm: true
       - name: Install car for the lm() test
-        run: Rscript -e 'install.packages("car", repos = "https://packagemanager.posit.co/cran/__linux__/noble/2025-01-15")'
+        run: |
+          Rscript -e "install.packages('car', repos = 'https://packagemanager.posit.co/cran/__linux__/$(lsb_release -cs)/2025-01-15')"
+          Rscript -e "stopifnot(requireNamespace('car', quietly = TRUE))"
       - uses: astral-sh/setup-uv@v10.2.0
       - name: Install Claude Code and Codex
         run: npm install -g @anthropic-ai/claude-code@2.1.277 @openai/codex@0.160.1
