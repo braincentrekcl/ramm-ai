@@ -991,6 +991,9 @@ Before writing the R script to disk, verify ALL of the following. If any check f
   their study folder once their data file is in `inputs/`, `Rscript
   code/analysis.R`, and list the files it will write in `outputs/`, including
   the log and `provenance.csv`.
+   - If the study has a pinned environment from the reproduce skill, give its
+     run command from `envs/README.md` instead (`Rscript code/run_analysis.R`
+     for renv, `docker run` for Docker).
    - Do not run R in any form, not even a syntax check: the user runs it.
    - Never install packages.
      If the user needs R or the packages installed, point them to the reproduce
@@ -1103,7 +1106,7 @@ nesting, any known issues like non-unique IDs or missing data]
 - Alpha: 0.05
 
 # Reproducible Environment (optional)
-- Reproducible environment: docker+renv, docker or renv
+- Reproducible environment: docker or renv
 
 # Toy Data (optional)
 - File: `toy_data.csv` (name starts with toy_; sent to the AI provider)
