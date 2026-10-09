@@ -1047,12 +1047,18 @@ Before writing the R script to disk, verify ALL of the following. If any check f
      with `/export code/sessions/YYYY-MM-DD.txt`.
    - **Codex:** start reproduce with `$ramm:reproduce`; save the session with
      `/export code/sessions/YYYY-MM-DD.md`.
+     `/export` needs Codex CLI 0.148 or later; on an older Codex, tell the user
+     to update it first.
    - **GitHub Copilot CLI:** start reproduce with `/reproduce`; save the session
      with `/share file code/sessions/YYYY-MM-DD.md`.
    - **OpenCode:** start reproduce with `@reproduce`.
      OpenCode's `/export` cannot choose where it saves, so: type `/export`,
      choose Markdown, then copy to the clipboard; open a new file in any text
-     editor, paste, and save it as `code/sessions/YYYY-MM-DD.md`.
+     editor, paste, and save it in the `sessions` folder inside the `code`
+     folder of their study folder, named `YYYY-MM-DD.md`.
+     Give the full path of that folder on their computer (you know where the
+     study folder is), not `code/sessions/`, which assumes they know it is
+     relative to the study folder.
 
 ---
 
