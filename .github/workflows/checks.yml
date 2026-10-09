@@ -30,7 +30,7 @@ jobs:
         run: bash tests/codex_probe.sh
       - name: Check Copilot installs both skills
         run: bash tests/copilot_probe.sh
-      - name: Check OpenCode loads every template rule
+      - name: Check OpenCode loads every template rule and both skills
         run: bash tests/opencode_probe.sh
       - name: Repository checks
         run: uv run --with pytest pytest tests -v
