@@ -17,8 +17,9 @@ This is the [YODA layout](https://handbook.datalad.org/en/latest/basics/101-127-
   can see what produced each result.
 
 1. Fill in `inputs/input.md`.
-  It is required: it records your questions before any results exist, like a
-  registered report.
+  It is required: it records your questions before any results exist.
+  Kept under version control, with a dated commit before you run the analysis,
+  it works like a registered report.
   RAMM-AI can suggest text for each heading if you describe your study.
 2. Keep your real data **out** of the study folder until you are ready to run
   the script.

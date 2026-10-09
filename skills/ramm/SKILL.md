@@ -50,8 +50,9 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
 1. Look for `inputs/input.md` (or the input file the user named when starting
   the skill, if it is in `inputs/`).
   Never proceed without it, even if the user describes the design in the chat:
-  input.md makes the analysis transparent and works as a registered report,
-  recording the questions before any results exist.
+  input.md makes the analysis transparent by recording the questions before
+  any results exist; kept under version control, with a dated commit before
+  the analysis is run, it works like a registered report.
    - No `inputs/` folder: stop and tell the user, in one sentence, to open you
      in their study folder, or to copy the template folder `template/my-study`
      from RAMM-AI.
