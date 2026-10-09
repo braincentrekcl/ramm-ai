@@ -27,6 +27,9 @@ Then install the plugin called `ramm` from it.
 
 OpenCode: RAMM-AI supports OpenCode v2 only (`brew install
   anomalyco/tap/opencode-v2` or `npm install -g @opencode/cli`).
+OpenCode Desktop also exists, but we have not checked that it applies the
+  template's rules, which keep your data from the assistant; until we have,
+  use the terminal version.
 OpenCode cannot currently use a GitHub Copilot Free or Student plan: it lists
   no models for them ([anomalyco/opencode#34644](https://github.com/anomalyco/opencode/issues/34644)).
 With those plans, use the GitHub Copilot route instead.
