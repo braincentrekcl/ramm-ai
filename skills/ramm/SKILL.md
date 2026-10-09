@@ -718,7 +718,8 @@ Keep 6c, and in 6f there is no within-individual spread: report only the SD of v
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
 - Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals. Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
-- Satterthwaite df apply to `lmer()` models. For a one-observation-per-subject `lm()` (see D.1), use `anova(model)` and ordinary t-based intervals.
+- Satterthwaite df apply to `lmer()` models. For a one-observation-per-individual `lm()` (see D.1), use `drop1(model, scope = ~ ., test = "F")` for Type III F-tests, so the tests mean the same as for `lmer()` (with the sum-to-zero contrasts set in Section 5), and ordinary t-based intervals.
+  Never use `anova(model)` on an `lm()`: it gives sequential (Type I) tests, whose results depend on the order of the terms when groups are unequal.
 
 ### Section 8: Post-Hoc Comparisons
 Apply the translation rules from Section G:

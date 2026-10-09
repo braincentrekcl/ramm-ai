@@ -1,6 +1,7 @@
 """Run the R chunks from the skill's script template (base R only)."""
 
 import csv
+import re
 import hashlib
 import os
 import subprocess
@@ -221,3 +222,28 @@ def test_predictor_guard_runs_on_an_lm(skill_text: str, tmp_path: Path) -> None:
     result = run_r(code, tmp_path)
     assert result.returncode == 0, result.stderr
     assert "guard ran: 4" in result.stdout
+
+
+def test_lm_anova_is_type_three(skill_text: str, tmp_path: Path) -> None:
+    """lm() gets Type III tests like lmer(), not sequential Type I."""
+    section_7 = skill_text.split("### Section 7: Model Summary", 1)[1].split(
+        "### Section 8", 1
+    )[0]
+    match = re.search(r"`(drop1\(model[^`]*\))`", section_7)
+    assert match, "Section 7 gives no drop1() call for lm() designs"
+    code = (
+        'options(contrasts = c("contr.sum", "contr.poly"))\n'
+        "set.seed(1)\n"
+        "dat <- data.frame(a = factor(rep(c('x', 'y'), c(14, 6))),\n"
+        "                  b = factor(rep(c('p', 'q', 'p', 'q'), c(10, 4, 2, 4))))\n"
+        "dat$y <- rnorm(20) + (dat$a == 'y') + (dat$b == 'q')\n"
+        "model <- lm(y ~ a * b, data = dat)\n"
+        f"type_three <- {match.group(1)}\n"
+        "type_one <- anova(model)\n"
+        'stopifnot(all(c("a", "b", "a:b") %in% rownames(type_three)))\n'
+        'stopifnot(abs(type_three["a", "F value"] - type_one["a", "F value"]) > 1e-6)\n'
+        'cat("type three ok\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "type three ok" in result.stdout
