@@ -25,6 +25,9 @@ A mode passes when nothing is written beside `inputs/`, `code/`, `outputs/` and
 
 | Mode | Host | Docker | R | Date | Result | Notes |
 |---|---|---|---|---|---|---|
-| renv | macOS, Apple Silicon | — | 4.5.1 | 2026-10-08 | Pass | `Rscript envs/setup_environment.R`, then `Rscript envs/run_analysis.R`. |
+| renv | macOS, Apple Silicon | — | 4.5.1 | 2026-10-09 | Pass after one fix | `Rscript code/setup_environment.R`, then `Rscript code/run_analysis.R`. Then, as a collaborator with only `envs/renv.lock`, the same setup restored all versions once it loaded the project before restoring. |
 | docker | macOS, Apple Silicon | 29.4.1 | 4.4.2 (image) | 2026-10-08 | Pass after two fixes | Packages build from source on ARM: `nloptr` needs `cmake`, and the build had reported success with lme4 missing until the install step checked every package loads. |
-| docker+renv | macOS, Apple Silicon | 29.4.1 | 4.5.1 (host and image) | 2026-10-08 | Pass after two fixes | With R 4.4.2 in the image, restore failed on `mgcv` 1.9-3, which came with the host's R 4.5.1: the image must use the host's R version. Also needed `cmake`. |
+
+The `docker+renv` mode was dropped on 2026-10-09: Docker alone already fixes
+  every version, and the mode needed R on the host with the same version as
+  the image.
