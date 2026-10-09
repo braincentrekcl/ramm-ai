@@ -52,7 +52,8 @@ For app installs and OpenCode notes, see [docs/install.md](docs/install.md).
 ## Documentation
 
 - [Installing RAMM-AI](docs/install.md)
-- [Your study folder, what happens and what the script writes](docs/study-folder.md)
+- [Setting up your study folder](docs/study-folder.md)
+- [Running the analysis and what the script writes](docs/running-the-analysis.md)
 - [What the AI assistant can see and change](docs/privacy-and-safety.md)
 - [Reproducible environment](docs/reproducible-environment.md)
 - [Institutional and local models](docs/institutional-and-local-models.md)
