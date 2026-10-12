@@ -105,6 +105,7 @@ Treatment Group (fixed)
 
 Show this tree in the confirmation summary (B), labelled in plain words ("Mouse", "Slide", "Section") with the counts input.md gives, so the user can check the structure before any script exists.
 It is the same structure the script prints and saves as `plot_hierarchy.png` (Section 4); if the user corrects it, use the corrected tree in both.
+Under the tree, say which factors vary between individuals (each individual has one level, such as genotype or drug group) and which vary within individuals (each individual has several levels, such as both treatments in a crossover, regions or timepoints).
 
 For each level, determine:
 - Is it random or fixed? (See Section D.1)
@@ -388,7 +389,10 @@ Choose tidyverse packages over base R, when available, but don't require all of 
   `inputs/`.
 - **Check the data against the design** straight after reading, using this
   pattern with the column names, unique IDs, groups and individuals per group from
-  input.md:
+  input.md.
+  Run the one-group-per-individual check only for between-individual factors;
+  leave it out for within-individual factors (B.3), where every individual has
+  several levels by design:
 
 <!-- chunk: data-checks -->
 ```r
@@ -403,7 +407,8 @@ if (length(missing_columns) > 0) {
        ". Check the spelling under 'Column Mappings' in inputs/input.md.", call. = FALSE)
 }
 
-# Subject IDs are globally unique, so each subject belongs to one group only.
+# Subject IDs are globally unique, and drug group varies between individuals,
+# so each subject belongs to one group only.
 groups_per_subject <- tapply(dat$drug_group, dat$subject_id,
                              function(g) length(unique(g)))
 subjects_in_several_groups <- names(groups_per_subject)[groups_per_subject > 1]
