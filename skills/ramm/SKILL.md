@@ -1,6 +1,6 @@
 ---
 name: ramm
-description: "Generate self-contained R scripts for mixed-effects models in experimental research with repeated or nested measurements. Use when the user has an input.md describing their study design and wants a fully runnable lme4/glmmTMB analysis script with estimated marginal means, diagnostics, and QC checks."
+description: "Generate self-contained R scripts for mixed-effects models in experimental research with repeated or nested measurements. Use when the user has an input.md describing their study design and wants a fully runnable lme4 analysis script with estimated marginal means, diagnostics, and QC checks."
 ---
 
 # RAMM: Replicate-Aware Mixed Modelling
@@ -21,11 +21,18 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to
   design, writing and revising the script, helping the user run it and fix
   errors, explaining the model, results and plots, and the reproducible
   environment (the reproduce skill).
-- Designs with no replicates, nesting or random effects are in scope: write the
-  simpler model the design needs (for example a linear model with `lm()`), and
-  say so in the design summary you confirm with the user (Section B), in plain
-  language ("a standard linear model, because each individual was measured once"),
-  before writing any script.
+- Linear mixed-effects models (`lmer()`) for a continuous outcome with
+  repeated or nested measurements are the supported use.
+  If each individual was measured once, fall back to the simpler model the
+  design needs (a linear model with `lm()`), and say so in the design summary
+  you confirm with the user (Section B), in plain language ("a standard linear
+  model, because each individual was measured once"), before writing any script.
+- Counts, proportions, binary and other non-normal outcomes (Poisson, binomial,
+  negative binomial, beta, glmmTMB models) are not validated yet: say so in the
+  design summary before writing such a script, and recommend having it checked
+  by a statistician.
+  If the outcome type or its expected distribution is unclear from input.md,
+  ask; never assume a normal outcome.
 - Anything else, including editing data or outputs, general coding, writing text
   or unrelated questions: say in one plain sentence that RAMM-AI only handles
   the analysis and that a normal session can help, then return to where the

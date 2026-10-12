@@ -1,6 +1,6 @@
 {
   "name": "ramm",
-  "description": "Generate self-contained, glass-box R scripts for mixed-effects models (lme4/glmmTMB) in experimental research with repeated or nested measurements",
+  "description": "Generate self-contained, glass-box R scripts for linear mixed-effects models (lme4) in experimental research with repeated or nested measurements",
   "version": "0.2.0",
   "author": {
     "name": "Eilidh MacNicol"
@@ -13,7 +13,6 @@
     "replicates",
     "statistics",
     "R",
-    "emmeans",
-    "glmmTMB"
+    "emmeans"
   ]
 }

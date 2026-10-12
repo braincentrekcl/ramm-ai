@@ -5,7 +5,7 @@
   research with repeated or nested measurements.
 
 You describe your study design in plain English in `inputs/input.md`.
-RAMM-AI writes an R script with the appropriate lme4/glmmTMB model, estimated
+RAMM-AI writes an R script with the appropriate linear mixed-effects model, estimated
   marginal means, diagnostics and QC checks, with every modelling decision
   explained in comments.
 You run the script yourself: the AI assistant never sees your data, but it can
