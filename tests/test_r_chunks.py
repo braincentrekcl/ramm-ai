@@ -95,7 +95,7 @@ def test_data_checks_stop_on_subject_in_two_groups(
     assert "appear in more than one group: vehicle_1" in result.stderr
 
 
-def test_data_checks_stop_on_group_size_mismatch(
+def test_data_checks_warn_on_fewer_individuals_than_planned(
     skill_text: str, tmp_path: Path
 ) -> None:
     rows = "".join(
@@ -104,8 +104,19 @@ def test_data_checks_stop_on_group_size_mismatch(
         if not line.startswith("drugC_12")
     )
     result = run_checks(skill_text, make_study(tmp_path), rows)
+    assert result.returncode == 0, result.stderr
+    assert "checks passed" in result.stdout
+    assert "drugC: planned 12, in data 11" in result.stderr
+    assert "Fewer individuals than planned in: drugC" in result.stderr
+
+
+def test_data_checks_stop_on_more_individuals_than_planned(
+    skill_text: str, tmp_path: Path
+) -> None:
+    rows = balanced_rows() + "drugC_13,1,1,drugC,1.0\n"
+    result = run_checks(skill_text, make_study(tmp_path), rows)
     assert result.returncode != 0
-    assert "does not match inputs/input.md" in result.stderr
+    assert "more individuals in the data than inputs/input.md plans" in result.stderr
 
 
 def test_data_checks_stop_on_unexpected_group(skill_text: str, tmp_path: Path) -> None:

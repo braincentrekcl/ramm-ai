@@ -36,6 +36,15 @@ Mention anything unusual, such as slide numbers that restart for every individua
 
 - For example: exclude rows where `qc_flag` is "torn"
 
+# Exclusions and Attrition (optional)
+
+Individuals lost or excluded after you wrote the Study Design: who, why, and
+  the date you recorded it.
+Keep the Study Design numbers as planned; the script reports planned and actual
+  numbers side by side.
+
+- For example: mouse_07 died before the second session (recorded 2026-03-02)
+
 # Preferences (optional)
 
 - Package: lme4 or glmmTMB

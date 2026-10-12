@@ -131,6 +131,7 @@ If ANY of the above cannot be determined from the input file, STOP and ask the u
 ### B.7 QC Rules
 - Extract any QC rules stated in input.md (for example "exclude sections flagged as torn"), with the column each one uses.
 - If none are stated, say so in the confirmation summary. Never invent QC rules, and never remove statistical outliers on your own initiative.
+- If input.md has an `Exclusions and Attrition` heading, list those individuals in the confirmation summary. Keep the planned numbers from Study Design for the script's design check (Section 2a); never change them to match the losses.
 
 ### B.8 Implied Interactions
 Interactions follow the study design. Include one only when input.md specifies it or the stated hypothesis requires it; never add one on your own initiative.
@@ -429,15 +430,26 @@ data_subjects_per_group <- tapply(dat$subject_id, dat$drug_group,
                                   function(s) length(unique(s)))
 data_subjects_per_group <- data_subjects_per_group[names(design_subjects_per_group)]
 data_subjects_per_group[is.na(data_subjects_per_group)] <- 0
-if (!all(data_subjects_per_group == design_subjects_per_group)) {
-  stop("The number of subjects per group in the data (",
-       paste(names(design_subjects_per_group), data_subjects_per_group,
-             sep = " = ", collapse = ", "),
-       ") does not match inputs/input.md (",
-       paste(names(design_subjects_per_group), design_subjects_per_group,
-             sep = " = ", collapse = ", "),
-       "). If individuals were lost, update the Study Design in inputs/input.md and say why.",
+# Report planned and actual numbers side by side. More than planned usually
+# means mislabelled or duplicated IDs, so it stops. Fewer than planned happens
+# in real studies (individuals lost or excluded), so it warns; the planned
+# numbers in inputs/input.md stay as they were.
+planned_vs_data <- paste0(names(design_subjects_per_group), ": planned ",
+                          design_subjects_per_group, ", in data ",
+                          data_subjects_per_group, collapse = "; ")
+message("Individuals per group (", planned_vs_data, ")")
+if (any(data_subjects_per_group > design_subjects_per_group)) {
+  stop("Some groups have more individuals in the data than inputs/input.md plans (",
+       planned_vs_data, "). Check the data file for mislabelled or duplicated IDs.",
        call. = FALSE)
+}
+fewer_than_planned <- names(design_subjects_per_group)[
+  data_subjects_per_group < design_subjects_per_group]
+if (length(fewer_than_planned) > 0) {
+  warning("Fewer individuals than planned in: ",
+          paste(fewer_than_planned, collapse = ", "), " (", planned_vs_data,
+          "). Record who was lost or excluded, and why, under 'Exclusions and ",
+          "Attrition' in inputs/input.md.", call. = FALSE)
 }
 ```
 
@@ -875,7 +887,8 @@ Finally, the script writes `outputs/results_summary.md`, the file a user opens
   first.
 Build it from the fitted results, never from hard-coded numbers, in plain
   language:
-- One line on the question and the data analysed (individuals per group, measurements kept, anything excluded or missing).
+- If any group has fewer individuals than planned (`fewer_than_planned` from Section 2a), start the file with a **Check first** line giving the planned and actual numbers per group, and pointing to 'Exclusions and Attrition' in inputs/input.md for who was lost and why.
+- One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
@@ -1108,6 +1121,9 @@ nesting, any known issues like non-unique IDs or missing data]
 
 # QC Rules (optional)
 - Exclude rows where `qc_flag` is "torn" (torn sections)
+
+# Exclusions and Attrition (optional)
+- mouse_07: died before the second session (recorded 2026-03-02)
 
 # Preferences (optional)
 - Package: lme4 or glmmTMB
