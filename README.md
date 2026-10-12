@@ -11,6 +11,9 @@ RAMM-AI writes a self-contained R script with the appropriate linear
   mixed-effects model, estimated marginal means, diagnostics and QC checks.
 You run the script yourself, and the assistant can help you run it and
   explain its output.
+Count, proportion and binary outcomes are beyond RAMM-AI's current scope: it
+  flags them and fits a linear mixed model only if you choose to continue.
+Contributions that add properly validated support are welcome.
 
 RAMM-AI works with four coding agents: Claude Code, Codex, GitHub Copilot and
   OpenCode.
