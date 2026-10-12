@@ -360,7 +360,10 @@ docker run --rm -it -v "$(pwd)":/analysis myanalysis R
 # ============================================================
 # Run this ONCE from your study folder, before running the analysis:
 #   Rscript code/setup_environment.R
-# If envs/renv.lock exists, it installs exactly the versions recorded there.
+# If envs/renv.lock exists, it installs exactly the versions recorded there,
+# and never changes the file. If code/analysis.R needs a package the lockfile
+# lacks, it stops; the analysis author adds it on purpose with:
+#   Rscript code/setup_environment.R --add-missing
 # If not, it installs the packages from a dated snapshot into envs/renv/ and
 # writes envs/renv.lock, which records exactly what is installed.
 # ============================================================
@@ -391,10 +394,20 @@ if (file.exists(file.path("envs", "renv.lock"))) {
   # instead of counting packages you already have elsewhere.
   renv::load("envs")
   renv::restore(project = "envs", prompt = FALSE)
-  # The script may have gained packages since the lockfile was written: add
-  # them from the same snapshot date, keeping every version already pinned.
+  # The script may have gained packages since the lockfile was written.
+  # Reproducing someone else's analysis must not change their environment, so
+  # adding them is the author's deliberate step (--add-missing), from the same
+  # snapshot date, keeping every version already pinned.
   missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
                                                 logical(1), quietly = TRUE)]
+  if (length(missing_packages) > 0 &&
+      !"--add-missing" %in% commandArgs(trailingOnly = TRUE)) {
+    stop("envs/renv.lock does not include ", paste(missing_packages, collapse = ", "),
+         ", which code/analysis.R needs. If you wrote this analysis and added ",
+         "the package on purpose, run: Rscript code/setup_environment.R --add-missing ",
+         "and commit envs/renv.lock. Otherwise ask the analysis author to update it.",
+         call. = FALSE)
+  }
   if (length(missing_packages) > 0) {
     options(repos = snapshot_repo)
     renv::install(missing_packages, project = "envs", prompt = FALSE)
@@ -457,8 +470,11 @@ Rscript code/setup_environment.R
 If `envs/renv.lock` already exists (you received this study from someone
   else, or you are setting up again), this installs exactly the versions it
   records.
-If the analysis script now needs a package the lockfile lacks, it adds that
-  package from the same snapshot date, keeping every other version, and updates
+It never changes `envs/renv.lock`: if the analysis script needs a package the
+  lockfile lacks, it stops and says so.
+If you wrote the analysis and added that package on purpose, run
+  `Rscript code/setup_environment.R --add-missing`: it adds the package from
+  the same snapshot date, keeping every other version, and updates
   `envs/renv.lock`; commit the updated file.
 If not, it installs the packages from a dated snapshot and writes
   `envs/renv.lock`; commit that file.
