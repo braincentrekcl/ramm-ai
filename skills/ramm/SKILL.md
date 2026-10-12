@@ -406,7 +406,8 @@ Choose tidyverse packages over base R, when available, but don't require all of 
 ```r
 # --- 2a. Check the data against the study design in inputs/input.md ---
 # The AI assistant wrote this script without opening your data, so these
-# checks run here. Each one stops with a message saying what to fix.
+# checks run here. Each one stops, or for lost individuals warns, with a
+# message saying what to fix.
 design_columns <- c("subject_id", "slide_id", "section", "drug_group", "uci_g")
 missing_columns <- setdiff(design_columns, names(dat))
 if (length(missing_columns) > 0) {
