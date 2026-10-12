@@ -788,8 +788,10 @@ Generate publication-ready plots using ggplot2:
     dplyr::mutate(x_strip = as.numeric(drug_group) +
                     seq(-0.2, 0.2, length.out = dplyr::n())) |>
     dplyr::ungroup() |>
-    dplyr::select(subject_id, x_strip)
-  plot_dat <- dplyr::left_join(dat, strip_x, by = "subject_id")
+    dplyr::select(drug_group, subject_id, x_strip)
+  # Join on group and individual: in a crossover each individual has a strip
+  # in every condition, and joining on the individual alone would copy rows.
+  plot_dat <- dplyr::left_join(dat, strip_x, by = c("drug_group", "subject_id"))
   # Violin width 0.6 spans +/- 0.3 around each group, so the strips (+/- 0.2)
   # sit inside it and the estimate at +0.4 sits clear of the last strip.
   emm_plot <- ggplot(plot_dat, aes(y = uci_g)) +

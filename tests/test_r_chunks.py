@@ -244,3 +244,28 @@ def test_lm_anova_is_type_three(skill_text: str, tmp_path: Path) -> None:
     result = run_r(code, tmp_path)
     assert result.returncode == 0, result.stderr
     assert "type three ok" in result.stdout
+
+
+def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
+    skill_text: str, tmp_path: Path
+) -> None:
+    """In a crossover each individual is in every condition; no row is copied."""
+    if run_r(
+        'quit(status = !requireNamespace("dplyr", quietly = TRUE))', tmp_path
+    ).returncode:
+        pytest.skip("the dplyr package is not installed")
+    strip_code = skill_text.split("# One strip per individual,", 1)[1].split(
+        "# Violin width", 1
+    )[0]
+    code = (
+        "dat <- expand.grid(subject_id = paste0('m', 1:4), rep = 1:3,\n"
+        "                   drug_group = c('vehicle', 'drug'))\n"
+        "dat$drug_group <- factor(dat$drug_group, levels = c('vehicle', 'drug'))\n"
+        "dat$uci_g <- seq_len(nrow(dat))\n"
+        "# One strip per individual," + strip_code + "\n"
+        "stopifnot(nrow(plot_dat) == nrow(dat))\n"
+        'cat("rows kept\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "rows kept" in result.stdout
