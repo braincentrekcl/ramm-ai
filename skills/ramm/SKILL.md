@@ -27,10 +27,18 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to
   design needs (a linear model with `lm()`), and say so in the design summary
   you confirm with the user (Section B), in plain language ("a standard linear
   model, because each individual was measured once"), before writing any script.
-- Counts, proportions, binary and other non-normal outcomes (Poisson, binomial,
-  negative binomial, beta, glmmTMB models) are not validated yet: say so in the
-  design summary before writing such a script, and recommend having it checked
-  by a statistician.
+- Counts, proportions, binary and ordinal outcomes are beyond RAMM-AI's
+  current scope: they often need a different kind of model (for example
+  Poisson or binomial), which RAMM-AI does not write.
+  Do not turn the user away.
+  In the design summary (Section B), say in plain words: a linear mixed model
+  can be reasonable when the values are large and roughly symmetric; when they
+  are not (small counts, many zeros, values bunched at 0 or 1, a long tail), it
+  can give misleading results, with intervals and p-values that look precise
+  but are not; the residual plots show how well it fits.
+  Ask whether to continue with a linear mixed model.
+  If the user continues, put the same warning in the script header and on the
+  **Check first** line of `results_summary.md`.
   If the outcome type or its expected distribution is unclear from input.md,
   ask; never assume a normal outcome.
 - Anything else, including editing data or outputs, general coding, writing text
@@ -252,40 +260,22 @@ If a grouping factor has fewer than 5-6 levels, the random effect variance estim
 | DV Type | Default Family | Notes |
 |---------|---------------|-------|
 | Continuous, roughly normal | Gaussian (identity) | The usual default; check the residual plots |
-| Continuous, right-skewed, positive | Gamma (log) or log-transform + Gaussian | Check distribution in exploration section |
-| Counts | Poisson (log) | Check for overdispersion; switch to NB if present |
-| Counts, overdispersed | Negative binomial (log) | Use glmmTMB |
-| Counts, zero-inflated | Zero-inflated Poisson/NB | Use glmmTMB with `ziformula` |
-| Proportions (0-1) | Beta (logit) | Use glmmTMB |
-| Binary (0/1) | Binomial (logit) | Use glmer or glmmTMB |
+| Continuous, right-skewed, positive | Log-transform + Gaussian | Check distribution in exploration section. Explain to the user, in the script comments and in `results_summary.md`, that back-transformed results are ratios ("1.3 times higher"), not differences in units |
+| Counts, proportions, binary, ordinal | Beyond the current scope | Flag it and ask before continuing with a linear mixed model (see Scope) |
 
-If the user does not specify and the DV type is ambiguous, default to Gaussian and include a comment suggesting the user check the residual plots to verify this assumption.
+If the DV type is ambiguous, ask the user (see Scope); never default to Gaussian silently.
 
 ### D.7 Package Selection
 
-- **lme4** (`lmer` / `glmer`): Default for Gaussian and standard GLMMs
-- **glmmTMB**: Use when the model requires:
-  - Zero-inflation
-  - Negative binomial family
-  - Beta family
-  - Complex variance structures
-  - Or when the user explicitly requests it
+- **lme4** (`lmer()`), or `lm()` when each individual was measured once (D.1).
 
 ### D.8 Optimizer and Convergence Settings
 
 Always specify the optimizer explicitly in the script:
 
-For lme4:
 ```r
 control <- lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
 model <- lmer(formula, data = dat, control = control)
-```
-
-For glmmTMB:
-```r
-# glmmTMB uses nlminb by default, which is well-suited for most models here.
-# Only override the optimizer if convergence fails with the default.
-model <- glmmTMB(formula, data = dat, family = ...)
 ```
 
 ### D.9 Common Pitfalls to Guard Against
@@ -893,6 +883,7 @@ Finally, the script writes `outputs/results_summary.md`, the file a user opens
   first.
 Build it from the fitted results, never from hard-coded numbers, in plain
   language:
+- If the outcome is beyond the current scope (counts, proportions, binary, ordinal; see Scope) and the user chose to continue, start the file with a **Check first** line saying a linear mixed model may give misleading results for this outcome and pointing to the residual plots.
 - If any group has fewer individuals than planned (`fewer_than_planned` from Section 2a), start the file with a **Check first** line giving the planned and actual numbers per group, and pointing to 'Exclusions and Attrition' in inputs/input.md for who was lost and why.
 - One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
