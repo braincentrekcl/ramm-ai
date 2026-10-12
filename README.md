@@ -78,7 +78,8 @@ Each demo is a study folder: copy it somewhere new, open your agent in it and
 - **Your data stays yours:** the AI assistant writes the script; you run it.
 - **Reproducible:** self-contained scripts, `sessionInfo()`, and a provenance
   record of every run.
-- **FAIR:** documented outputs with tidy CSV exports.
+- **FAIR:** a structured study design in `input.md`, reusable scripts,
+  machine-readable CSV outputs and a provenance record of every run.
 
 ## Licence
 

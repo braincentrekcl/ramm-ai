@@ -1,6 +1,6 @@
 ---
 name: reproduce
-description: "Generate a reproducible environment (a Docker/Apptainer container or renv) for an R analysis script produced by the RAMM skill. Use when the user wants pinned package versions for FAIR-compliant reproducibility, so novice collaborators can run the analysis without fighting package installations."
+description: "Generate a reproducible environment (a Docker/Apptainer container or renv) for an R analysis script produced by the RAMM skill. Use when the user wants pinned package versions for reproducibility, so novice collaborators can run the analysis without fighting package installations."
 ---
 
 # RAMM Reproduce: Environment Generation for R Analysis Scripts
