@@ -13,6 +13,8 @@ You run the script yourself, and the assistant can help you run it and
 
 RAMM-AI works with four coding agents: Claude Code, Codex, GitHub Copilot and
   OpenCode.
+The agent and model versions we tested are listed in
+  [Tested versions](docs/tested-versions.md).
 Use whichever your AI provider offers; OpenCode works with almost any provider,
   including institutionally hosted and local models.
 
