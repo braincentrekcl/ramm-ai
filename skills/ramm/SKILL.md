@@ -89,6 +89,7 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
 
 Before writing any code, you MUST extract and confirm all of the following from the input file. Present your understanding to the user as a structured summary and ask them to confirm before proceeding. Write the summary in plain language (see H): the user may never have used R.
 End the summary with an explicit question, never with a statement or a list of points to flag: the user must be able to see that you are waiting for them and what you need. Then stop and wait for the user's answer: never answer the question yourself or carry on with a default. If you have a question tool that works in your current mode, you may use it; if it is unavailable or fails, ask in plain text in your reply and end your turn. Put every open decision (for example an implied interaction, see below, or a missing preference) in that same question.
+The script contains only what the user confirmed: every term in the model (fixed effects, covariates, interactions, random effects and slopes) appears in the summary in plain words, and anything input.md does not name is asked about there, never added afterwards.
 If the design has no replicates, nesting or random effects, say so in the
   summary and propose the simpler model (see Scope) as one of the open
   decisions.
