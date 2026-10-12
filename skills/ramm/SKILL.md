@@ -724,7 +724,7 @@ Keep 6c, and in 6f there is no within-individual spread: report only the SD of v
   Never use `anova(model)` on an `lm()`: it gives sequential (Type I) tests, whose results depend on the order of the terms when groups are unequal.
 
 ### Section 8: Post-Hoc Comparisons
-Apply the translation rules from Section G:
+Apply these translation rules:
 
 | User says | emmeans code |
 |-----------|-------------|
