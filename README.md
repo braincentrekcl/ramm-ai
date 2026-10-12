@@ -1,13 +1,14 @@
 # RAMM-AI
 
-**Replicate-Aware Mixed Modelling**: an AI assistant skill that writes
-  self-contained, glass-box R scripts for mixed-effects models in experimental
-  research with repeated or nested measurements.
+**Replicate-Aware Mixed Modelling**: an AI assistant skill that helps you
+  build an R analysis project for experimental data with repeated or nested
+  measurements, without needing coding experience.
+It gives you more flexibility than point-and-click statistics software, and
+  every modelling decision is written down and explained in the script.
 
 You describe your study design in plain English in `inputs/input.md`.
-RAMM-AI writes an R script with the appropriate linear mixed-effects model, estimated
-  marginal means, diagnostics and QC checks, with every modelling decision
-  explained in comments.
+RAMM-AI writes a self-contained R script with the appropriate linear
+  mixed-effects model, estimated marginal means, diagnostics and QC checks.
 You run the script yourself, and the assistant can help you run it and
   explain its output.
 
