@@ -210,20 +210,6 @@ def test_provenance_stops_when_script_file_missing(
     assert "script_file" in result.stderr
 
 
-def test_predictor_guard_runs_on_an_lm(skill_text: str, tmp_path: Path) -> None:
-    """Section 6c is kept for one-observation-per-individual lm() designs."""
-    section_6 = skill_text.split("# --- 6. Model Diagnostics ---", 1)[1]
-    guard = section_6.split("# 6c.", 1)[1].split("# 6d.", 1)[0]
-    code = (
-        "dat <- data.frame(y = rnorm(40), group = gl(4, 10))\n"
-        "model <- lm(y ~ group, data = dat)\n"
-        "# 6c." + guard + 'cat("guard ran:", n_fixed_params, "\\n")\n'
-    )
-    result = run_r(code, tmp_path)
-    assert result.returncode == 0, result.stderr
-    assert "guard ran: 4" in result.stdout
-
-
 def test_lm_anova_is_type_three(skill_text: str, tmp_path: Path) -> None:
     """lm() gets Type III tests like lmer(), checked against the definition."""
     if run_r(

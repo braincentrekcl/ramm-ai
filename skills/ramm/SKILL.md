@@ -664,23 +664,15 @@ if (isSingular(model)) {
 Consider simplifying the random effects structure. See the variance table below.")
 }
 
-# 6c. Predictor-vs-observations guard
-n_obs <- nrow(dat)
-n_fixed_params <- ncol(model.matrix(model))  # works for lmer() and lm()
-if (n_fixed_params > n_obs / 10) {
-  warning(sprintf("Caution: %d fixed-effect parameters with only %d observations.
-Consider whether all predictors are necessary.", n_fixed_params, n_obs))
-}
-
-# 6d. Random effects variance components
+# 6c. Random effects variance components
 print(VarCorr(model))
 
-# 6e. Residual diagnostics
+# 6d. Residual diagnostics
 # The four residual plots are drawn into outputs/plot_residuals.png in
 # Section 10. Drawing them here as well would make R save them to
 # Rplots.pdf in the study folder, outside outputs/.
 
-# 6f. Variability by group
+# 6e. Variability by group
 # The model assumes every group has the same spread, both between individuals
 # and between replicates within an individual. If one group is much more
 # variable, its spread can distort the other groups' results. This check
@@ -712,8 +704,8 @@ for (sd_column in c("within_individual_sd", "between_individual_sd")) {
 }
 ```
 
-For a one-observation-per-individual `lm()` (see D.1), leave out 6a, 6b and 6d: an ordinary linear model has no optimiser, no singular fit and no variance components.
-Keep 6c, and in 6f there is no within-individual spread: report only the SD of values per group, under the same rule.
+For a one-observation-per-individual `lm()` (see D.1), leave out 6a, 6b and 6c: an ordinary linear model has no optimiser, no singular fit and no variance components.
+In 6e there is no within-individual spread: report only the SD of values per group, under the same rule.
 
 ### Section 7: Model Summary
 - `summary(model)` for full output
