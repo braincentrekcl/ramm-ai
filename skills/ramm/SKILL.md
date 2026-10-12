@@ -201,10 +201,11 @@ A factor is **fixed** if:
 
 If it is unclear which applies, ask the user whether the levels were deliberately chosen targets of inference (fixed) or a sample standing in for a wider population (random). Do not guess.
 
-**The biological unit is not the same as a random intercept.** The individual (for example a mouse, a participant or a donor) is always the biological experimental unit. It needs a random intercept only when more than one analysed observation remains per subject:
+**The biological unit is not the same as a random intercept.** The individual (for example a mouse, a participant or a donor) is almost always the biological unit of interest and the level at which measurements are taken. It needs a random intercept only when more than one analysed observation remains per subject:
 - Repeated or nested measurements per subject → include `(1 | subject)`.
 - Exactly one analysed observation per subject → fit an ordinary subject-level model (`lm()`), with no subject random intercept; one would be unidentifiable and give a singular fit.
 - Never treat technical replicates as additional biological units.
+- If a treatment was given to a whole cage, litter or batch (for example diet, drinking water or housing), suggest adding that grouping as a level above the individual to control for batch effects. Many studies are not powered for this, so expect the user to decline; if they do, keep the individual-level model and record the choice in a comment in the script.
 
 ### D.2 The Maximal-Then-Simplify Strategy (Barr et al., 2013)
 
