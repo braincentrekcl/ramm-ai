@@ -13,8 +13,11 @@ Anything the assistant opens is sent to your AI provider.
   If those IDs could identify someone (for example participant codes linked to
   names), use coded IDs in your data.
 - Only OpenCode with the template config enforces these limits.
-  On the other agents, keeping the real data out of the folder until you run the
-  script is what keeps it from the assistant.
+  On Claude Code, Codex and Copilot they are instructions the agent follows,
+  not a lock: keeping the real data out of the folder until you run the script
+  is what keeps it from the assistant.
+- Anything you paste into the chat or ask the assistant to read (errors,
+  results, plots) is sent to your AI provider too.
 - With default settings, every agent asks before changing a file; the OpenCode
   template lets it change files in `code/` and `envs/` only.
   Do not mark your study folder as trusted in Codex, and do not use "allow

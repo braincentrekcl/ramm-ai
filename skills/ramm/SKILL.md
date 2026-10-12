@@ -157,7 +157,7 @@ Generate comparisons within subgroups only when the model includes the correspon
 
 ## C. Data Access
 
-You never see the user's data, which keeps unpublished data away from the AI
+Never open the user's data: this keeps unpublished data away from the AI
   provider.
 
 - Read only `inputs/input.md` and, if input.md names one under `Toy Data`, a toy
@@ -405,7 +405,7 @@ Choose tidyverse packages over base R, when available, but don't require all of 
 <!-- chunk: data-checks -->
 ```r
 # --- 2a. Check the data against the study design in inputs/input.md ---
-# The AI assistant that wrote this script never saw your data, so these
+# The AI assistant wrote this script without opening your data, so these
 # checks run here. Each one stops with a message saying what to fix.
 design_columns <- c("subject_id", "slide_id", "section", "drug_group", "uci_g")
 missing_columns <- setdiff(design_columns, names(dat))
