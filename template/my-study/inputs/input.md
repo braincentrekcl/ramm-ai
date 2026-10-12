@@ -5,7 +5,7 @@ Fill in every heading marked (required) before you start RAMM-AI; headings
 You can add headings of your own for anything else that describes the study.
 This file records your questions before any results exist.
 Kept under version control, with a dated commit before you run the analysis,
-  it works like a registered report.
+  it serves as a preregistration-style record.
 -->
 
 # Study Design (required)

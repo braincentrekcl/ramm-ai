@@ -59,7 +59,7 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
   Never proceed without it, even if the user describes the design in the chat:
   input.md makes the analysis transparent by recording the questions before
   any results exist; kept under version control, with a dated commit before
-  the analysis is run, it works like a registered report.
+  the analysis is run, it serves as a preregistration-style record.
    - No `inputs/` folder: stop and tell the user, in one sentence, to open you
      in their study folder, or to copy the template folder `template/my-study`
      from RAMM-AI.
