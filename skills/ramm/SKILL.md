@@ -125,8 +125,6 @@ For each level, determine:
 - Any specific adjustment method requested?
 
 ### B.5 User Preferences
-- Package preference (lme4 default, or glmmTMB)
-- Family/link function (Gaussian default)
 - Alpha level (0.05 default)
 - Plot points: one per replicate, or one per individual (see Section 9)
 - P-value adjustment (default depends on the comparison type; see Section 8)
@@ -214,7 +212,7 @@ You are generating the script without access to the data — you cannot fit the 
 - **In the script:** specify the maximal random effects structure justified by the study design as the starting model.
 - **Also in the script:** embed the decision tree for simplification as commented-out alternative models the user can enable after inspecting Section 6 diagnostics (see Section E, Section 5 below for the exact pattern).
 - **Ordering the alternatives** (this is the rule the user applies at runtime, and the comments in the script should reflect it):
-   1. Remove random effect correlations first (use `||` syntax in lme4, or `diag()` in glmmTMB)
+   1. Remove random effect correlations first (use `||` syntax in lme4)
    2. Remove the random effect with the smallest variance component (identify from `VarCorr()`)
    3. **Never remove the subject-level random intercept when there are repeated measurements per subject** — it accounts for pseudoreplication
 - Each commented alternative in the script should have a short rationale for when to enable it.
@@ -316,7 +314,6 @@ Generate the R script with these sections in this exact order. Each section must
 # Fixed effects: {list with levels}
 # Random effects: {list with nesting description}
 # Post-hoc comparisons: {what was requested}
-# Package: {lme4 or glmmTMB}
 #
 # Run from your study folder (the one holding inputs/, code/ and outputs/),
 # once your data file is in inputs/:
@@ -387,7 +384,7 @@ for (pkg in required_packages) library(pkg, character.only = TRUE)
 Name the log after the script (`analysis.R` writes `outputs/analysis_log.txt`;
   `brain_regions_analysis.R` writes `outputs/brain_regions_analysis_log.txt`).
 
-Adjust the package list based on the model requirements (add glmmTMB, performance, etc. as needed).
+Adjust the package list based on the model requirements.
 Choose tidyverse packages over base R, when available, but don't require all of tidyverse. Add packages as needed.
 
 ### Section 2: Data Loading and Preparation
@@ -1135,8 +1132,6 @@ nesting, any known issues like non-unique IDs or missing data]
 - mouse_07: died before the second session (recorded 2026-03-02)
 
 # Preferences (optional)
-- Package: lme4 or glmmTMB
-- Family: gaussian, Gamma, poisson, etc.
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
 

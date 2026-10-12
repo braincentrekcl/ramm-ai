@@ -47,8 +47,6 @@ Keep the Study Design numbers as planned; the script reports planned and actual
 
 # Preferences (optional)
 
-- Package: lme4 or glmmTMB
-- Family: gaussian, Gamma, poisson, etc.
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
 
