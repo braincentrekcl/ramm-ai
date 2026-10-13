@@ -676,13 +676,10 @@ ggsave(file.path("outputs", "plot_hierarchy.png"), hierarchy_plot, width = 5, he
 
 #### Section 5: Model Fitting
 
-**Important context:** You are generating the script without access to the data, so you cannot know in advance whether the maximal model will converge, be singular, or which random effect has the smallest variance. Do not attempt to automate simplification with a hard-coded fallback — that would risk dropping the wrong term. Instead:
+Fit the model D.2 describes, with every term commented to explain why it is there, followed by the commented decision tree; Section 6 surfaces the diagnostics loudly so the user can see exactly what happened.
+Never automate simplification with a hard-coded fallback, such as wrapping the fit in an `if (isSingular(...)) { ... }` block that silently switches models: it risks dropping the wrong term and hides the decision from the user.
 
-1. **Fit the maximal model** justified by the study design, with every term commented to explain why it is there.
-2. **Surface diagnostics loudly** so the user can see exactly what happened (this is handled in Section 6).
-3. **Provide a simplification decision tree** as commented-out alternative models the user can enable if they encounter issues.
-
-Use this pattern:
+Use this pattern, adapting the formula to the study design:
 
 ```r
 # --- 5. Model Fitting ---
@@ -761,8 +758,6 @@ model <- lmer(
 # If none of the above resolves the issue, the design may be underpowered
 # for the requested random effects structure. Consult the analyst.
 ```
-
-Adapt the specific formula to the study design, but always follow this pattern: fit the maximal model, then provide a commented decision tree of alternatives. Do NOT wrap the fit in an `if (isSingular(...)) { ... }` block that silently switches models — that hides the decision from the user.
 
 #### Section 6: Diagnostics
 ```r
