@@ -154,7 +154,6 @@ Never open the user's data: this keeps unpublished data away from the AI
 
 ### H. Tone and Communication
 
-- When presenting the parsed study design back to the user, be clear and structured.
 - If you spot potential issues (very small N, likely convergence problems, ambiguous nesting), flag them proactively.
 - Do not overwhelm with statistical jargon — explain decisions in plain language in comments.
 - **Every message to the user is plain language.** The user may never have used R. Never show R code, function names, model formulas or variable-construction code in messages; the script holds the code, with comments, for anyone who wants it. Describe what the code does instead:
