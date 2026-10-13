@@ -395,6 +395,8 @@ model <- lmer(formula, data = dat, control = control)
 ### E. R Script Structure
 
 Generate the R script with these sections in this exact order. Each section must have a clear comment header.
+The script runs from the study folder with `Rscript code/analysis.R`, reads only from `inputs/` and writes only to `outputs/`.
+Before writing the script to disk, check it against every rule in this skill; if any check fails, fix the script before writing.
 
 #### Section 0: Header
 ```r
@@ -823,6 +825,7 @@ for (sd_column in c("within_individual_sd", "between_individual_sd")) {
 ```
 
 For a one-observation-per-individual `lm()` (see D.1), leave out 6a, 6b and 6c: an ordinary linear model has no optimiser, no singular fit and no variance components.
+Call no lme4-only functions on an `lm()` anywhere in the script (`isSingular()`, `VarCorr()`, `fixef()`, `@optinfo`, `ran_pars`).
 In 6e there is no within-individual spread: report only the SD of values per group, under the same rule.
 
 #### Section 7: Model Summary
@@ -891,7 +894,7 @@ summary(contrast_output, infer = TRUE)
 **Kenward-Roger, only if the user asks for it.** Offer it as a sensitivity check, never as a way to choose between results. Add `pbkrtest` to the required packages, use `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))` and `ddf = "Kenward-Roger"` in Section 7, and add this comment: "In simulations, Kenward-Roger was conservative when between-individual variation is poorly estimated (few individuals, noisy replicates), costing power without improving coverage. Use it to check a result, not to choose between results."
 
 #### Section 9: Visualisation
-Generate publication-ready plots using ggplot2:
+Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
 - Estimated marginal means with confidence intervals
 - For each group, draw a violin of the raw replicate data, with points on top showing which individual each value came from, so the reader can see how many individuals contributed how many replicates. Offer the user one of two point styles (a B.5 preference; ask if not stated).
   If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the confirmation question (B), even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual. Keep the user's choice if they still want one point per replicate; the strips below are the fallback.
@@ -1058,41 +1061,6 @@ write.csv(provenance, file.path("outputs", "provenance.csv"), row.names = FALSE)
 
 DataLad (https://www.datalad.org) users can run the same script with
   `datalad run`; nothing in the script depends on it.
-
-### F. Final Checklist
-
-Before writing the R script to disk, verify ALL of the following. If any check fails, fix the script before writing.
-
-- [ ] Every column name referenced in the script matches the input.md column mappings
-- [ ] The random effects structure matches the hierarchy described in input.md
-- [ ] Non-unique IDs have been made globally unique with `paste()`
-- [ ] The post-hoc comparisons match what was requested in input.md
-- [ ] The script runs from the study folder with `Rscript
-  code/analysis.R`, reads only from `inputs/` and writes only to
-  `outputs/`
-- [ ] Section 2a checks the data against input.md: columns, unique IDs, groups
-  and individuals per group
-- [ ] The script never prints data rows
-- [ ] Section 12 writes `outputs/provenance.csv` last, after the log is closed
-- [ ] All modelling decisions have inline comments explaining WHY, not just WHAT
-- [ ] `sessionInfo()` is present at the end
-- [ ] The run is recorded in the log in `outputs/`: opened at the start of
-  Section 1, closed at the end of Section 11
-- [ ] Sum-to-zero contrasts are set before fitting and restored at the end
-- [ ] All required packages are listed in Section 1, and the script never calls `install.packages()`
-- [ ] The `set.seed(42)` is present
-- [ ] The header accurately describes what was specified
-- [ ] Diagnostic plots are generated
-- [ ] For an `lm()`, the script calls no lme4-only functions (`isSingular()`, `VarCorr()`, `fixef()`, `@optinfo`, `ran_pars`)
-- [ ] The variability-by-group check writes `results_variance_by_group.csv` and warns, without changing the model
-- [ ] Results are exported as CSV via broom/broom.mixed
-- [ ] QC applies only rules from input.md and writes `results_exclusions.csv` (missing and excluded kept separate)
-- [ ] The replicate audit writes `results_replicate_audit_per_individual.csv` and `results_replicate_audit_summary.csv`
-- [ ] Plots are saved as 300dpi PNG
-- [ ] The hierarchy is printed and saved as `plot_hierarchy.png`, with counts taken from the data
-- [ ] Differences are reference-relative (treatment minus control) and group means are not tested against zero
-- [ ] Exported column names and plot labels are readable words, and each factor keeps its colours across plots
-- [ ] The script writes `results_summary.md`
 
 ---
 
