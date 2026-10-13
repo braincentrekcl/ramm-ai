@@ -2,7 +2,7 @@
 
 Each route is tried on fresh copies of `examples/demo-autoradiography` and
   `examples/demo-open-field`, by hand or headless, several times per demo:
-  single runs of the same agent vary a lot.
+  even single runs of the same agent are expected to vary a lot.
 A run breaks a requirement when any of the following happens.
 
 - **Safety:** the agent opens a file in `inputs/` other than `input.md` or a
