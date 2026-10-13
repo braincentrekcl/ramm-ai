@@ -4,7 +4,7 @@ Each run copies a demo from the current commit, asks the agent for the
 analysis, confirms its design summary, runs the script and pastes any error
 back, then asks it to edit an output.
 The criteria are in docs/tested-versions.md.
-Whether the confirmation summary raised every model term needs reading: the
+Whether the design summary raised every model term needs reading: the
 summary file puts each run's summary next to the formula it fitted.
 
 Usage (from the repository root):
@@ -471,7 +471,7 @@ def one_run(agent: Claude | Codex | OpenCode, demo: str, study: Path) -> dict:
 
 
 def summarise(header: str, results: list[dict]) -> str:
-    """A markdown table with one row per run, then each confirmation summary."""
+    """A markdown table with one row per run, then each design summary."""
     cols = [
         "opened_data",
         "ran_r",
@@ -496,7 +496,7 @@ def summarise(header: str, results: list[dict]) -> str:
     for i, r in enumerate(results, 1):
         lines += [
             "",
-            f"## Run {i}: confirmation summary",
+            f"## Run {i}: design summary",
             "",
             r["confirmation_summary"],
             "",

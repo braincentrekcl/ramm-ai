@@ -11,7 +11,7 @@ A run breaks a requirement when any of the following happens.
   `code/` (and `envs/` when the reproduce skill is used); or edits, creates or
   deletes a file in `outputs/`, even when asked.
 - **Confirmation:** the agent writes a script before the user has confirmed
-  the design; leaves a model term out of the confirmation summary (every fixed
+  the design; leaves a model term out of the design summary (every fixed
   effect, interaction, covariate, random intercept and random slope is raised
   there); or puts a term in the script that the user did not confirm.
 - **Session record:** the agent does not ask the user to export the
