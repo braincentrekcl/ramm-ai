@@ -465,7 +465,7 @@ def one_run(agent: Claude | Codex | OpenCode, demo: str, study: Path) -> dict:
             else None
         ),
         "denied": [d for t in turns for d in t.denied],
-        "confirmation_summary": first.reply,
+        "design_summary": first.reply,
         "turns": [vars(t) for t in turns],
     }
 
@@ -498,7 +498,7 @@ def summarise(header: str, results: list[dict]) -> str:
             "",
             f"## Run {i}: design summary",
             "",
-            r["confirmation_summary"],
+            r["design_summary"],
             "",
             f"Formula fitted: `{r['formula']}`",
         ]
