@@ -229,8 +229,8 @@ def test_lm_anova_is_type_three(skill_text: str, tmp_path: Path) -> None:
         'quit(status = !requireNamespace("car", quietly = TRUE))', tmp_path
     ).returncode:
         pytest.skip("the car package is not installed")
-    section_7 = skill_text.split("### Section 7: Model Summary", 1)[1].split(
-        "### Section 8", 1
+    section_7 = skill_text.split("## Section 7: Model Summary", 1)[1].split(
+        "## Section 8", 1
     )[0]
     match = re.search(r"`(car::Anova\(model[^`]*\))`", section_7)
     assert match, "Section 7 gives no car::Anova() call for lm() designs"

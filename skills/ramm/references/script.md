@@ -8,7 +8,8 @@ Each section must have a clear comment header.
 The script runs from the study folder with `Rscript code/analysis.R`, reads only from `inputs/` and writes only to `outputs/`.
 Before writing the script to disk, check it against every rule in this skill; if any check fails, fix the script before writing.
 
-#### Section 0: Header
+## Section 0: Header
+
 ```r
 # ============================================================
 # Mixed-Effects Model Analysis
@@ -34,7 +35,8 @@ Before writing the script to disk, check it against every rule in this skill; if
 # ============================================================
 ```
 
-#### Section 1: Environment and Reproducibility
+## Section 1: Environment and Reproducibility
+
 <!-- chunk: setup -->
 ```r
 # --- 1. Environment Setup ---
@@ -94,7 +96,8 @@ Adjust the package list based on the model requirements.
 Choose tidyverse packages over base R, when available, but don't require all of tidyverse.
 Add packages as needed.
 
-#### Section 2: Data Loading and Preparation
+## Section 2: Data Loading and Preparation
+
 - Read the data file named under `Data File` in input.md from `inputs/` (`readr::read_csv(file.path("inputs", "data.csv"))`; see Data access for .tsv and spreadsheets).
   If the file is missing, stop with a plain message saying to put it in `inputs/`.
 - **Check the data against the design** straight after reading, using this pattern with the column names, unique IDs, groups and individuals per group from input.md.
@@ -196,7 +199,8 @@ write.csv(exclusions, file.path("outputs", "results_exclusions.csv"), row.names 
 dat <- dat |> dplyr::filter(qc_status == "kept")
 ```
 
-#### Section 3: Data Exploration
+## Section 3: Data Exploration
+
 - Summary statistics per group (mean, SD, N, missing count)
 - N per cell for each fixed effect combination
 - Histogram or density plot of the DV
@@ -234,7 +238,8 @@ replicate_summary <- replicate_audit |>
 write.csv(replicate_summary, file.path("outputs", "results_replicate_audit_summary.csv"), row.names = FALSE)
 ```
 
-#### Section 4: Hierarchy Diagram
+## Section 4: Hierarchy Diagram
+
 Print an ASCII tree of the nesting structure as understood by the model, and save the same structure as `plot_hierarchy.png` (below).
 Label levels in plain words ("Mouse", "Slide", "Section"), not column names or model terms.
 ```r
@@ -279,7 +284,7 @@ hierarchy_plot <- ggplot(hierarchy, aes(x = 0, y = y)) +
 ggsave(file.path("outputs", "plot_hierarchy.png"), hierarchy_plot, width = 5, height = 1.5 * nrow(hierarchy), dpi = 300)
 ```
 
-#### Section 5: Model Fitting
+## Section 5: Model Fitting
 
 Fit the starting model that The maximal-then-simplify strategy describes, with every term commented to explain why it is there, followed by the commented decision tree; Section 6 surfaces the diagnostics loudly so the user can see exactly what happened.
 Never automate simplification with a hard-coded fallback, such as wrapping the fit in an `if (isSingular(...)) { ... }` block that silently switches models: it risks dropping the wrong term and hides the decision from the user.
@@ -364,7 +369,8 @@ model <- lmer(
 # for the requested random effects structure. Consult the analyst.
 ```
 
-#### Section 6: Diagnostics
+## Section 6: Diagnostics
+
 ```r
 # --- 6. Model Diagnostics ---
 
@@ -428,7 +434,8 @@ For a one-observation-per-individual `lm()` (see Random vs fixed effects), leave
 Call no lme4-only functions on an `lm()` anywhere in the script (`isSingular()`, `VarCorr()`, `fixef()`, `@optinfo`, `ran_pars`).
 In 6e there is no within-individual spread: report only the SD of values per group, under the same rule.
 
-#### Section 7: Model Summary
+## Section 7: Model Summary
+
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
 - Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals.
@@ -438,7 +445,8 @@ In 6e there is no within-individual spread: report only the SD of values per gro
   Add `car` to the required packages in Section 1.
   Never use `anova(model)` on an `lm()`: it gives sequential (Type I) tests, whose results depend on the order of the terms when groups are unequal.
 
-#### Section 8: Post-Hoc Comparisons
+## Section 8: Post-Hoc Comparisons
+
 Apply these translation rules:
 
 | User says | emmeans code |
@@ -503,7 +511,8 @@ Offer it as a sensitivity check, never as a way to choose between results.
 Add `pbkrtest` to the required packages, use `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))` and `ddf = "Kenward-Roger"` in Section 7, and add this comment: "In simulations, Kenward-Roger was conservative when between-individual variation is poorly estimated (few individuals, noisy replicates), costing power without improving coverage.
 Use it to check a result, not to choose between results."
 
-#### Section 9: Visualisation
+## Section 9: Visualisation
+
 Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
 - For each group, draw a violin of the raw replicate data, with points on top showing which individual each value came from, so the reader can see how many individuals contributed how many replicates.
   Offer the user one of two point styles (one of the user preferences; ask if not stated).
@@ -557,7 +566,8 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
 - Show factor levels as readable words in plots (for example "sensory cortex", not `sensory_cortex`)
 - Give each factor the same colours in every plot: if genotype is coloured in one plot, it keeps those colours everywhere, and no other factor reuses them
 
-#### Section 10: Export Results
+## Section 10: Export Results
+
 ```r
 # --- 10. Export Results ---
 
@@ -615,7 +625,8 @@ Build it from the fitted results, never from hard-coded numbers, in plain langua
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
 - A list of the other output files and what each contains, including the log in `outputs/`, the full record of the run.
 
-#### Section 11: Session Info
+## Section 11: Session Info
+
 <!-- chunk: session-info -->
 ```r
 # --- 11. Session Information ---
@@ -632,7 +643,8 @@ sink()
 close(log_con)
 ```
 
-#### Section 12: Provenance
+## Section 12: Provenance
+
 Always the last section, after the log is closed, so the log's checksum is final.
 Use the script's real file name in `script_file`.
 
