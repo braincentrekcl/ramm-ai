@@ -160,6 +160,24 @@ def error_excerpt(output: str, max_lines: int = 30) -> str:
     return "\n".join(lines[-max_lines:])
 
 
+def claude_items(event: dict) -> list[dict]:
+    """The content items of a Claude Code stream-json event, if it has any."""
+    message = event.get("message")
+    content = message.get("content") if isinstance(message, dict) else None
+    if not isinstance(content, list):
+        return []
+    return [item for item in content if isinstance(item, dict)]
+
+
+def result_text(result: str | list) -> str:
+    """A tool result's text, whether given as a string or as a list of parts."""
+    if isinstance(result, str):
+        return result
+    return "\n".join(
+        part if isinstance(part, str) else part.get("text", "") for part in result
+    )
+
+
 class Claude:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin, self.model, self.effort = plugin, model, effort
@@ -188,15 +206,11 @@ class Claude:
         outputs = []
         for line in proc.stdout.splitlines():
             event = json.loads(line)
-            content = event.get("message", {}).get("content", [])
-            for item in content if isinstance(content, list) else []:
+            for item in claude_items(event):
                 if item.get("type") == "tool_use" and "command" in item["input"]:
                     turn.commands.append(item["input"]["command"])
                 if item.get("type") == "tool_result":
-                    result = item.get("content", "")
-                    if isinstance(result, list):
-                        result = "\n".join(r.get("text", "") for r in result)
-                    outputs.append(str(result))
+                    outputs.append(result_text(item.get("content", "")))
             if event.get("type") == "result":
                 self.session = event["session_id"]
                 turn.reply = event.get("result", "")

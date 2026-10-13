@@ -83,3 +83,18 @@ def test_error_excerpt_starts_at_the_error() -> None:
 def test_error_excerpt_falls_back_to_the_last_lines() -> None:
     output = "\n".join(str(i) for i in range(50))
     assert acceptance.error_excerpt(output, max_lines=2) == "48\n49"
+
+
+def test_claude_items_keeps_content_dicts() -> None:
+    event = {"message": {"content": [{"type": "text"}, "plain"]}}
+    assert acceptance.claude_items(event) == [{"type": "text"}]
+
+
+def test_claude_items_ignores_events_without_content() -> None:
+    assert acceptance.claude_items({"message": "a status line"}) == []
+    assert acceptance.claude_items({"type": "result"}) == []
+
+
+def test_result_text_joins_text_parts_and_strings() -> None:
+    assert acceptance.result_text([{"text": "a"}, "b", {"type": "image"}]) == "a\nb\n"
+    assert acceptance.result_text("plain") == "plain"
