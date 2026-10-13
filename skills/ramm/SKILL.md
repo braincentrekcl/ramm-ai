@@ -24,7 +24,7 @@ The script's sections and code patterns are in `references/script.md`, next to t
 
 RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to the R script, its results and its environment, and nothing else.
 
-- In scope: helping fill in `inputs/input.md` (see Study folder and input), questions about the design, writing and revising the script, helping the user run it and fix errors, explaining the model, results and plots, and the reproducible environment (the reproduce skill).
+- In scope: helping fill in `inputs/input.md` (see [Study folder and input](#study-folder-and-input)), questions about the design, writing and revising the script, helping the user run it and fix errors, explaining the model, results and plots, and the reproducible environment (the reproduce skill).
 - The supported use is a linear mixed-effects model (`lmer()`) for a continuous outcome with repeated or nested measurements.
   If each individual was measured once, propose the simpler model the design needs, a linear model (`lm()`), as one of the open decisions in the design summary, in plain language ("a standard linear model, because each individual was measured once").
 - Counts, proportions, binary and ordinal outcomes are beyond the current scope: they often need another kind of model (for example Poisson or binomial), which RAMM-AI does not write.
@@ -36,14 +36,14 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to the
 
 ### Confirm the design first
 
-Before writing any code, extract everything listed under What to extract from input.md and present it to the user as a structured design summary in plain language (see Tone and communication).
+Before writing any code, extract from input.md everything listed in [What to extract](#what-to-extract) and present it to the user as a structured design summary in plain language (see [Tone and communication](#tone-and-communication)).
 End the summary with an explicit question, never a statement or a list of points to flag, so the user can see that you are waiting and what you need; put every open decision (for example an implied interaction or a missing preference) in that question.
 Then stop and wait for the answer: never answer the question yourself or carry on with a default.
 You may use a question tool if one works in your current mode; if it is unavailable or fails, ask in plain text and end your turn.
 The script contains only what the user confirmed: every model term (fixed effects, covariates, interactions, random effects and slopes) appears in the summary in plain words, and anything input.md does not name is asked about there, never added afterwards.
-Once the user confirms, write the script (see Writing and running the script) in the same turn; never reply with only an acknowledgement.
+Once the user confirms, write the script (see [Writing and running the script](#writing-and-running-the-script)) in the same turn; never reply with only an acknowledgement.
 
-If anything listed under What to extract cannot be determined from input.md, stop and ask: list exactly what is unclear, with an example of what to add to input.md.
+If anything listed in [What to extract](#what-to-extract) cannot be determined from input.md, stop and ask: list exactly what is unclear, with an example of what to add to input.md.
 Do not guess.
 
 ### Data access
@@ -70,7 +70,7 @@ Never install packages.**
 
 - Give the user the single command to run from their study folder once their data file is in `inputs/`, `Rscript code/analysis.R`, and list the files it will write in `outputs/`, including the log and `provenance.csv`.
   If the study has a pinned environment from the reproduce skill, give its run command from `envs/README.md` instead (`Rscript code/run_analysis.R` for renv, `docker run` or `apptainer run` for a container).
-- If the user needs R or the packages installed, point them to the reproduce skill (see Reproducible environment).
+- If the user needs R or the packages installed, point them to the reproduce skill (see [Reproducible environment](#reproducible-environment)).
 - If the script fails, help from the error the user pastes or the log in `outputs/`; fix problems by changing the script, and the user reruns it.
 - Before each change to a script you wrote, tell the user in plain language what you will change and why: the agent may not ask them to approve it.
   If the user refuses a change, do not make it another way (for example with a command): say what you wanted to change and why, and wait.
@@ -85,7 +85,7 @@ If the user asks you to change a result, decline and offer to change the script 
 ### Session record
 
 At the end of the session, ask the user to export this conversation into `code/sessions/`, saying in one sentence why: it records what was asked and done, alongside input.md.
-You cannot run the command yourself; give it as under Agent commands, with today's date in place of YYYY-MM-DD.
+You cannot run the command yourself; give it as in [Agent commands](#agent-commands), with today's date in place of YYYY-MM-DD.
 If `code/sessions/` already has a record from today, add `-2` (then `-3`, and so on) before the extension: Codex will not overwrite an existing file, and the other agents would replace the earlier record.
 The record must be the agent's own verbatim export; never write your own summary in its place, even if the export fails.
 
@@ -137,14 +137,14 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
    Never proceed without it, even if the user describes the design in the chat: input.md makes the analysis transparent by recording the questions before any results exist; kept under version control, with a dated commit before the analysis is run, it serves as a preregistration-style record.
    - No `inputs/` folder: stop and tell the user, in one sentence, to open you in their study folder, or to copy the template folder `template/my-study` from RAMM-AI.
    - `inputs/` exists but `input.md` is missing: stop, explain in plain language why input.md is required, and ask them to fill in the template and save it as `inputs/input.md`.
-     You may help: from what they tell you, suggest text for each heading for them to add themselves (see Input file format).
+     You may help: from what they tell you, suggest text for each heading for them to add themselves (see [Input file format](#input-file-format)).
      Never write in `inputs/`.
 2. List the file names in `inputs/`; listing does not open them.
    If there is a data file other than input.md and a toy file, remind the user once to keep real data out of the study folder until it is time to run the script, unless they are using OpenCode with the RAMM-AI template config, which stops you reading data files.
 
 ### What to extract
 
-From input.md, extract the following for the design summary (see Confirm the design first).
+From input.md, extract the following for the design summary (see [Confirm the design first](#confirm-the-design-first)).
 
 #### Dependent variable
 
@@ -178,9 +178,9 @@ It is the same structure the script prints and saves as `plot_hierarchy.png` (Se
 Under the tree, say which factors vary between individuals (each individual has one level, such as genotype or drug group) and which vary within individuals (each individual has several levels, such as both treatments in a crossover, regions or timepoints).
 
 For each level, determine:
-- Is it random or fixed? (see Random vs fixed effects)
-- Are its identifiers globally unique? (see The non-unique ID problem)
-- How many levels does it have? (see Small number of levels)
+- Is it random or fixed? (see [Random vs fixed effects](#random-vs-fixed-effects))
+- Are its identifiers globally unique? (see [The non-unique ID problem](#the-non-unique-id-problem))
+- How many levels does it have? (see [Small number of levels](#small-number-of-levels))
 
 #### Post-hoc comparisons
 
@@ -224,11 +224,11 @@ When subgroup comparisons are generated, report all of them; never hide or suppr
 
 ### Write the script
 
-When the user confirms the design summary, write the script as Writing and running the script describes.
+When the user confirms the design summary, write the script as [Writing and running the script](#writing-and-running-the-script) describes.
 
 ### After writing
 
-After writing, tell the user, in plain language (see Tone and communication):
+After writing, tell the user, in plain language (see [Tone and communication](#tone-and-communication)):
 
 - What file was created, and that `outputs/results_summary.md` is the place to start once it has run
 - What R packages need to be installed
@@ -239,12 +239,12 @@ After writing, tell the user, in plain language (see Tone and communication):
 
 Suggest the reproduce skill next if the user specified a `Reproducible environment:` preference in input.md, mentioned wanting a reproducible setup, or does not have R or the packages installed (the Docker route needs no R on their computer).
 Otherwise just mention it as an option.
-Give the command as under Agent commands.
+Give the command as in [Agent commands](#agent-commands).
 If they confirm, follow the reproduce skill.
 
 ### End of the session
 
-Ask the user to save the session record (see Session record).
+Ask the user to save the session record (see [Session record](#session-record)).
 
 ---
 
@@ -294,7 +294,7 @@ Specifically:
 ### The non-unique ID problem
 
 This is extremely common in experimental data.
-If the user says identifiers are "not unique across subjects" (e.g., slide 1 from subject 1 is different from slide 1 from subject 2), the R script MUST create globally unique identifiers (pattern under Nesting and crossed random effects).
+If the user says identifiers are "not unique across subjects" (e.g., slide 1 from subject 1 is different from slide 1 from subject 2), the R script MUST create globally unique identifiers (pattern in [Nesting and crossed random effects](#nesting-and-crossed-random-effects)).
 
 Then use `(1 | slide_uid)` instead of `(1 | slide_num)` in the model formula.
 This is critical — using non-unique IDs as random effects will silently pool variance across unrelated groups.
@@ -325,7 +325,7 @@ In this case:
 |---------|---------------|-------|
 | Continuous, roughly normal | Gaussian (identity) | The usual default; check the residual plots |
 | Continuous, right-skewed, positive | Log-transform + Gaussian | Check distribution in exploration section. Explain to the user, in the script comments and in `results_summary.md`, that back-transformed results are ratios ("1.3 times higher"), not differences in units |
-| Counts, proportions, binary, ordinal | Beyond the current scope | Flag it and ask before continuing with a linear mixed model (see Scope) |
+| Counts, proportions, binary, ordinal | Beyond the current scope | Flag it and ask before continuing with a linear mixed model (see [Scope](#scope)) |
 
 ### Optimizer and convergence settings
 
