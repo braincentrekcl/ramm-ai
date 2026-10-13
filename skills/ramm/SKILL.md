@@ -363,11 +363,7 @@ If a grouping factor has fewer than 5-6 levels, the random effect variance estim
 
 If the DV type is ambiguous, ask the user (see Scope); never default to Gaussian silently.
 
-#### D.7 Package Selection
-
-- **lme4** (`lmer()`), or `lm()` when each individual was measured once (D.1).
-
-#### D.8 Optimizer and Convergence Settings
+#### D.7 Optimizer and Convergence Settings
 
 Always specify the optimizer explicitly in the script:
 
@@ -376,7 +372,7 @@ control <- lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
 model <- lmer(formula, data = dat, control = control)
 ```
 
-#### D.9 Common Pitfalls to Guard Against
+#### D.8 Common Pitfalls to Guard Against
 
 1. **Pseudoreplication:** Multiple measurements per subject are NOT independent. The random effects structure must account for this. If the data have more than one observation per subject and the script does not include a subject-level random effect, something is wrong. If there is one observation per subject, a subject random effect is wrong (see D.1).
 2. **Confounding batch with treatment:** If treatments were applied in batches, batch should be a random effect or the confounding should be noted.
