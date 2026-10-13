@@ -1,5 +1,6 @@
 """Checks for the helpers in the headless acceptance harness."""
 
+import json
 from pathlib import Path
 
 import acceptance
@@ -109,3 +110,42 @@ def test_skill_read_rule_anchors_at_the_filesystem_root() -> None:
 def test_skill_read_rule_refuses_a_relative_path() -> None:
     with pytest.raises(ValueError, match="absolute"):
         acceptance.skill_read_rule(Path("plugin"))
+
+
+COPILOT_EVENTS = [
+    {"type": "assistant.message", "data": {"content": "", "model": "gpt-x"}},
+    {
+        "type": "tool.execution_start",
+        "data": {"toolCallId": "a", "toolName": "bash", "arguments": {"command": "ls"}},
+    },
+    {
+        "type": "tool.execution_complete",
+        "data": {"toolCallId": "a", "success": True, "result": {"content": "x.R"}},
+    },
+    {
+        "type": "tool.execution_start",
+        "data": {"toolCallId": "b", "toolName": "bash", "arguments": {"command": "R"}},
+    },
+    {
+        "type": "tool.execution_complete",
+        "data": {"toolCallId": "b", "success": False, "error": {"code": "denied"}},
+    },
+    {"type": "assistant.message", "data": {"content": "Done.", "model": "gpt-x"}},
+    {"type": "result", "sessionId": "s1", "exitCode": 0},
+]
+
+
+def test_parse_copilot_reads_commands_denials_reply_and_session() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    stdout = "\n".join(json.dumps(e) for e in COPILOT_EVENTS)
+    session, models = acceptance.parse_copilot(stdout, turn)
+    assert (session, models) == ("s1", {"gpt-x"})
+    assert turn.commands == ["ls", "R"]
+    assert turn.denied == ['{"command": "R"}']
+    assert (turn.reply, turn.tool_output) == ("Done.", "x.R")
+
+
+def test_parse_copilot_returns_no_session_without_a_result() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    session, _ = acceptance.parse_copilot(json.dumps(COPILOT_EVENTS[0]), turn)
+    assert session is None

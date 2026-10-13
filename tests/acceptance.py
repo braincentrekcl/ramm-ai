@@ -11,6 +11,7 @@ Usage (from the repository root):
     python3 tests/acceptance.py claude autoradiography --runs 3
     python3 tests/acceptance.py codex open-field --runs 3 --effort medium
     python3 tests/acceptance.py opencode open-field --runs 3
+    python3 tests/acceptance.py copilot autoradiography --runs 3
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
 with shell set to "ask" as the template says for free models; a headless run
@@ -48,7 +49,12 @@ REFERENCES = {
     },
 }
 
-START = {"claude": "/ramm:ramm", "codex": "$ramm:ramm", "opencode": "@ramm"}
+START = {
+    "claude": "/ramm:ramm",
+    "codex": "$ramm:ramm",
+    "copilot": "/ramm",
+    "opencode": "@ramm",
+}
 OPENCODE_DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
 REQUEST = "Please analyse my study; the design is in inputs/input.md."
 CONFIRM = (
@@ -315,6 +321,83 @@ class Codex:
         (self.home / "auth.json").unlink(missing_ok=True)
 
 
+def parse_copilot(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
+    """Fill turn from Copilot's JSON lines; return the session ID and models used."""
+    session, models, calls, messages, outputs = None, set(), {}, [], []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        data = event.get("data", {})
+        kind = event.get("type")
+        if kind == "result":
+            session = event["sessionId"]
+        if kind == "assistant.message":
+            if data.get("content"):
+                messages.append(data["content"])
+            if data.get("model"):
+                models.add(data["model"])
+        if kind == "tool.execution_start":
+            calls[data["toolCallId"]] = data.get("arguments", {})
+            if data.get("toolName") == "bash":
+                turn.commands.append(data["arguments"].get("command", ""))
+        if kind == "tool.execution_complete":
+            if data.get("success"):
+                outputs.append((data.get("result") or {}).get("content", ""))
+            elif (data.get("error") or {}).get("code") == "denied":
+                turn.denied.append(json.dumps(calls.get(data["toolCallId"])))
+    turn.reply = "\n\n".join(messages)
+    turn.tool_output = "\n".join(outputs)
+    return session, models
+
+
+class Copilot:
+    def __init__(self, plugin: Path, home: Path, model: str | None, effort: str | None):
+        self.plugin, self.model, self.effort, self.home = plugin, model, effort, home
+        self.session: str | None = None
+        self.models_seen: set[str] = set()
+        # A fresh Copilot home, so no plugin installed on this computer loads;
+        # the login stays in the keychain. The plugin comes from --plugin-dir:
+        # like a copy installed from GitHub, Copilot reads its files without
+        # asking, which it does not for a marketplace added from a local folder.
+        home.mkdir(parents=True)
+
+    def _env(self) -> dict[str, str]:
+        return {**os.environ, "COPILOT_HOME": str(self.home)}
+
+    def turn(self, study: Path, prompt: str) -> Turn:
+        # File edits are allowed, as Claude's acceptEdits allows them; anything
+        # else a user would be asked about is denied in a headless run.
+        cmd = ["copilot", "-p", prompt, "--output-format", "json"]
+        cmd += ["--plugin-dir", str(self.plugin)]
+        cmd += ["--allow-tool", "write"]
+        if self.session:
+            cmd += ["--resume", self.session]
+        if self.model:
+            cmd += ["--model", self.model]
+        if self.effort:
+            cmd += ["--reasoning-effort", self.effort]
+        proc = subprocess.run(
+            cmd,
+            check=False,
+            cwd=study,
+            env=self._env(),
+            capture_output=True,
+            text=True,
+            timeout=TURN_TIMEOUT_S,
+            stdin=subprocess.DEVNULL,
+        )
+        turn = Turn(tag="", prompt=prompt)
+        session, models = parse_copilot(proc.stdout, turn)
+        if not session:
+            raise RuntimeError(f"copilot returned no session:\n{proc.stderr}")
+        self.session = session
+        self.models_seen |= models
+        return turn
+
+    def describe(self) -> str:
+        models = ", ".join(sorted(self.models_seen)) or "unknown"
+        return f"{models}, effort {self.effort or 'default'}"
+
+
 class OpenCode:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin = plugin
@@ -390,7 +473,7 @@ def archive(path: str, dest: Path, strip: int) -> None:
     )
 
 
-def one_run(agent: Claude | Codex | OpenCode, demo: str, study: Path) -> dict:
+def one_run(agent: Claude | Codex | Copilot | OpenCode, demo: str, study: Path) -> dict:
     archive(f"examples/demo-{demo}", study, strip=2)
     if isinstance(agent, OpenCode):
         agent.install(study)
@@ -507,7 +590,7 @@ def summarise(header: str, results: list[dict]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("agent", choices=["claude", "codex", "opencode"])
+    parser.add_argument("agent", choices=["claude", "codex", "copilot", "opencode"])
     parser.add_argument("demo", choices=sorted(REFERENCES))
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--model")
@@ -527,7 +610,7 @@ def main() -> None:
     ).stdout.strip()
     version = subprocess.run(
         [args.agent, "--version"], capture_output=True, text=True, check=True
-    ).stdout.strip()
+    ).stdout.splitlines()[0]
     plugin = out / "plugin"
     if not plugin.exists():
         archive(".", plugin, strip=0)
@@ -539,6 +622,8 @@ def main() -> None:
             agent = Claude(plugin, args.model, args.effort)
         elif args.agent == "opencode":
             agent = OpenCode(plugin, args.model, args.effort)
+        elif args.agent == "copilot":
+            agent = Copilot(plugin, run_dir / "copilot-home", args.model, args.effort)
         else:
             agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
         try:
