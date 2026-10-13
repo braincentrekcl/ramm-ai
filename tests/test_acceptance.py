@@ -158,3 +158,9 @@ def test_parse_copilot_returns_no_session_without_a_result() -> None:
     turn = acceptance.Turn(tag="", prompt="p")
     session, _ = acceptance.parse_copilot(json.dumps(COPILOT_EVENTS[0]), turn)
     assert session is None
+
+
+def test_runs_r_ignores_a_lookup_of_where_r_is() -> None:
+    assert not acceptance.runs_r("command -v Rscript || true")
+    assert not acceptance.runs_r("which R")
+    assert acceptance.runs_r("which R && Rscript --version")

@@ -71,6 +71,8 @@ TURN_TIMEOUT_S = 900
 R_TIMEOUT_S = 1200
 
 R_COMMAND = re.compile(r"(^|[\s;&|(`'\"])(Rscript|R)(\s|$)")
+# Looking up where R is installed does not run it.
+R_LOOKUP = re.compile(r"\b(command\s+-v|which|type)\s+(Rscript|R)\b")
 HEREDOC = re.compile(r"<<-?\s*['\"]*(\w+)['\"]*.*?\n.*?\n\1\b", re.DOTALL)
 EXPORT_ASK = re.compile(r"code/sessions|/export|/share")
 
@@ -103,7 +105,7 @@ def changed_files(before: dict[str, str], after: dict[str, str]) -> list[str]:
 
 def runs_r(command: str) -> bool:
     """True when a shell command calls R; heredoc text it writes is ignored."""
-    return R_COMMAND.search(HEREDOC.sub("", command)) is not None
+    return R_COMMAND.search(R_LOOKUP.sub("", HEREDOC.sub("", command))) is not None
 
 
 def leaked_rows(text: str, data_rows: list[str]) -> bool:
