@@ -33,7 +33,7 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to the
 
 ### Confirm the design first
 
-Before writing any code, extract everything listed under What to extract from input.md and present it to the user as a structured summary in plain language (see Tone and communication).
+Before writing any code, extract everything listed under What to extract from input.md and present it to the user as a structured design summary in plain language (see Tone and communication).
 End the summary with an explicit question, never a statement or a list of points to flag, so the user can see that you are waiting and what you need; put every open decision (for example an implied interaction or a missing preference) in that question.
 Then stop and wait for the answer: never answer the question yourself or carry on with a default.
 You may use a question tool if one works in your current mode; if it is unavailable or fails, ask in plain text and end your turn.
@@ -168,7 +168,7 @@ Treatment Group (fixed)
                     └── Region (observation-level, 12 ROIs)
 ```
 
-Show this tree in the confirmation summary, labelled in plain words ("Mouse", "Slide", "Section") with the counts input.md gives, so the user can check the structure before any script exists.
+Show this tree in the design summary, labelled in plain words ("Mouse", "Slide", "Section") with the counts input.md gives, so the user can check the structure before any script exists.
 It is the same structure the script prints and saves as `plot_hierarchy.png` (Section 4); if the user corrects it, use the corrected tree in both.
 Under the tree, say which factors vary between individuals (each individual has one level, such as genotype or drug group) and which vary within individuals (each individual has several levels, such as both treatments in a crossover, regions or timepoints).
 
@@ -193,9 +193,9 @@ For each level, determine:
 #### QC rules
 
 - Extract any QC rules stated in input.md (for example "exclude sections flagged as torn"), with the column each one uses.
-- If none are stated, say so in the confirmation summary.
+- If none are stated, say so in the design summary.
   Never invent QC rules, and never remove statistical outliers on your own initiative.
-- If input.md has an `Exclusions and Attrition` heading, list those individuals in the confirmation summary.
+- If input.md has an `Exclusions and Attrition` heading, list those individuals in the design summary.
   Keep the planned numbers from Study Design for the script's design check (Section 2a); never change them to match the losses.
 
 #### Implied interactions
@@ -203,7 +203,7 @@ For each level, determine:
 Interactions follow the study design.
 Include one only when input.md specifies it or the stated hypothesis requires it; never add one on your own initiative.
 
-If an interaction seems implied but is not specified (for example, the input asks to compare treatment within each sex, or says the effect may "differ by" something), point this out in the confirmation summary and ask whether they want to test it.
+If an interaction seems implied but is not specified (for example, the input asks to compare treatment within each sex, or says the effect may "differ by" something), point this out in the design summary and ask whether they want to test it.
 Explain briefly why: comparing subgroups one at a time does not show that they differ.
 Include it only if the user says yes.
 
