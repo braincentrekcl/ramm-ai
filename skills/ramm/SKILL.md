@@ -369,7 +369,7 @@ Users may add headings of their own.
 nesting, any known issues like non-unique IDs or missing data]
 
 # Column Mappings (required)
-- Dependent variable: `column_name` (type, units)
+- Dependent variable: `column_name` (type, units; optionally, how the values usually spread)
 - Fixed effect: `column_name` (levels: a, b, c; reference = a)
 - Subject ID: `column_name` (globally unique)
 - Nesting level: `column_name` (unique or NOT unique across subjects)
