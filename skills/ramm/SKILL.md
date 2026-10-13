@@ -309,7 +309,7 @@ A factor is **fixed** if:
 If it is unclear which applies, ask the user whether the levels were deliberately chosen targets of inference (fixed) or a sample standing in for a wider population (random). Do not guess.
 
 **The biological unit is not the same as a random intercept.** The individual (for example a mouse, a participant or a donor) is almost always the biological unit of interest and the level at which measurements are taken. It needs a random intercept only when more than one analysed observation remains per subject:
-- Repeated or nested measurements per subject → include `(1 | subject)`.
+- Repeated or nested measurements per subject are not independent → include `(1 | subject)`.
 - Exactly one analysed observation per subject → fit an ordinary subject-level model (`lm()`), with no subject random intercept; one would be unidentifiable and give a singular fit.
 - Never treat technical replicates as additional biological units.
 - If a treatment was given to a whole cage, litter or batch (for example diet, drinking water or housing), suggest adding that grouping as a level above the individual to control for batch effects. Many studies are not powered for this, so expect the user to decline; if they do, keep the individual-level model and record the choice in a comment in the script.
@@ -365,10 +365,9 @@ Always specify the optimizer explicitly in the script, as in the Section 5 patte
 
 #### D.8 Common Pitfalls to Guard Against
 
-1. **Pseudoreplication:** Multiple measurements per subject are NOT independent. The random effects structure must account for this. If the data have more than one observation per subject and the script does not include a subject-level random effect, something is wrong. If there is one observation per subject, a subject random effect is wrong (see D.1).
-2. **Confounding batch with treatment:** If treatments were applied in batches, batch should be a random effect or the confounding should be noted.
-3. **Ignoring hierarchy:** If sections are nested in slides nested in subjects, each level needs its own random effect (or a justification for why it was excluded).
-4. **Using raw group means instead of estimated marginal means:** Always use emmeans. Raw means are biased in unbalanced designs.
+1. **Confounding batch with treatment:** If treatments were applied in batches, batch should be a random effect or the confounding should be noted.
+2. **Ignoring hierarchy:** If sections are nested in slides nested in subjects, each level needs its own random effect (or a justification for why it was excluded).
+3. **Using raw group means instead of estimated marginal means:** Always use emmeans. Raw means are biased in unbalanced designs.
 
 ---
 
