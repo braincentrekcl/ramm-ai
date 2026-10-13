@@ -365,9 +365,8 @@ Always specify the optimizer explicitly in the script, as in the Section 5 patte
 
 #### D.8 Common Pitfalls to Guard Against
 
-1. **Confounding batch with treatment:** If treatments were applied in batches, batch should be a random effect or the confounding should be noted.
-2. **Ignoring hierarchy:** If sections are nested in slides nested in subjects, each level needs its own random effect (or a justification for why it was excluded).
-3. **Using raw group means instead of estimated marginal means:** Always use emmeans. Raw means are biased in unbalanced designs.
+1. **Ignoring hierarchy:** If sections are nested in slides nested in subjects, each level needs its own random effect (or a justification for why it was excluded).
+2. **Using raw group means instead of estimated marginal means:** Always use emmeans. Raw means are biased in unbalanced designs.
 
 ---
 
