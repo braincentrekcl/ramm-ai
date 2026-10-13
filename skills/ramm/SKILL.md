@@ -361,8 +361,6 @@ If a grouping factor has fewer than 5-6 levels, the random effect variance estim
 | Continuous, right-skewed, positive | Log-transform + Gaussian | Check distribution in exploration section. Explain to the user, in the script comments and in `results_summary.md`, that back-transformed results are ratios ("1.3 times higher"), not differences in units |
 | Counts, proportions, binary, ordinal | Beyond the current scope | Flag it and ask before continuing with a linear mixed model (see Scope) |
 
-If the DV type is ambiguous, ask the user (see Scope); never default to Gaussian silently.
-
 #### D.7 Optimizer and Convergence Settings
 
 Always specify the optimizer explicitly in the script, as in the Section 5 pattern.
