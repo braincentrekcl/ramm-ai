@@ -1,6 +1,7 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  // Change this path to where you put the RAMM-AI folder, keeping /skills at the end.
+  // Change /path/to/ramm-ai to where you put the RAMM-AI folder, here and in
+  // the two rules below that let RAMM-AI read its own skill files.
   "skills": ["/path/to/ramm-ai/skills"],
   // RAMM-AI never runs commands, never reads your data, and only writes in code/
   // and envs/.
@@ -14,9 +15,13 @@
     { "action": "grep", "resource": "*", "effect": "deny" },
     // Nothing outside the study folder.
     { "action": "external_directory", "resource": "*", "effect": "deny" },
+    // Except RAMM-AI's own skill files, which it reads before writing a script;
+    // they hold no user data, and edit stays denied below.
+    { "action": "external_directory", "resource": "/path/to/ramm-ai/skills/*", "effect": "allow" },
     // In the study folder, read nothing except what is allowed below.
     // OpenCode matches these against paths inside the study folder.
     { "action": "read", "resource": "*", "effect": "deny" },
+    { "action": "read", "resource": "/path/to/ramm-ai/skills/*", "effect": "allow" },
     // The scripts and environment files RAMM-AI writes, by name, so a data
     // file kept beside them stays unreadable.
     { "action": "read", "resource": "code/*.R", "effect": "allow" },

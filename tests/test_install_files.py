@@ -140,3 +140,29 @@ def test_opencode_edit_rules(
 )
 def test_opencode_denies_other_tools(opencode_rules: list[dict], action: str) -> None:
     assert decide(opencode_rules, action, "anything") == "deny"
+
+
+SKILLS = "/path/to/ramm-ai/skills"
+
+
+def test_opencode_reads_the_skill_folder(opencode_rules: list[dict]) -> None:
+    folder = f"{SKILLS}/ramm/references/*"
+    assert decide(opencode_rules, "external_directory", folder) == "allow"
+    assert decide(opencode_rules, "read", f"{SKILLS}/ramm/references/script.md") == (
+        "allow"
+    )
+
+
+@pytest.mark.parametrize(
+    ("action", "resource"),
+    [
+        ("edit", f"{SKILLS}/ramm/SKILL.md"),
+        ("external_directory", "/path/to/ramm-ai/examples/demo-open-field/inputs/*"),
+        ("read", "/path/to/ramm-ai/examples/demo-open-field/inputs/data.csv"),
+        ("external_directory", "/Users/someone/Documents/*"),
+    ],
+)
+def test_opencode_keeps_the_rest_outside_the_study_closed(
+    opencode_rules: list[dict], action: str, resource: str
+) -> None:
+    assert decide(opencode_rules, action, resource) == "deny"
