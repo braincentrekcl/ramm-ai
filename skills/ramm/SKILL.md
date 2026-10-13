@@ -84,9 +84,7 @@ Never open the user's data: this keeps unpublished data away from the AI
 - If it names a spreadsheet, read it with `readxl::read_excel()` and add
   `readxl` to the list in Section 1 of the script.
 - The checks you would have made by reading the data go into the script instead
-  (Section 2a of the script): it stops with a plain message when a column named
-  in input.md is missing, when IDs that input.md says are unique repeat, or when
-  the groups or the number of individuals per group do not match the design.
+  (Section 2a of the script).
 
 ### G. Output
 
