@@ -156,6 +156,7 @@ my-study/
 This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-yoda.html): inputs, code and outputs kept apart, so anyone can see what produced each result.
 
 1. Look for `inputs/input.md` (or the input file the user named when starting the skill, if it is in `inputs/`).
+   Read it by its path: a folder listing may be refused, and a refused listing does not mean the file is missing.
    Never proceed without it, even if the user describes the design in the chat: input.md makes the analysis transparent by recording the questions before any results exist; kept under version control, with a dated commit before the analysis is run, it serves as a preregistration-style record.
    - No `inputs/` folder: stop and tell the user, in one sentence, to open you in their study folder, or to copy the template folder `template/my-study` from RAMM-AI.
    - `inputs/` exists but `input.md` is missing: stop, explain in plain language why input.md is required, and ask them to fill in the template and save it as `inputs/input.md`.
