@@ -60,7 +60,7 @@ Once the user confirms, write the script (Section G) in the same turn; never
   reply with only an acknowledgement.
 
 #### B.6 Ambiguity Check
-If ANY of the above cannot be determined from the input file, STOP and ask the user before proceeding. List exactly what is unclear. Do not guess.
+If ANY of the above cannot be determined from the input file, STOP and ask the user before proceeding. List exactly what is unclear, with an example of what to add to input.md. Do not guess.
 
 ### C. Data Access
 
@@ -162,7 +162,6 @@ Never open the user's data: this keeps unpublished data away from the AI
   - Not `(1 | mouse_id) + (1 | slide_id)`, but "the model allows each mouse and each slide to sit a little higher or lower than average".
   - Column names are fine when pointing the user at their own data (for example "your `section` column").
 - Call the individuals what input.md calls them (mice, rats, participants, donors) in messages, comments and plot labels; "individual" is only the fallback.
-- If the user's input.md is incomplete, be specific about what is missing and provide an example of what to add. Never guess.
 - Never suggest that RAMM makes QC unnecessary.
 
 ---
