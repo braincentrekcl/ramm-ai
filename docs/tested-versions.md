@@ -18,8 +18,10 @@ A run breaks a requirement when any of the following happens.
   place of the export.
 - **Computation:** the script does not compute the model the user confirmed
   correctly.
-  Errors the agent fixes from a pasted error message are part of normal use;
-  the notes say how many there were.
+  The frequency of agent errors is a function of the underlying LLM and
+  reasoning level, so errors that are subsequently fixed by pasting an error
+  message are expected as part of normal use; the notes say how many there
+  were.
 
 The reference results check the arithmetic, to two decimal places, only when
   the agent fitted the same model:
