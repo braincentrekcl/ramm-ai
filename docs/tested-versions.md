@@ -48,6 +48,8 @@ The table holds only results for the current RAMM-AI; earlier runs are in the
 
 | Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
 |---|---|---|---|---|---|---|
+| Claude Code | 727a47a | 2.1.287 | Opus 5.5, default effort | 2026-10-13 | 6, headless | Nothing broke; every script ran first time. Open field: the reference model in 3 runs, numbers matched. Autoradiography: the reference model in 1 run, numbers matched; 2 runs fitted a mouse-by-region slope and no slide term, both raised in plain words before writing. |
+| Codex | 727a47a | 0.160.1 | gpt-6-luna, reasoning effort low | 2026-10-13 | 6, headless | Confirmation broke in 2 open-field runs: one fitted a treatment slope it had not raised and a treatment × session interaction it had only asked about; one added order in the turn that wrote the script. 7 errors fixed from pasted messages in 4 runs: slopes that could not be fitted with 21 sessions, R mistakes, and a slide check that stopped on valid data. Autoradiography: the reference model in 3 runs, numbers matched. Open field: the reference model in 1 run, numbers matched. |
 
 ## Reproduce
 
