@@ -26,7 +26,9 @@ A run breaks a requirement when any of the following happens.
 The reference results check the arithmetic, to two decimal places, only when
   the agent fitted the same model:
 
-- Autoradiography: het − WT in striatum, −14.56 (SE 5.86).
+- Autoradiography: `specific_binding ~ genotype * region + (1 | mouse_id) +
+  (1 | slide_id) + (1 | section_uid)`, het − WT in striatum −14.56 (SE 5.86,
+  Satterthwaite df 42.17), from 474 measurements in 30 mice.
 - Open field: `centre_time_s ~ treatment + session + (1 | mouse_id)`, diazepam −
   vehicle 31.27 s (SE 6.55, Satterthwaite df 9.01), from 21 sessions in 12 mice.
 
