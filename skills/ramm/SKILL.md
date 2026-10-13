@@ -292,19 +292,18 @@ It needs a random intercept only when more than one analysed observation remains
 - If a treatment was given to a whole cage, litter or batch (for example diet, drinking water or housing), suggest adding that grouping as a level above the individual to control for batch effects.
   Many studies are not powered for this, so expect the user to decline; if they do, keep the individual-level model and record the choice in a comment in the script.
 
-### The maximal-then-simplify strategy (Barr et al., 2013)
+### Starting model and fallbacks
 
-You are generating the script without access to the data — you cannot fit the model, observe singular fits, or iteratively simplify.
-Your job is to **encode the strategy into the script** so the user can apply it when they run it.
-Specifically:
+You write the script without the data, so you cannot fit the model, see a singular fit or simplify it yourself.
+The script carries the strategy instead, so the user can apply it when they run it (Barr et al., 2013):
 
-- **In the script:** specify the maximal random effects structure justified by the study design as the starting model.
-- **Also in the script:** embed the decision tree for simplification as commented-out alternative models the user can enable after inspecting Section 6 diagnostics (see Section 5 for the exact pattern).
-- **Ordering the alternatives** (this is the rule the user applies at runtime, and the comments in the script should reflect it):
-   1. Remove random effect correlations first (use `||` syntax in lme4)
-   2. Remove the random effect with the smallest variance component (identify from `VarCorr()`)
-   3. **Never remove the subject-level random intercept when there are repeated measurements per subject** — it accounts for pseudoreplication
-- Each commented alternative in the script should have a short rationale for when to enable it.
+- **Starting model:** the full model the user confirmed: a random intercept for each grouping level, and a random slope only if the user chose one (see [Random slopes](#random-slopes)).
+- **Fallbacks:** commented-out simpler models the user can enable, one at a time, after inspecting the Section 6 diagnostics (see Section 5 for the exact pattern), in this order:
+   1. Remove the correlations between random effects (`||` in lme4), if the model has a slope.
+   2. Remove the random effect with the smallest variance component (from `VarCorr()`), but **never the individual's random intercept while there are repeated measurements per individual**: it accounts for pseudoreplication.
+   3. Try another optimizer.
+   4. Compare optimizers with `allFit()`.
+- Give each commented alternative a short rationale for when to enable it.
 
 ### The non-unique ID problem
 
@@ -331,7 +330,7 @@ dat$section_uid <- paste(dat$subject_id, dat$slide_num, dat$section_num, sep = "
 
 If a grouping factor has fewer than 5-6 levels, the random effect variance estimate will be unreliable.
 In this case:
-- Include the term in the maximal model if the design justifies it (e.g., 4 batches is common)
+- Include the term in the starting model if the design justifies it (e.g., 4 batches is common)
 - Add a script comment warning that the estimate may be unreliable and suggesting this term as a first candidate for the Section 5 simplification alternatives if the model is singular
 
 ### Family and link function selection

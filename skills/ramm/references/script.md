@@ -286,7 +286,7 @@ ggsave(file.path("outputs", "plot_hierarchy.png"), hierarchy_plot, width = 5, he
 
 ## Section 5: Model Fitting
 
-Fit the starting model that [The maximal-then-simplify strategy](../SKILL.md#the-maximal-then-simplify-strategy-barr-et-al-2013) describes, with every term commented to explain why it is there, followed by the commented decision tree; Section 6 surfaces the diagnostics loudly so the user can see exactly what happened.
+Fit the starting model that [Starting model and fallbacks](../SKILL.md#starting-model-and-fallbacks) describes, with every term commented to explain why it is there, followed by the commented decision tree; Section 6 surfaces the diagnostics loudly so the user can see exactly what happened.
 Never automate simplification with a hard-coded fallback, such as wrapping the fit in an `if (isSingular(...)) { ... }` block that silently switches models: it risks dropping the wrong term and hides the decision from the user.
 
 Use this pattern, adapting the formula to the study design:
@@ -294,8 +294,8 @@ Use this pattern, adapting the formula to the study design:
 ```r
 # --- 5. Model Fitting ---
 
-# Fit the maximal random effects structure justified by the study design
-# (Barr et al., 2013). The model below is our recommended starting point.
+# Start from the full model confirmed in the design summary, with a random
+# intercept for each grouping level (Barr et al., 2013).
 # If it fails to converge or gives a singular fit warning, do NOT ignore it —
 # review the diagnostics in Section 6 and consider the simplification options
 # commented below.
