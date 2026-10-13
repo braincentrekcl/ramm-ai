@@ -23,6 +23,15 @@ Then install the plugin called `ramm` from it.
 | GitHub Copilot in VS Code | [Agent plugins in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-plugins): add the marketplace to `chat.plugins.marketplaces`, or run **Chat: Install Plugin From Source** with the GitHub address |
 | Codex app | [Plugins](https://learn.chatgpt.com/docs/plugins): the app installs from OpenAI's and your workspace's plugin lists, so ask your workspace admin to import the marketplace, or use the command line above once |
 
+## Claude Code notes
+
+Before writing the script, RAMM-AI reads its script patterns,
+  `skills/ramm/references/script.md` in the installed plugin.
+The plugin sits outside your study folder, so Claude Code asks whether it
+  may read that file ([Working directories](https://code.claude.com/docs/en/permissions#working-directories)).
+Allow it: without it RAMM-AI writes the script without its patterns.
+The file holds RAMM-AI's own instructions, none of your data.
+
 ## OpenCode notes
 
 OpenCode: RAMM-AI supports OpenCode v2 only (`brew install
