@@ -5,7 +5,8 @@ Letters such as B.3 or D.1 refer to sections of the ramm skill's SKILL.md.
 
 ### E. R Script Structure
 
-Generate the R script with these sections in this exact order. Each section must have a clear comment header.
+Generate the R script with these sections in this exact order.
+Each section must have a clear comment header.
 The script runs from the study folder with `Rscript code/analysis.R`, reads only from `inputs/` and writes only to `outputs/`.
 Before writing the script to disk, check it against every rule in this skill; if any check fails, fix the script before writing.
 
@@ -89,24 +90,17 @@ for (pkg in required_packages) library(pkg, character.only = TRUE)
 # lmerTest supplies the Satterthwaite df used for all tests and intervals.
 ```
 
-Name the log after the script (`analysis.R` writes `outputs/analysis_log.txt`;
-  `brain_regions_analysis.R` writes `outputs/brain_regions_analysis_log.txt`).
+Name the log after the script (`analysis.R` writes `outputs/analysis_log.txt`; `brain_regions_analysis.R` writes `outputs/brain_regions_analysis_log.txt`).
 
 Adjust the package list based on the model requirements.
-Choose tidyverse packages over base R, when available, but don't require all of tidyverse. Add packages as needed.
+Choose tidyverse packages over base R, when available, but don't require all of tidyverse.
+Add packages as needed.
 
 #### Section 2: Data Loading and Preparation
-- Read the data file named under `Data File` in input.md from `inputs/`
-  (`readr::read_csv(file.path("inputs", "data.csv"))`; see C for .tsv and
-  spreadsheets).
-  If the file is missing, stop with a plain message saying to put it in
-  `inputs/`.
-- **Check the data against the design** straight after reading, using this
-  pattern with the column names, unique IDs, groups and individuals per group from
-  input.md.
-  Run the one-group-per-individual check only for between-individual factors;
-  leave it out for within-individual factors (B.3), where every individual has
-  several levels by design:
+- Read the data file named under `Data File` in input.md from `inputs/` (`readr::read_csv(file.path("inputs", "data.csv"))`; see C for .tsv and spreadsheets).
+  If the file is missing, stop with a plain message saying to put it in `inputs/`.
+- **Check the data against the design** straight after reading, using this pattern with the column names, unique IDs, groups and individuals per group from input.md.
+  Run the one-group-per-individual check only for between-individual factors; leave it out for within-individual factors (B.3), where every individual has several levels by design:
 
 <!-- chunk: data-checks -->
 ```r
@@ -171,9 +165,9 @@ if (length(fewer_than_planned) > 0) {
 - Set reference levels (vehicle/control first)
 - Create unique IDs for nested factors where needed (see D.3)
 - Print the number of rows, columns and individuals per group.
-  Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data
-  itself), so the log can be shown to the AI assistant safely.
-- **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data. Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line:
+  Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data itself), so the log can be shown to the AI assistant safely.
+- **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data.
+  Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line:
 
 ```r
 # --- 2b. Quality control ---
@@ -258,7 +252,9 @@ Label levels in plain words ("Mouse", "Slide", "Section"), not column names or m
 # Total expected observations: ~48 subjects × ~4 slides × 3 sections × varies regions
 ```
 
-Then draw the tree with ggplot2 (already required, so no extra package). Take every count from the data, never from input.md, so the picture shows what was analysed. Add one box per level; note factors measured within a level (for example regions on every section) inside that level's box.
+Then draw the tree with ggplot2 (already required, so no extra package).
+Take every count from the data, never from input.md, so the picture shows what was analysed.
+Add one box per level; note factors measured within a level (for example regions on every section) inside that level's box.
 Only a factor that splits the individuals into separate groups (for example genotype, or a drug each individual receives alone) gets a box above the individual.
 A factor every individual receives more than one level of (for example both treatments in a crossover, or regions) is not above the individual, because the individuals do not sit inside it: note it inside the individual's box or the measurement's box instead.
 If there is no between-individual factor, the individual is the top box.
@@ -437,8 +433,10 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 #### Section 7: Model Summary
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
-- Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals. Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
-- Satterthwaite df apply to `lmer()` models. For a one-observation-per-individual `lm()` (see D.1), use `car::Anova(model, type = 3)` for Type III F-tests, so the tests mean the same as for `lmer()` (with the sum-to-zero contrasts set in Section 5), and ordinary t-based intervals.
+- Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals.
+  Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
+- Satterthwaite df apply to `lmer()` models.
+  For a one-observation-per-individual `lm()` (see D.1), use `car::Anova(model, type = 3)` for Type III F-tests, so the tests mean the same as for `lmer()` (with the sum-to-zero contrasts set in Section 5), and ordinary t-based intervals.
   Add `car` to the required packages in Section 1.
   Never use `anova(model)` on an `lm()`: it gives sequential (Type I) tests, whose results depend on the order of the terms when groups are unequal.
 
@@ -457,16 +455,21 @@ Default p-value adjustment depends on the comparison type:
 - **Pairwise** (`revpairwise`): use `adjust = "tukey"` — designed for all pairwise comparisons
 - **All other comparisons**: use `adjust = "holm"` — a safe general-purpose default
 - Override with the user's preference if they specify a different method in input.md
-- With `dunnett` or `tukey`, check the contrasts' df before summarising and stop if any is below 2 (see the pattern below). Both methods return NaN or an unhelpful error below 2 df, and with so few individuals no adjusted p-value would be trustworthy anyway
+- With `dunnett` or `tukey`, check the contrasts' df before summarising and stop if any is below 2 (see the pattern below).
+  Both methods return NaN or an unhelpful error below 2 df, and with so few individuals no adjusted p-value would be trustworthy anyway
 
 Always:
 - Specify the adjustment method explicitly in the code (never rely on defaults)
 - Report estimates AND confidence intervals, not just p-values
 - Name the objects `emm` and `contrast_output`; Section 10 exports them
-- Express every difference relative to the reference level (treatment minus control, het minus WT), so a decrease in the treated group reads as a negative number. `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment. The same holds for interaction contrasts: `interaction = "revpairwise"` labels them as, for example, `diazepam - vehicle` by `second - first`; `"pairwise"` gives the same size with the labels reversed
+- Express every difference relative to the reference level (treatment minus control, het minus WT), so a decrease in the treated group reads as a negative number.
+  `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment.
+  The same holds for interaction contrasts: `interaction = "revpairwise"` labels them as, for example, `diazepam - vehicle` by `second - first`; `"pairwise"` gives the same size with the labels reversed
 - Test differences, not means: for the group means use `summary(emm, infer = c(TRUE, FALSE))`, which gives confidence intervals without testing whether each mean is zero (a meaningless test for most measurements)
 - Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
-- If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ. Only a test of the difference itself (an interaction) shows that. If that question matters to your study, specify it in input.md."
+- If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ.
+  Only a test of the difference itself (an interaction) shows that.
+  If that question matters to your study, specify it in input.md."
 
 Use this pattern (adapt the formula and comparison):
 
@@ -497,14 +500,25 @@ summary(emm, infer = c(TRUE, FALSE))
 summary(contrast_output, infer = TRUE)
 ```
 
-**Kenward-Roger, only if the user asks for it.** Offer it as a sensitivity check, never as a way to choose between results. Add `pbkrtest` to the required packages, use `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))` and `ddf = "Kenward-Roger"` in Section 7, and add this comment: "In simulations, Kenward-Roger was conservative when between-individual variation is poorly estimated (few individuals, noisy replicates), costing power without improving coverage. Use it to check a result, not to choose between results."
+**Kenward-Roger, only if the user asks for it.**
+Offer it as a sensitivity check, never as a way to choose between results.
+Add `pbkrtest` to the required packages, use `emm_options(lmer.df = "kenward-roger", pbkrtest.limit = nrow(dat))` and `ddf = "Kenward-Roger"` in Section 7, and add this comment: "In simulations, Kenward-Roger was conservative when between-individual variation is poorly estimated (few individuals, noisy replicates), costing power without improving coverage.
+Use it to check a result, not to choose between results."
 
 #### Section 9: Visualisation
 Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
-- For each group, draw a violin of the raw replicate data, with points on top showing which individual each value came from, so the reader can see how many individuals contributed how many replicates. Offer the user one of two point styles (a B.5 preference; ask if not stated).
-  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the confirmation question (B), even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual. Keep the user's choice if they still want one point per replicate; the strips below are the fallback.
+- For each group, draw a violin of the raw replicate data, with points on top showing which individual each value came from, so the reader can see how many individuals contributed how many replicates.
+  Offer the user one of two point styles (a B.5 preference; ask if not stated).
+  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the confirmation question (B), even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
+  Keep the user's choice if they still want one point per replicate; the strips below are the fallback.
   - **One point per replicate**, marked by individual: shows how spread each individual's replicates are.
-- Mark the individual with a visual feature no other factor is using. Use colour if it is free. If colour already shows another factor (for example group), use shape with 6 or fewer individuals per group, and only if shape is not already showing another factor (see below); shapes become hard to tell apart beyond that. Otherwise give each individual its own vertical strip: a thin line spanning its replicates, with its points on the line, strips ordered by individual mean and spread within the violin's width. Say in the subtitle that each strip is one individual. Never rely on dodged or jittered columns alone: without the line, a reader cannot tell an individual's column from jitter. Place the estimate and its interval clear of the last strip:
+- Mark the individual with a visual feature no other factor is using.
+  Use colour if it is free.
+  If colour already shows another factor (for example group), use shape with 6 or fewer individuals per group, and only if shape is not already showing another factor (see below); shapes become hard to tell apart beyond that.
+  Otherwise give each individual its own vertical strip: a thin line spanning its replicates, with its points on the line, strips ordered by individual mean and spread within the violin's width.
+  Say in the subtitle that each strip is one individual.
+  Never rely on dodged or jittered columns alone: without the line, a reader cannot tell an individual's column from jitter.
+  Place the estimate and its interval clear of the last strip:
   ```r
   # One strip per individual, ordered by the individual's mean within its group.
   strip_x <- dat |>
@@ -536,7 +550,8 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   ```
   - **One point per individual** (the individual's mean), with point size showing how many replicates it came from.
 - Beside each violin, plot the group's estimated marginal mean with its 95% confidence interval from Section 8, so the reader can compare the raw data with the model's estimate.
-- Estimated marginal means are model-based group estimates. Label per-individual means as individual means, never as EMMs.
+- Estimated marginal means are model-based group estimates.
+  Label per-individual means as individual means, never as EMMs.
 - Use a clean theme (`theme_classic()` or `theme_bw()`), with Set2 colours for categorical factors, magma for sequential factors, and RdBu_r for diverging (mean centered) factors.
 - If there is more than one categorical factor (e.g. genotype and drug), use shape for the factor with fewest levels.
 - Label axes clearly with units
@@ -592,18 +607,15 @@ For an `lm()`, export the fixed effects with `broom::tidy(model)` (add `broom` t
 
 Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
 
-Finally, the script writes `outputs/results_summary.md`, the file a user opens
-  first.
-Build it from the fitted results, never from hard-coded numbers, in plain
-  language:
+Finally, the script writes `outputs/results_summary.md`, the file a user opens first.
+Build it from the fitted results, never from hard-coded numbers, in plain language:
 - If the outcome is beyond the current scope (counts, proportions, binary, ordinal; see Scope) and the user chose to continue, start the file with a **Check first** line saying a linear mixed model may give misleading results for this outcome and pointing to the residual plots.
 - If any group has fewer individuals than planned (`fewer_than_planned` from Section 2a), start the file with a **Check first** line giving the planned and actual numbers per group, and pointing to 'Exclusions and Attrition' in inputs/input.md for who was lost and why.
 - One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
-- A list of the other output files and what each contains, including the log in
-  `outputs/`, the full record of the run.
+- A list of the other output files and what each contains, including the log in `outputs/`, the full record of the run.
 
 #### Section 11: Session Info
 <!-- chunk: session-info -->
@@ -623,8 +635,7 @@ close(log_con)
 ```
 
 #### Section 12: Provenance
-Always the last section, after the log is closed, so the log's checksum is
-  final.
+Always the last section, after the log is closed, so the log's checksum is final.
 Use the script's real file name in `script_file`.
 
 <!-- chunk: provenance -->
@@ -664,5 +675,4 @@ provenance$recorded_at <- format(run_started, "%Y-%m-%d %H:%M:%S")
 write.csv(provenance, file.path("outputs", "provenance.csv"), row.names = FALSE)
 ```
 
-DataLad (https://www.datalad.org) users can run the same script with
-  `datalad run`; nothing in the script depends on it.
+DataLad (https://www.datalad.org) users can run the same script with `datalad run`; nothing in the script depends on it.
