@@ -365,12 +365,7 @@ If the DV type is ambiguous, ask the user (see Scope); never default to Gaussian
 
 #### D.7 Optimizer and Convergence Settings
 
-Always specify the optimizer explicitly in the script:
-
-```r
-control <- lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5))
-model <- lmer(formula, data = dat, control = control)
-```
+Always specify the optimizer explicitly in the script, as in the Section 5 pattern.
 
 #### D.8 Common Pitfalls to Guard Against
 
