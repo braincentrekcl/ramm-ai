@@ -10,6 +10,11 @@ summary file puts each run's summary next to the formula it fitted.
 Usage (from the repository root):
     python3 tests/acceptance.py claude autoradiography --runs 3
     python3 tests/acceptance.py codex open-field --runs 3 --effort medium
+    python3 tests/acceptance.py opencode open-field --runs 3
+
+OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
+with shell set to "ask" as the template says for free models; a headless run
+rejects every request it would ask about.
 """
 
 import argparse
@@ -43,7 +48,8 @@ REFERENCES = {
     },
 }
 
-START = {"claude": "/ramm:ramm", "codex": "$ramm:ramm"}
+START = {"claude": "/ramm:ramm", "codex": "$ramm:ramm", "opencode": "@ramm"}
+OPENCODE_DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
 REQUEST = "Please analyse my study; the design is in inputs/input.md."
 CONFIRM = (
     "Yes, that is right. Where you asked me something, go with what you"
@@ -56,7 +62,7 @@ EDIT = (
 )
 CLOSE = "Thanks, that is everything for today."
 MAX_FIXES = 3
-TURN_TIMEOUT_S = 1800
+TURN_TIMEOUT_S = 900
 R_TIMEOUT_S = 1200
 
 R_COMMAND = re.compile(r"(^|[\s;&|(`'\"])(Rscript|R)(\s|$)")
@@ -281,6 +287,68 @@ class Codex:
         (self.home / "auth.json").unlink(missing_ok=True)
 
 
+class OpenCode:
+    def __init__(self, plugin: Path, model: str | None, effort: str | None):
+        self.plugin = plugin
+        self.model = model or OPENCODE_DEFAULT_MODEL
+        self.effort = effort
+        self.session: str | None = None
+
+    def install(self, study: Path) -> None:
+        """Copy the permission template into the study, as a user would."""
+        template = (REPO_ROOT / "opencode" / "opencode.jsonc").read_text()
+        shell_deny = '{ "action": "shell", "resource": "*", "effect": "deny" }'
+        if shell_deny not in template:
+            raise RuntimeError("opencode.jsonc no longer has the shell rule to set")
+        config = template.replace(
+            "/path/to/ramm-ai/skills", str(self.plugin / "skills")
+        ).replace(shell_deny, shell_deny.replace("deny", "ask"))
+        (study / "opencode.jsonc").write_text(config)
+
+    def turn(self, study: Path, prompt: str) -> Turn:
+        model = self.model + (f"#{self.effort}" if self.effort else "")
+        cmd = ["opencode", "run", "--standalone", "--format", "json", "-m", model]
+        if self.session:
+            cmd += ["--session", self.session]
+        proc = subprocess.run(
+            cmd + [prompt],
+            check=False,
+            cwd=study,
+            # OpenCode takes its folder from PWD, which subprocess leaves
+            # pointing at the repository.
+            env={**os.environ, "PWD": str(study)},
+            capture_output=True,
+            text=True,
+            timeout=TURN_TIMEOUT_S,
+            stdin=subprocess.DEVNULL,
+        )
+        turn = Turn(tag="", prompt=prompt)
+        messages, outputs = [], []
+        for line in proc.stdout.splitlines():
+            event = json.loads(line)
+            self.session = event.get("sessionID", self.session)
+            part = event.get("part", {})
+            state = part.get("state", {})
+            if event.get("type") == "text":
+                messages.append(part["text"])
+            if event.get("type") == "error":
+                messages.append(f"[error: {json.dumps(event.get('error'))}]")
+            if event.get("type") == "tool_use":
+                if part.get("tool") == "shell":
+                    turn.commands.append(state.get("input", {}).get("command", ""))
+                if state.get("status") == "error":
+                    turn.denied.append(json.dumps(state.get("input")))
+                outputs.append(str(state.get("output") or ""))
+        if not self.session:
+            raise RuntimeError(f"opencode returned no session:\n{proc.stderr}")
+        turn.reply = "\n\n".join(messages)
+        turn.tool_output = "\n".join(outputs)
+        return turn
+
+    def describe(self) -> str:
+        return f"{self.model}, variant {self.effort or 'default'}"
+
+
 def archive(path: str, dest: Path, strip: int) -> None:
     """Extract path from the current commit into dest."""
     dest.mkdir(parents=True)
@@ -294,15 +362,22 @@ def archive(path: str, dest: Path, strip: int) -> None:
     )
 
 
-def one_run(agent: Claude | Codex, demo: str, study: Path) -> dict:
+def one_run(agent: Claude | Codex | OpenCode, demo: str, study: Path) -> dict:
     archive(f"examples/demo-{demo}", study, strip=2)
+    if isinstance(agent, OpenCode):
+        agent.install(study)
     data_rows = (study / "inputs" / "data.csv").read_text().splitlines()[1:]
     script = study / "code" / "analysis.R"
     turns: list[Turn] = []
 
     def say(tag: str, prompt: str) -> Turn:
         before = snapshot(study)
-        turn = agent.turn(study, prompt)
+        try:
+            turn = agent.turn(study, prompt)
+        except subprocess.TimeoutExpired:
+            turn = Turn(
+                tag="", prompt=prompt, reply=f"[no reply in {TURN_TIMEOUT_S} s]"
+            )
         turn.tag, turn.changed = tag, changed_files(before, snapshot(study))
         turns.append(turn)
         return turn
@@ -405,7 +480,7 @@ def summarise(header: str, results: list[dict]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("agent", choices=["claude", "codex"])
+    parser.add_argument("agent", choices=["claude", "codex", "opencode"])
     parser.add_argument("demo", choices=sorted(REFERENCES))
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--model")
@@ -434,6 +509,8 @@ def main() -> None:
         run_dir = out / f"{args.agent}-{args.demo}-{i}"
         if args.agent == "claude":
             agent = Claude(plugin, args.model, args.effort)
+        elif args.agent == "opencode":
+            agent = OpenCode(plugin, args.model, args.effort)
         else:
             agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
         try:
