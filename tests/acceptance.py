@@ -178,6 +178,20 @@ def result_text(result: str | list) -> str:
     )
 
 
+def skill_read_rule(plugin: Path) -> str:
+    """A Claude Code rule allowing reads of the plugin's skills folder only.
+
+    The skill reads references/script.md next to SKILL.md, which is outside the
+    study folder. Interactively Claude Code asks the user first; with -p that
+    request is denied, so the harness grants it, as the user would. Read only:
+    --add-dir would also let acceptEdits change the skill.
+    """
+    if not plugin.is_absolute():
+        raise ValueError(f"plugin path must be absolute, got {plugin}")
+    # "//" anchors a Claude Code path rule at the filesystem root.
+    return f"Read(/{plugin}/skills/**)"
+
+
 class Claude:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin, self.model, self.effort = plugin, model, effort
@@ -187,6 +201,7 @@ class Claude:
     def turn(self, study: Path, prompt: str) -> Turn:
         cmd = ["claude", "-p", prompt, "--plugin-dir", str(self.plugin)]
         cmd += ["--setting-sources", "project", "--permission-mode", "acceptEdits"]
+        cmd += ["--allowedTools", skill_read_rule(self.plugin)]
         cmd += ["--output-format", "stream-json", "--verbose"]
         if self.session:
             cmd += ["--resume", self.session]

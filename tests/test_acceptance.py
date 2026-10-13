@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import acceptance
+import pytest
 
 
 def test_changed_files_lists_added_removed_and_modified() -> None:
@@ -98,3 +99,13 @@ def test_claude_items_ignores_events_without_content() -> None:
 def test_result_text_joins_text_parts_and_strings() -> None:
     assert acceptance.result_text([{"text": "a"}, "b", {"type": "image"}]) == "a\nb\n"
     assert acceptance.result_text("plain") == "plain"
+
+
+def test_skill_read_rule_anchors_at_the_filesystem_root() -> None:
+    rule = acceptance.skill_read_rule(Path("/tmp/run/plugin"))
+    assert rule == "Read(//tmp/run/plugin/skills/**)"
+
+
+def test_skill_read_rule_refuses_a_relative_path() -> None:
+    with pytest.raises(ValueError, match="absolute"):
+        acceptance.skill_read_rule(Path("plugin"))
