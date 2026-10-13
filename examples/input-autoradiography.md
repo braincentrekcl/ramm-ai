@@ -21,7 +21,7 @@ Most subjects have all the regions but not all regions are on all slides or sect
 
 # Data File
 
-Path: ./data.csv
+- File: `data.csv`
 
 # Preferences
 
@@ -30,6 +30,6 @@ Path: ./data.csv
 
 # Reproducible environment
 
-- Reproducible environment: docker+renv
+- Reproducible environment: container
 - R version: 4.4.2
 - Snapshot date: 2025-01-15

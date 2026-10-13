@@ -1,6 +1,6 @@
 # Study Design
 
-SIMULATED DEMO DATA (see make_data.R); not from a real experiment.
+SIMULATED DEMO DATA (see code/make_data.R); not from a real experiment.
 
 Receptor autoradiography in wild-type (WT), heterozygous (het) and homozygous (hom) knockout mice, 10 mice per genotype (30 mice).
 We measured [³H]-radioligand specific binding (µCi/g tissue equivalent) in three brain regions: striatum, sensory cortex and dorsal hippocampus.
@@ -31,7 +31,7 @@ We want to know whether binding differs between genotypes, and whether the genot
 
 # Data File
 
-Path: ./data.csv
+- File: `data.csv`
 
 # Preferences
 

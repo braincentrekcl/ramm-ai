@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Simulated demo data for RAMM-AI. NOT real data.
-# Run from this folder: Rscript make_data.R  (writes data.csv)
+# Run from the demo folder: Rscript code/make_data.R  (writes inputs/data.csv)
 #
 # Open-field crossover: 12 mice each tested twice, once after vehicle and
 # once after diazepam, in counterbalanced order (6 vehicle-first,
@@ -45,5 +45,5 @@ rows <- lapply(seq_len(nrow(mice)), function(i) {
 })
 data <- do.call(rbind, rows)
 data <- data[!paste(data$mouse_id, data$treatment, sep = "_") %in% lost, ]
-write.csv(data, "data.csv", row.names = FALSE)
-cat(sprintf("Wrote data.csv: %d sessions from %d mice\n", nrow(data), length(unique(data$mouse_id))))
+write.csv(data, file.path("inputs", "data.csv"), row.names = FALSE)
+cat(sprintf("Wrote inputs/data.csv: %d sessions from %d mice\n", nrow(data), length(unique(data$mouse_id))))

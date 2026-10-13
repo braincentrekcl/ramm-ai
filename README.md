@@ -1,182 +1,92 @@
 # RAMM-AI
 
-**Replicate-Aware Mixed Modelling** — a Claude Code plugin that generates self-contained, glass-box R scripts for mixed-effects models in preclinical research.
+**Replicate-Aware Mixed Modelling**: an AI assistant skill that helps you
+  build an R analysis project for experimental data with repeated or nested
+  measurements, without needing coding experience.
+It gives you more flexibility than point-and-click statistics software, and
+  every modelling decision is written down and explained in the script.
 
-You describe your study design in plain English. RAMM generates a fully runnable R script with the appropriate lme4/glmmTMB model, estimated marginal means, diagnostics, and QC checks — with every modelling decision explained in inline comments.
+You describe your study design in plain English in `inputs/input.md`.
+RAMM-AI writes a self-contained R script with the appropriate linear
+  mixed-effects model, estimated marginal means, diagnostics and QC checks.
+You run the script yourself, and the assistant can help you run it and
+  explain its output.
+Count, proportion and binary outcomes are beyond RAMM-AI's current scope: it
+  flags them and fits a linear mixed model only if you choose to continue.
+Contributions that add properly validated support are welcome.
 
-## Installation
+RAMM-AI works with four coding agents: Claude Code, Codex, GitHub Copilot and
+  OpenCode.
+The agent and model versions we tested are listed in
+  [Tested versions](docs/tested-versions.md).
+Use whichever your AI provider offers; OpenCode works with almost any provider,
+  including institutionally hosted and local models.
 
-In Claude Code:
+## Before you start
 
-```
-/install-plugin braincentrekcl/ramm-ai
-```
+- An AI coding agent: Claude Code, Codex, GitHub Copilot or OpenCode.
+- R to run the script, or a container instead of installing R: Docker, or
+  Apptainer on an HPC cluster (see
+  [Reproducible environment](docs/reproducible-environment.md)).
+- Git is optional.
+  Without it, download this repository as a ZIP from GitHub, unzip it, and use
+  the path of that folder wherever the commands below say
+  `braincentrekcl/ramm-ai` or a GitHub URL.
+  To update, download the ZIP again.
+  Version control is good practice for your study when you are ready for it,
+  but you do not need to learn git to use RAMM-AI.
 
-Or load it from a local folder for one session only (nothing is installed), for development or a demo:
+## Install
 
-```
-claude --plugin-dir /path/to/ramm-ai
-```
+| Agent | Install | Start RAMM-AI | Start reproduce |
+|---|---|---|---|
+| Claude Code | `claude plugin marketplace add braincentrekcl/ramm-ai`, then `claude plugin install ramm@ramm-ai` | `/ramm:ramm` | `/ramm:reproduce` |
+| Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` | `$ramm:ramm` | `$ramm:reproduce` |
+| GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` | `/ramm` | `/reproduce` |
+| OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it | `@ramm` | `@reproduce` |
 
-## Usage
+For app installs and OpenCode notes, see [docs/install.md](docs/install.md).
 
-This plugin provides two skills:
+## Quick start
 
-- **`/ramm:ramm`** — generate a mixed-effects analysis R script from a plain-English study design
-- **`/ramm:reproduce`** — generate a reproducible environment (Docker and/or renv) for an existing analysis script
+1. Copy `template/my-study` and rename it for your study.
+2. Fill in `inputs/input.md`.
+3. Keep your real data out of the study folder until you run the script.
+  This is for privacy: anything the assistant opens is sent to your AI
+  provider, a third party.
+4. Open your agent in the study folder and start RAMM-AI with the command above.
 
-### Generating the analysis script
+## Documentation
 
-1. Create an `input.md` file describing your study design (see format below)
-2. Place your data file (CSV) in the same directory
-3. Run:
-
-```
-/ramm:ramm input.md
-```
-
-Or simply `/ramm:ramm` if your file is named `input.md`.
-
-RAMM will parse your study design, validate it against your data (if available), and generate a self-contained R script.
-Everything it tells you is in plain language; the R code stays in the script, with comments explaining each step.
-
-Before running the script, RAMM asks whether you want it to run the analysis for you or run it yourself.
-If R or a required package is missing, it names what is missing and gives you the one command to run once it is installed:
-
-```
-Rscript analysis.R
-```
-
-### Generating a reproducible environment
-
-After your analysis script has been generated, run:
-
-```
-/ramm:reproduce analysis.R
-```
-
-This produces a pinned environment so collaborators can reproduce your results exactly. Three modes are supported:
-
-- **`docker+renv`** (default) — Docker image + renv lockfile, maximally reproducible
-- **`docker`** — Docker image with pinned CRAN snapshot
-- **`renv`** — R-native lockfile for users with R already installed
-
-You can choose the mode by adding to your `input.md`:
-
-```markdown
-# Reproducible environment
-- Reproducible environment: docker
-```
-
-## Input File Format
-
-Your `input.md` should contain these sections:
-
-### Study Design (required)
-
-Plain English description of your experiment: total N, group sizes, what was measured, the hierarchy of your data (what is nested within what), and any known issues.
-
-### Column Mappings (required)
-
-Map your data columns to their roles:
-
-```markdown
-- Dependent variable: `column_name` (type, units)
-- Fixed effect: `column_name` (levels: a, b, c; reference = a)
-- Subject ID: `column_name` (globally unique)
-- Nesting level: `column_name` (unique or NOT unique across subjects)
-```
-
-### Post-Hoc Comparisons (required)
-
-What comparisons you want, in plain English:
-
-```markdown
-- Compare each treatment to vehicle
-- Pairwise comparisons within genotype
-```
-
-### Data File (optional)
-
-```markdown
-Path: ./data.csv
-```
-
-### Preferences (optional)
-
-Override defaults if needed:
-
-```markdown
-- Package: glmmTMB
-- Family: Gamma
-- P-value adjustment: Tukey
-```
-
-### Reproducible environment (optional)
-
-Request a pinned environment alongside the analysis script:
-
-```markdown
-- Reproducible environment: docker+renv
-- R version: 4.4.2
-- Snapshot date: 2025-01-15
-```
-
-## What You Get
-
-An R script (`analysis.R`) containing:
-
-| Section | Contents |
-|---------|----------|
-| Header | Study description, what was specified |
-| Environment | Package loading, reproducibility setup |
-| Data prep | Loading, factor encoding, unique ID creation |
-| Exploration | Summary stats, N per cell, missing data |
-| Hierarchy diagram | Tree of the nesting structure, printed and saved as `plot_hierarchy.png` |
-| Model | Formula with commented rationale for every term |
-| Diagnostics | Convergence, singular fit, residual plots, QQ |
-| Summary | Coefficients, ANOVA, confidence intervals |
-| Post-hoc | The comparisons you asked for, as differences from the reference group (e.g. het minus WT) with 95% confidence intervals |
-| Plots | Publication-ready (300 dpi PNG) |
-| Export | Results as CSV files with readable column names, plus `results_summary.md` |
-| Session info | Full R environment for reproducibility |
-
-Running the script writes:
-
-- `results_summary.md`: start here. The answer to each comparison in plain sentences, warnings, and a guide to the other files
-- `results_group_means.csv`, `results_comparisons.csv`: estimated group means and the differences between groups
-- `results_replicate_audit_per_animal.csv`, `results_replicate_audit_summary.csv`: how many replicates each animal contributed
-- `results_exclusions.csv`: measurements that were missing or removed by your QC rules
-- `plot_hierarchy.png`, `plot_emmeans.png`, `plot_residuals.png` and the other plots
+- [Installing RAMM-AI](docs/install.md)
+- [Setting up your study folder](docs/study-folder.md)
+- [Running the analysis and what the script writes](docs/running-the-analysis.md)
+- [What the AI assistant can see and change](docs/privacy-and-safety.md)
+- [Reproducible environment](docs/reproducible-environment.md)
+- [Institutional and local models](docs/institutional-and-local-models.md)
+- [Tested versions](docs/tested-versions.md)
 
 ## Examples
 
-See the `examples/` directory for complete input files:
+- **`examples/demo-autoradiography/`**: simulated receptor autoradiography,
+  three genotypes, three regions, slides and sections, uneven tissue loss
+- **`examples/demo-open-field/`**: simulated open-field crossover (vehicle vs
+  diazepam) with missing sessions
+- **`examples/input-*.md`**: further example `input.md` files
 
-- **input-autoradiography.md** — brain region autoradiography with nested slides/sections
-- **input-simple-two-group.md** — minimal two-group comparison
-- **input-repeated-measures.md** — longitudinal repeated measures with group x time interaction
-- **demo-autoradiography/** — simulated receptor autoradiography: three genotypes, three regions, slides and sections, uneven tissue loss (with data)
-- **demo-open-field/** — simulated open-field crossover (vehicle vs diazepam) with missing sessions (with data)
-
-## R Packages Required
-
-The generated scripts will use some or all of these. Scripts never install packages: if one is missing, the script stops and lists what to install.
-
-- lme4 / glmmTMB
-- lmerTest
-- emmeans
-- ggplot2
-- broom.mixed
-- dplyr, tidyr
+Each demo is a study folder: copy it somewhere new, open your agent in it and
+  start RAMM-AI.
 
 ## Principles
 
-- **Glass-box:** Every decision is explained. The script teaches, not just executes.
-- **Reproducible:** Self-contained scripts with `set.seed()`, `sessionInfo()`, and version tracking.
-- **FAIR:** Well-documented outputs with tidy CSV exports.
-- **Transparent:** You can read exactly what model was fit and why.
+- **Glass-box:** every decision is explained.
+  The script teaches, not just executes.
+- **Your data stays yours:** the AI assistant writes the script; you run it.
+- **Reproducible:** self-contained scripts, `sessionInfo()`, and a provenance
+  record of every run.
+- **FAIR:** a structured study design in `input.md`, reusable scripts,
+  machine-readable CSV outputs and a provenance record of every run.
 
-## License
+## Licence
 
 MIT

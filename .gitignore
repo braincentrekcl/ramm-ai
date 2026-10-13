@@ -1,0 +1,10 @@
+# Files written when the demos are run; the demos ship without results.
+examples/*/code/*
+!examples/*/code/make_data.R
+!examples/*/code/sessions/
+examples/*/code/sessions/*
+!examples/*/code/sessions/.gitkeep
+examples/*/outputs/*
+!examples/*/outputs/.gitkeep
+examples/*/envs/
+__pycache__/

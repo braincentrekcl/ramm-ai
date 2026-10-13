@@ -14,4 +14,4 @@ A simple two-group comparison. 20 mice were randomly assigned to either a treatm
 
 # Data File
 
-Path: ./data.csv
+- File: `data.csv`

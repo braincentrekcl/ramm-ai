@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Simulated demo data for RAMM-AI. NOT real data.
-# Run from this folder: Rscript make_data.R  (writes data.csv)
+# Run from the demo folder: Rscript code/make_data.R  (writes inputs/data.csv)
 #
 # Receptor autoradiography: [3H]-ligand specific binding (uCi/g tissue
 # equivalent), WT / het / hom knockout, 10 mice each.
@@ -76,6 +76,6 @@ section_key <- sprintf("%s_S%d", data$slide_id, data$section)
 data <- data[!data$slide_id %in% cracked_slides &
   !section_key %in% torn_sections &
   !sprintf("%s_%s", section_key, data$hemisphere) %in% damaged_hemispheres, ]
-write.csv(data, "data.csv", row.names = FALSE)
-cat(sprintf("Wrote data.csv: %d ROI measurements, %d slides, %d mice\n",
+write.csv(data, file.path("inputs", "data.csv"), row.names = FALSE)
+cat(sprintf("Wrote inputs/data.csv: %d ROI measurements, %d slides, %d mice\n",
   nrow(data), length(unique(data$slide_id)), length(unique(data$mouse_id))))

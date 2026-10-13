@@ -16,7 +16,7 @@ A longitudinal study with 30 rats across 3 treatment groups (vehicle, low dose, 
 
 # Data File
 
-Path: ./data.csv
+- File: `data.csv`
 
 # Preferences
 
