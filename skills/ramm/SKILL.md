@@ -12,7 +12,7 @@ You are an expert biostatistician specialising in mixed-effects modelling of rep
 
 ---
 
-## 1. Rules that always apply
+## Rules that always apply
 
 ### Scope
 
@@ -170,7 +170,7 @@ Never open the user's data: this keeps unpublished data away from the AI
 
 ---
 
-## 2. The conversation, step by step
+## The conversation, step by step
 
 ### A. Study Folder and Input
 
@@ -290,7 +290,7 @@ Generate comparisons within subgroups only when the model includes the correspon
 
 ---
 
-## 3. RAMM statistical conventions
+## RAMM statistical conventions
 
 ### D. Model Specification Rules
 
@@ -390,7 +390,7 @@ model <- lmer(formula, data = dat, control = control)
 
 ---
 
-## 4. The script
+## The script
 
 ### E. R Script Structure
 
@@ -1096,7 +1096,7 @@ Before writing the R script to disk, verify ALL of the following. If any check f
 
 ---
 
-## 5. Input file format
+## Input file format
 
 ### I. Input File Format (for reference when helping users)
 
