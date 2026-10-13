@@ -1,7 +1,8 @@
 # Tested versions
 
 Each route is tried on fresh copies of `examples/demo-autoradiography` and
-  `examples/demo-open-field`, by hand or headless, several times per demo:
+  `examples/demo-open-field`, by hand or headless with `tests/acceptance.py`,
+  several times per demo:
   even single runs of the same agent are expected to vary a lot.
 A run breaks a requirement when any of the following happens.
 
@@ -47,6 +48,9 @@ The table holds only results for the current RAMM-AI; earlier runs are in the
 
 | Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
 |---|---|---|---|---|---|---|
+| Claude Code | 727a47a | 2.1.287 | Opus 5.5, default effort | 2026-10-13 | 6, headless | Nothing broke; every script ran first time. Open field: the reference model in 3 runs, numbers matched. Autoradiography: the reference model in 1 run, numbers matched; 2 runs fitted a mouse-by-region slope and no slide term, both raised in plain words before writing. |
+| Codex | 727a47a | 0.160.1 | gpt-6-luna, reasoning effort low | 2026-10-13 | 6, headless | Confirmation broke in 2 open-field runs: one fitted a treatment slope it had not raised and a treatment × session interaction it had only asked about; one added order in the turn that wrote the script. 7 errors fixed from pasted messages in 4 runs: slopes that could not be fitted with 21 sessions, R mistakes, and a slide check that stopped on valid data. Autoradiography: the reference model in 3 runs, numbers matched. Open field: the reference model in 1 run, numbers matched. |
+| OpenCode | 06548e8 | 2.0.24 | Muse Spark 1.3 Free, default variant, shell set to `ask` | 2026-10-13 | 6, headless; 1 by hand | Never asked for the session export. Headless, it wrote the script before confirming in 4 runs: it asked with OpenCode's question tool, which a headless run rejects, and went on; by hand in the app it gave the summary and waited. Tried `Rscript --version` once (rejected). The reference model in all 6 runs, numbers matched; 3 errors fixed from pasted messages, all R mistakes. |
 
 ## Reproduce
 
