@@ -1076,4 +1076,3 @@ nesting, any known issues like non-unique IDs or missing data]
 - File: `toy_data.csv` (name starts with toy_; sent to the AI provider)
 ```
 
-After writing the analysis script, suggest the reproduce skill (see G.5).
