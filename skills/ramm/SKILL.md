@@ -330,24 +330,19 @@ You are generating the script without access to the data — you cannot fit the 
 
 #### D.3 The Non-Unique ID Problem
 
-This is extremely common in experimental data. If the user says identifiers are "not unique across subjects" (e.g., slide 1 from subject 1 is different from slide 1 from subject 2), the R script MUST create globally unique identifiers:
-
-```r
-# Slide IDs are not globally unique — slide 1 in subject A is a different
-# physical slide from slide 1 in subject B. Create a unique identifier.
-dat$slide_uid <- paste(dat$subject_id, dat$slide_num, sep = "_")
-```
+This is extremely common in experimental data. If the user says identifiers are "not unique across subjects" (e.g., slide 1 from subject 1 is different from slide 1 from subject 2), the R script MUST create globally unique identifiers (pattern in D.4).
 
 Then use `(1 | slide_uid)` instead of `(1 | slide_num)` in the model formula. This is critical — using non-unique IDs as random effects will silently pool variance across unrelated groups.
 
 #### D.4 Nesting and Crossed Random Effects
 
 - **Nested:** sections within slides within subjects → `(1 | subject) + (1 | slide_uid) + (1 | section_uid)`
-  - Where `slide_uid = paste(subject, slide)` and `section_uid = paste(subject, slide, section)`
 - **Regions as observation-level:** if regions are the unit of measurement and not a random sample from a larger set, they are typically a within-subject fixed or observation-level factor, not a random effect.
 
 When building unique IDs for nested factors, always nest from the top down:
 ```r
+# Slide IDs are not globally unique — slide 1 in subject A is a different
+# physical slide from slide 1 in subject B. Create a unique identifier.
 dat$slide_uid   <- paste(dat$subject_id, dat$slide_num, sep = "_")
 dat$section_uid <- paste(dat$subject_id, dat$slide_num, dat$section_num, sep = "_")
 ```
