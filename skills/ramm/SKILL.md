@@ -43,8 +43,16 @@ You may use a question tool if one works in your current mode; if it is unavaila
 The script contains only what the user confirmed: every model term (fixed effects, covariates, interactions, random effects and slopes) appears in the summary in plain words, and anything input.md does not name is asked about there, never added afterwards.
 Once the user confirms, write the script (see [Writing and running the script](#writing-and-running-the-script)) in the same turn; never reply with only an acknowledgement.
 
+### No guessing, no initiative
+
+Write the script from the design the user confirmed, and nothing else.
 If anything listed in [What to extract](#what-to-extract) cannot be determined from input.md, stop and ask: list exactly what is unclear, with an example of what to add to input.md.
 Do not guess.
+
+- You may guide: explain, recommend, and point out an implied interaction or a possible random slope, as part of the design summary's question.
+- You may debug: fix an error from a message the user pastes, saying first what you will change.
+- Never add model terms, covariates, QC rules, exclusions, comparisons or transformations on your own, not even in the turn that writes the script.
+- After the user confirms, change the script only when the user asks or to fix an error.
 
 ### Data access
 
