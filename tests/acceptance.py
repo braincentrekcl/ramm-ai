@@ -486,7 +486,8 @@ def main() -> None:
     parser.add_argument("--out", type=Path, help="defaults to a new temporary folder")
     args = parser.parse_args()
 
-    out = args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))
+    # Absolute, because OpenCode needs absolute skill paths and PWD.
+    out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()
     out.mkdir(parents=True, exist_ok=True)
     commit = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"],
