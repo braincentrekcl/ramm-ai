@@ -33,17 +33,15 @@ When the agent and user agreed on a different model, the numbers differ for
 Whether a model is defensible is for the user and their reviewers, not this
   test.
 
-Record the commit, the agent version, the model and its settings, and the date
-  for every test.
-The table holds only results for the current RAMM-AI; earlier runs are in
-  the git history of this file.
-Each result is one of:
+Record the commit, the agent version, the AI model and its settings, and the
+  date for every row.
+Each agent has one row, covering both demos: the notes say what broke, in how
+  many runs, so users can see the pitfalls to watch for; they are not a ranking
+  of agents or models.
+The table holds only results for the current RAMM-AI; earlier runs are in the
+  git history of this file.
 
-- **Pass:** this commit completed the full test.
-- **Partial:** the named parts passed; the named cases were not tested.
-- **Fail:** a defect was seen.
-
-| Route | Commit | Agent version | Model | Date | Result | Notes |
+| Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
 |---|---|---|---|---|---|---|
 
 ## Reproduce
