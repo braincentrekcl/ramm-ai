@@ -141,6 +141,8 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
 
 ### What to extract
 
+From input.md, extract the following for the design summary (see Confirm the design first).
+
 #### Dependent variable
 
 - Column name
@@ -217,6 +219,10 @@ When subgroup comparisons are generated, report all of them; never hide or suppr
 - If input.md does not name one, ask.
   Never look for it by opening files.
 
+### Write the script
+
+When the user confirms the design summary, write the script as Writing and running the script describes.
+
 ### After writing
 
 After writing, tell the user, in plain language (see Tone and communication):
@@ -232,6 +238,10 @@ Suggest the reproduce skill next if the user specified a `Reproducible environme
 Otherwise just mention it as an option.
 Give the command as under Agent commands.
 If they confirm, follow the reproduce skill.
+
+### End of the session
+
+Ask the user to save the session record (see Session record).
 
 ---
 
