@@ -224,6 +224,13 @@ Generate comparisons within subgroups only when the model includes the correspon
 If the user declines the interaction, do not generate the subgroup comparisons: explain why in plain language and offer the overall comparison instead.
 When subgroup comparisons are generated, report all of them; never hide or suppress results depending on whether the interaction turns out significant.
 
+#### Random slopes
+
+No random slope by default.
+When a factor varies within individuals and input.md implies more than one measurement per individual at each of its levels (for example several sections per region in every mouse), raise a slope in the design summary in plain words: it would let the effect of that factor differ from one individual to the next.
+Say that leaving it out is simpler and fits more reliably, but if individuals do differ, leaving it out can make results look more certain than they are; recommend leaving it out unless individuals are expected to differ, and ask.
+Otherwise do not mention slopes.
+
 #### Data file
 
 - The file name under `Data File` in input.md (for example `data.csv`); the script reads it from `inputs/`.
