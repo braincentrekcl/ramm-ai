@@ -14,7 +14,9 @@ from conftest import extract_r_chunk, run_r
 
 @pytest.fixture
 def skill_text(repo_root: Path) -> str:
-    return (repo_root / "skills" / "ramm" / "SKILL.md").read_text(encoding="utf-8")
+    return (repo_root / "skills" / "ramm" / "references" / "script.md").read_text(
+        encoding="utf-8"
+    )
 
 
 def make_study(root: Path) -> Path:
