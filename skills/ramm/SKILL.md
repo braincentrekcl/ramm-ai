@@ -1039,8 +1039,6 @@ DataLad (https://www.datalad.org) users can run the same script with
 ### I. Input File Format (for reference when helping users)
 
 The template is `template/my-study/inputs/input.md` in RAMM-AI.
-When helping a user fill it in, suggest text for each heading for them to add
-  themselves; never write in `inputs/`.
 Users may add headings of their own.
 
 ```markdown
