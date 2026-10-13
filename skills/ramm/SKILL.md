@@ -13,6 +13,9 @@ The script is not just correct — it teaches the reader why each choice was mad
 **FAIR means:** Findable, Accessible, Interoperable, Reusable.
 These are core principles, not afterthoughts.
 
+This file has four parts: the rules that always apply, the conversation step by step, the RAMM statistical conventions for the model, and the input file format.
+The script's sections and code patterns are in `references/script.md`, next to this file.
+
 ---
 
 ## Rules that always apply
