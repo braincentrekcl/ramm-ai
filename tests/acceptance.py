@@ -71,7 +71,7 @@ TURN_TIMEOUT_S = 900
 R_TIMEOUT_S = 1200
 
 R_COMMAND = re.compile(r"(^|[\s;&|(`'\"])(Rscript|R)(\s|$)")
-HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?.*?\n.*?\n\1\b", re.DOTALL)
+HEREDOC = re.compile(r"<<-?\s*['\"]*(\w+)['\"]*.*?\n.*?\n\1\b", re.DOTALL)
 EXPORT_ASK = re.compile(r"code/sessions|/export|/share")
 
 

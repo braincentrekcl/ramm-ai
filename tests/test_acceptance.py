@@ -33,6 +33,15 @@ def test_runs_r_ignores_a_script_written_with_a_heredoc() -> None:
     assert acceptance.runs_r(command + "\nRscript code/analysis.R")
 
 
+def test_runs_r_ignores_a_heredoc_quoted_by_a_shell_wrapper() -> None:
+    # Codex wraps commands in zsh -lc '...', which quotes 'EOF' as '"'EOF'.
+    command = (
+        "/bin/zsh -lc 'cat > code/analysis.R <<'\"'EOF'\n"
+        "#   Rscript code/analysis.R\nEOF\n'"
+    )
+    assert not acceptance.runs_r(command)
+
+
 def test_leaked_rows_finds_a_data_row() -> None:
     rows = ['"M01","WT",94.4', '"M01","WT",104.4']
     assert acceptance.leaked_rows('1\t"M01","WT",104.4\n', rows)
