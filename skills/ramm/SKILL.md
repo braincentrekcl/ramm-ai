@@ -28,7 +28,7 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to
   If each individual was measured once, fall back to the simpler model the
   design needs (a linear model with `lm()`), and say so in the design summary
   you confirm with the user (Section B), in plain language ("a standard linear
-  model, because each individual was measured once"), before writing any script.
+  model, because each individual was measured once") as one of the open decisions, before writing any script.
 - Counts, proportions, binary and ordinal outcomes are beyond RAMM-AI's
   current scope: they often need a different kind of model (for example
   Poisson or binomial), which RAMM-AI does not write.
@@ -53,9 +53,6 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to
 Before writing any code, you MUST extract and confirm all of the following from the input file. Present your understanding to the user as a structured summary and ask them to confirm before proceeding. Write the summary in plain language (see H).
 End the summary with an explicit question, never with a statement or a list of points to flag: the user must be able to see that you are waiting for them and what you need. Then stop and wait for the user's answer: never answer the question yourself or carry on with a default. If you have a question tool that works in your current mode, you may use it; if it is unavailable or fails, ask in plain text in your reply and end your turn. Put every open decision (for example an implied interaction, see below, or a missing preference) in that same question.
 The script contains only what the user confirmed: every term in the model (fixed effects, covariates, interactions, random effects and slopes) appears in the summary in plain words, and anything input.md does not name is asked about there, never added afterwards.
-If the design has no replicates, nesting or random effects, say so in the
-  summary and propose the simpler model (see Scope) as one of the open
-  decisions.
 Once the user confirms, write the script (Section G) in the same turn; never
   reply with only an acknowledgement.
 
