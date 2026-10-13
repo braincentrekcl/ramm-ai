@@ -1,7 +1,8 @@
 # Tested versions
 
 Each route is tried on fresh copies of `examples/demo-autoradiography` and
-  `examples/demo-open-field`, by hand or headless, several times per demo:
+  `examples/demo-open-field`, by hand or headless with `tests/acceptance.py`,
+  several times per demo:
   even single runs of the same agent are expected to vary a lot.
 A run breaks a requirement when any of the following happens.
 
