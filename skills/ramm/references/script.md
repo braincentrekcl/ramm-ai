@@ -1,9 +1,7 @@
 # RAMM-AI script patterns
 
 The script RAMM-AI writes, section by section.
-Letters such as B.3 or D.1 refer to sections of the ramm skill's SKILL.md.
-
-### E. R Script Structure
+Section 0 to Section 12 are the script's sections below; other section names, such as Data access, are sections of the ramm skill's SKILL.md.
 
 Generate the R script with these sections in this exact order.
 Each section must have a clear comment header.
@@ -97,10 +95,10 @@ Choose tidyverse packages over base R, when available, but don't require all of 
 Add packages as needed.
 
 #### Section 2: Data Loading and Preparation
-- Read the data file named under `Data File` in input.md from `inputs/` (`readr::read_csv(file.path("inputs", "data.csv"))`; see C for .tsv and spreadsheets).
+- Read the data file named under `Data File` in input.md from `inputs/` (`readr::read_csv(file.path("inputs", "data.csv"))`; see Data access for .tsv and spreadsheets).
   If the file is missing, stop with a plain message saying to put it in `inputs/`.
 - **Check the data against the design** straight after reading, using this pattern with the column names, unique IDs, groups and individuals per group from input.md.
-  Run the one-group-per-individual check only for between-individual factors; leave it out for within-individual factors (B.3), where every individual has several levels by design:
+  Run the one-group-per-individual check only for between-individual factors; leave it out for within-individual factors (see Hierarchy and nesting), where every individual has several levels by design:
 
 <!-- chunk: data-checks -->
 ```r
@@ -163,7 +161,7 @@ if (length(fewer_than_planned) > 0) {
 
 - Convert grouping variables to factors with explicit levels
 - Set reference levels (vehicle/control first)
-- Create unique IDs for nested factors where needed (see D.3)
+- Create unique IDs for nested factors where needed (see The non-unique ID problem)
 - Print the number of rows, columns and individuals per group.
   Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data itself), so the log can be shown to the AI assistant safely.
 - **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data.
@@ -283,7 +281,7 @@ ggsave(file.path("outputs", "plot_hierarchy.png"), hierarchy_plot, width = 5, he
 
 #### Section 5: Model Fitting
 
-Fit the model D.2 describes, with every term commented to explain why it is there, followed by the commented decision tree; Section 6 surfaces the diagnostics loudly so the user can see exactly what happened.
+Fit the starting model that The maximal-then-simplify strategy describes, with every term commented to explain why it is there, followed by the commented decision tree; Section 6 surfaces the diagnostics loudly so the user can see exactly what happened.
 Never automate simplification with a hard-coded fallback, such as wrapping the fit in an `if (isSingular(...)) { ... }` block that silently switches models: it risks dropping the wrong term and hides the decision from the user.
 
 Use this pattern, adapting the formula to the study design:
@@ -426,7 +424,7 @@ for (sd_column in c("within_individual_sd", "between_individual_sd")) {
 }
 ```
 
-For a one-observation-per-individual `lm()` (see D.1), leave out 6a, 6b and 6c: an ordinary linear model has no optimiser, no singular fit and no variance components.
+For a one-observation-per-individual `lm()` (see Random vs fixed effects), leave out 6a, 6b and 6c: an ordinary linear model has no optimiser, no singular fit and no variance components.
 Call no lme4-only functions on an `lm()` anywhere in the script (`isSingular()`, `VarCorr()`, `fixef()`, `@optinfo`, `ran_pars`).
 In 6e there is no within-individual spread: report only the SD of values per group, under the same rule.
 
@@ -436,7 +434,7 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 - Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals.
   Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
 - Satterthwaite df apply to `lmer()` models.
-  For a one-observation-per-individual `lm()` (see D.1), use `car::Anova(model, type = 3)` for Type III F-tests, so the tests mean the same as for `lmer()` (with the sum-to-zero contrasts set in Section 5), and ordinary t-based intervals.
+  For a one-observation-per-individual `lm()` (see Random vs fixed effects), use `car::Anova(model, type = 3)` for Type III F-tests, so the tests mean the same as for `lmer()` (with the sum-to-zero contrasts set in Section 5), and ordinary t-based intervals.
   Add `car` to the required packages in Section 1.
   Never use `anova(model)` on an `lm()`: it gives sequential (Type I) tests, whose results depend on the order of the terms when groups are unequal.
 
@@ -508,8 +506,8 @@ Use it to check a result, not to choose between results."
 #### Section 9: Visualisation
 Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
 - For each group, draw a violin of the raw replicate data, with points on top showing which individual each value came from, so the reader can see how many individuals contributed how many replicates.
-  Offer the user one of two point styles (a B.5 preference; ask if not stated).
-  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the confirmation question (B), even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
+  Offer the user one of two point styles (one of the user preferences; ask if not stated).
+  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the confirmation question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
   Keep the user's choice if they still want one point per replicate; the strips below are the fallback.
   - **One point per replicate**, marked by individual: shows how spread each individual's replicates are.
 - Mark the individual with a visual feature no other factor is using.
