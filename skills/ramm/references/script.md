@@ -515,9 +515,8 @@ Use it to check a result, not to choose between results."
 
 Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
 - For each group, draw a violin of the raw replicate data, with points on top showing which individual each value came from, so the reader can see how many individuals contributed how many replicates.
-  Offer the user one of two point styles (one of the user preferences; ask if not stated).
-  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
-  Keep the user's choice if they still want one point per replicate; the strips below are the fallback.
+  Use the point style the user confirmed in the design summary (see [User preferences](../SKILL.md#user-preferences)).
+  Keep the user's choice if they still want one point per replicate when individuals are hard to tell apart; the strips below are the fallback.
   - **One point per replicate**, marked by individual: shows how spread each individual's replicates are.
 - Mark the individual with a visual feature no other factor is using.
   Use colour if it is free.

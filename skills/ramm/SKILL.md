@@ -214,8 +214,9 @@ For each level, determine:
 #### User preferences
 
 - Alpha level (0.05 default)
-- Plot points: one per replicate, or one per individual (see Section 9)
-- P-value adjustment (default depends on the comparison type; see Section 8)
+- Plot points: one per replicate, or one per individual (see Section 9); ask if input.md does not say.
+  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
+- P-value adjustment: Dunnett for comparisons with a control, Tukey for all pairwise comparisons, Holm for any other, unless input.md names another method (see Section 8)
 - Any other preferences stated
 
 #### QC rules
