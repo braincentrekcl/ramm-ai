@@ -266,6 +266,7 @@ After writing, tell the user, in plain language (see [Tone and communication](#t
 - What R packages need to be installed
 - Remind them to review the script before trusting it, especially that the hierarchy picture matches how their samples or individuals were handled
 - If the script compares subgroups, repeat the subgroup disclaimer from Section 8 in plain language
+- Remind them to save the session record only once they have run the script and have no more questions, with the command for this agent (see [Session record](#session-record)): a record saved now would leave out everything that follows
 
 ### Reproducible environment
 
