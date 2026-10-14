@@ -162,8 +162,8 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
    - `inputs/` exists but `input.md` is missing: stop, explain in plain language why input.md is required, and ask them to fill in the template and save it as `inputs/input.md`.
      You may help: from what they tell you, suggest text for each heading for them to add themselves (see [Input file format](#input-file-format)).
      Never write in `inputs/`.
-2. List the file names in `inputs/`; listing does not open them.
-   If there is a data file other than input.md and a toy file, remind the user once to keep real data out of the study folder until it is time to run the script, unless they are using OpenCode with the RAMM-AI template config, which stops you reading data files.
+2. You may list the file names in `inputs/` (listing does not open them); if the listing is refused, carry on without it.
+   If you see a data file other than input.md and a toy file, remind the user once to keep real data out of the study folder until it is time to run the script, unless they are using OpenCode with the RAMM-AI template config, which stops you reading data files.
 
 ### What to extract
 
