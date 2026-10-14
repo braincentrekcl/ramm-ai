@@ -128,6 +128,71 @@ def test_data_checks_stop_on_unexpected_group(skill_text: str, tmp_path: Path) -
     assert "groups that are not in inputs/input.md: drugE" in result.stderr
 
 
+# The chunk's example plans 4 slides per individual and 3 sections per slide.
+GROUPING_DATA = """
+dat <- expand.grid(subject_id = paste0("s", 1:3), slide_num = 1:4, section = 1:3,
+                   stringsAsFactors = FALSE)
+dat$slide_uid <- paste(dat$subject_id, dat$slide_num, sep = "_")
+dat$section_uid <- paste(dat$slide_uid, dat$section, sep = "_")
+"""
+
+
+def run_grouping_checks(
+    skill_text: str, tmp_path: Path, change: str = ""
+) -> subprocess.CompletedProcess[str]:
+    code = (
+        GROUPING_DATA
+        + change
+        + extract_r_chunk(skill_text, "grouping-checks")
+        + 'cat("checks passed\\n")\n'
+    )
+    return run_r(code, tmp_path)
+
+
+def test_grouping_checks_pass_on_planned_design(
+    skill_text: str, tmp_path: Path
+) -> None:
+    result = run_grouping_checks(skill_text, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "checks passed" in result.stdout
+
+
+def test_grouping_checks_stop_when_labels_split_a_unit(
+    skill_text: str, tmp_path: Path
+) -> None:
+    # Two regions measured on the same slide, wrongly put into the slide label.
+    split = (
+        'dat$region <- ifelse(dat$section == 1, "a", "b")\n'
+        'dat$slide_uid <- paste(dat$subject_id, dat$region, dat$slide_num, sep = "_")\n'
+    )
+    result = run_grouping_checks(skill_text, tmp_path, split)
+    assert result.returncode != 0
+    assert "up to 8 slides per individual where inputs/input.md plans 4" in (
+        result.stderr
+    )
+
+
+def test_grouping_checks_stop_when_labels_are_shared_across_units(
+    skill_text: str, tmp_path: Path
+) -> None:
+    # Slide numbers restart in every individual and were used without the individual.
+    shared = "dat$slide_uid <- as.character(dat$slide_num)\n"
+    result = run_grouping_checks(skill_text, tmp_path, shared)
+    assert result.returncode != 0
+    assert "'slide_uid' labels appear in more than one 'subject_id'" in result.stderr
+
+
+def test_grouping_checks_report_lost_units_without_stopping(
+    skill_text: str, tmp_path: Path
+) -> None:
+    lost = 'dat <- dat[dat$slide_uid != "s1_4", ]\n'
+    result = run_grouping_checks(skill_text, tmp_path, lost)
+    assert result.returncode == 0, result.stderr
+    assert "1 of 3 units have fewer slides per individual than planned" in (
+        result.stderr
+    )
+
+
 def md5(path: Path) -> str:
     return hashlib.md5(path.read_bytes()).hexdigest()
 

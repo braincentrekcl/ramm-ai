@@ -165,6 +165,47 @@ if (length(fewer_than_planned) > 0) {
 - Convert grouping variables to factors with explicit levels
 - Set reference levels (vehicle/control first)
 - Create unique IDs for nested factors where needed (see [The non-unique ID problem](../SKILL.md#the-non-unique-id-problem))
+- **Check each grouping level** once its labels are built, using this pattern with the labels the model will use and the planned number of each per unit of the level above, from input.md; leave out a level input.md gives no number for:
+
+<!-- chunk: grouping-checks -->
+```r
+# --- 2c. Check each grouping level against the study design ---
+# The model groups measurements by the labels built above. Each label must
+# belong to one unit of the level above, and no unit may have more of them
+# than inputs/input.md plans: otherwise the labels merge or split real units
+# (for example two regions measured on one slide given two slide labels), and
+# the model would not match the design, so the script stops. Fewer than
+# planned happens when material is lost or damaged, so it is only reported.
+planned_per_unit <- data.frame(
+  level   = c("slide_uid", "section_uid"),
+  within  = c("subject_id", "slide_uid"),
+  planned = c(4, 3),
+  label   = c("slides per individual", "sections per slide")
+)
+for (i in seq_len(nrow(planned_per_unit))) {
+  check <- planned_per_unit[i, ]
+  units_per_label <- tapply(dat[[check$within]], dat[[check$level]],
+                            function(x) length(unique(x)))
+  if (any(units_per_label > 1)) {
+    stop("Some '", check$level, "' labels appear in more than one '",
+         check$within, "', so different units share a label. Check how Section 2 ",
+         "builds the '", check$level, "' labels.", call. = FALSE)
+  }
+  labels_per_unit <- tapply(dat[[check$level]], dat[[check$within]],
+                            function(x) length(unique(x)))
+  if (any(labels_per_unit > check$planned)) {
+    stop("The data has up to ", max(labels_per_unit), " ", check$label,
+         " where inputs/input.md plans ", check$planned, ". Check how Section 2 ",
+         "builds the '", check$level, "' labels.", call. = FALSE)
+  }
+  if (any(labels_per_unit < check$planned)) {
+    message(sum(labels_per_unit < check$planned), " of ", length(labels_per_unit),
+            " units have fewer ", check$label, " than planned (", check$planned,
+            "), as expected when material is lost or damaged.")
+  }
+}
+```
+
 - Print the number of rows, columns and individuals per group.
   Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data itself), so the log can be shown to the AI assistant safely.
 - **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data.
