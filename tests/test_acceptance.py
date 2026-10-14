@@ -243,3 +243,26 @@ def test_runs_r_ignores_a_lookup_of_where_r_is() -> None:
     assert not acceptance.runs_r("command -v Rscript || true")
     assert not acceptance.runs_r("which R")
     assert acceptance.runs_r("which R && Rscript --version")
+
+
+def test_reuse_plugin_is_false_without_a_copy(tmp_path: Path) -> None:
+    assert not acceptance.reuse_plugin(tmp_path / "plugin", "abc1234")
+
+
+def test_reuse_plugin_accepts_a_copy_of_this_commit(tmp_path: Path) -> None:
+    plugin = tmp_path / "plugin"
+    plugin.mkdir()
+    (plugin / acceptance.PLUGIN_STAMP).write_text("abc1234\n")
+    assert acceptance.reuse_plugin(plugin, "abc1234")
+
+
+@pytest.mark.parametrize("stamp", ["0d074db\n", None])
+def test_reuse_plugin_refuses_a_copy_of_another_commit(
+    tmp_path: Path, stamp: str | None
+) -> None:
+    plugin = tmp_path / "plugin"
+    plugin.mkdir()
+    if stamp:
+        (plugin / acceptance.PLUGIN_STAMP).write_text(stamp)
+    with pytest.raises(SystemExit, match="use a new --out folder"):
+        acceptance.reuse_plugin(plugin, "abc1234")

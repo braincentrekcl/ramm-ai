@@ -508,6 +508,24 @@ class OpenCode:
         return f"{self.model}, variant {self.effort or 'default'}"
 
 
+# The commit a plugin copy was taken from, kept inside the copy.
+PLUGIN_STAMP = ".ramm-commit"
+
+
+def reuse_plugin(plugin: Path, commit: str) -> bool:
+    """True when plugin is a copy of this commit; stops when it is a copy of
+    another, so a report never stamps a commit its runs did not use."""
+    if not plugin.exists():
+        return False
+    stamp = plugin / PLUGIN_STAMP
+    found = stamp.read_text().strip() if stamp.exists() else "an unrecorded commit"
+    if found != commit:
+        raise SystemExit(
+            f"{plugin} is a copy of {found}, not {commit}: use a new --out folder."
+        )
+    return True
+
+
 def archive(path: str, dest: Path, strip: int) -> None:
     """Extract path from the current commit into dest."""
     dest.mkdir(parents=True)
@@ -665,8 +683,9 @@ def main() -> None:
         [args.agent, "--version"], capture_output=True, text=True, check=True
     ).stdout.splitlines()[0]
     plugin = out / "plugin"
-    if not plugin.exists():
+    if not reuse_plugin(plugin, commit):
         archive(".", plugin, strip=0)
+        (plugin / PLUGIN_STAMP).write_text(commit + "\n")
 
     results = []
     for i in range(1, args.runs + 1):
