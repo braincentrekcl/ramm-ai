@@ -43,7 +43,7 @@ Before writing any code, extract from input.md everything listed in [What to ext
 End the summary with an explicit question, never a statement or a list of points to flag, so the user can see that you are waiting and what you need; put every open decision (for example an implied interaction or a missing preference) in that question.
 Then stop and wait for the answer: never answer the question yourself or carry on with a default.
 You may use a question tool if one works in your current mode; if it is unavailable or fails, ask in plain text and end your turn.
-The script contains only what the user confirmed: every model term (fixed effects, covariates, interactions, random effects and slopes) appears in the summary in plain words, and anything input.md does not name is asked about there, never added afterwards.
+The script contains only what the user confirmed: every model term (fixed effects, covariates, interactions, random effects and slopes) and any transformation of the outcome (such as a log scale) appear in the summary in plain words, and anything input.md does not name is asked about there, never added afterwards.
 Once the user confirms, write the script (see [Writing and running the script](#writing-and-running-the-script)) in the same turn; never reply with only an acknowledgement.
 
 ### No guessing, no initiative
@@ -354,7 +354,7 @@ In this case:
 | DV Type | Default Family | Notes |
 |---------|---------------|-------|
 | Continuous, roughly normal | Gaussian (identity) | The usual default; check the residual plots |
-| Continuous, right-skewed, positive | Log-transform + Gaussian | Check distribution in exploration section. Explain to the user, in the script comments and in `results_summary.md`, that back-transformed results are ratios ("1.3 times higher"), not differences in units |
+| Continuous, right-skewed, positive | Log-transform + Gaussian, if the user chooses it | Propose the log scale as an open decision in the design summary, saying in plain words that back-transformed results are ratios ("1.3 times higher"), not differences in units. If the user chooses it, explain the same in the script comments and in `results_summary.md`. Check distribution in exploration section |
 | Counts, proportions, binary, ordinal | Beyond the current scope | Flag it and ask before continuing with a linear mixed model (see [Scope](#scope)) |
 
 ### Optimizer and convergence settings
