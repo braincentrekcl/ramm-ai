@@ -87,6 +87,7 @@ Never open the user's data: this keeps unpublished data away from the AI provide
 Write the script to `code/analysis.R` unless the user asks for another name; never stop to ask for one.
 Write nothing outside `code/`.
 Before writing or changing a script, read `references/script.md`, next to this file: it gives the script's sections and the patterns to follow, and "Section 1" to "Section 12" in this skill mean those sections.
+Read all of it; if your tool shortens long output, read it in parts (for example 200 lines at a time) until you have seen every section.
 
 **You never run the script, or R in any form, not even a syntax check: the user runs it.
 Never install packages.**
