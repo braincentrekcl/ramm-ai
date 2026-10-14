@@ -52,6 +52,49 @@ def test_leaked_rows_ignores_the_header_and_other_text() -> None:
     assert not acceptance.leaked_rows('"mouse_id","genotype","binding"', rows)
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "inputs/data.csv",
+        "/Users/me/study/inputs/data.xlsx",
+        "head -1 inputs/raw_counts.tsv | cut -d, -f2",
+    ],
+)
+def test_names_input_data_finds_a_data_file(text: str) -> None:
+    assert acceptance.names_input_data(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "inputs/input.md",
+        "/Users/me/study/inputs/toy_data.csv",
+        "ls -1 inputs/",
+        "rg --files -g '!inputs/*.csv' .",
+        "cat > code/analysis.R <<'EOF'\n# reads inputs/data.csv\nEOF\n",
+    ],
+)
+def test_names_input_data_ignores_allowed_files_listings_and_heredocs(
+    text: str,
+) -> None:
+    assert not acceptance.names_input_data(text)
+
+
+def test_tool_paths_collects_path_arguments() -> None:
+    arguments = {"file_path": "inputs/data.csv", "limit": 1, "pattern": "WT"}
+    assert acceptance.tool_paths(arguments) == ["inputs/data.csv"]
+    assert acceptance.tool_paths({"filePath": "a.R", "paths": ["b", "c"]}) == [
+        "a.R",
+        "b",
+        "c",
+    ]
+
+
+def test_tool_paths_accepts_arguments_given_as_text() -> None:
+    # Copilot passes some tools' arguments as one string, not named fields.
+    assert acceptance.tool_paths("*** Begin Patch\n") == []
+
+
 def test_extract_formula_skips_comments() -> None:
     script = (
         "# model <- lmer(y ~ a + (1 | s), data = dat)\n"
@@ -177,6 +220,17 @@ def test_parse_copilot_reads_commands_denials_reply_and_session() -> None:
     assert turn.commands == ["ls", "R"]
     assert turn.denied == ['{"command": "R"}']
     assert (turn.reply, turn.tool_output) == ("Done.", "x.R")
+
+
+def test_parse_copilot_records_the_paths_its_tools_read() -> None:
+    view = {
+        "type": "tool.execution_start",
+        "data": {"toolCallId": "v", "toolName": "view", "arguments": {"path": "x.md"}},
+    }
+    turn = acceptance.Turn(tag="", prompt="p")
+    stdout = "\n".join(json.dumps(e) for e in [view, COPILOT_EVENTS[-1]])
+    acceptance.parse_copilot(stdout, turn)
+    assert turn.paths == ["x.md"]
 
 
 def test_parse_copilot_returns_no_session_without_a_result() -> None:
