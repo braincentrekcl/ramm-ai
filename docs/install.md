@@ -25,10 +25,8 @@ Then install the plugin called `ramm` from it.
 
 ## Claude Code notes
 
-Before writing the script, RAMM-AI reads its script patterns,
-  `skills/ramm/references/script.md` in the installed plugin.
-The plugin sits outside your study folder, so Claude Code asks whether it
-  may read that file ([Working directories](https://code.claude.com/docs/en/permissions#working-directories)).
+Before writing the script, RAMM-AI reads its script patterns, `skills/ramm/references/script.md` in the installed plugin.
+The plugin sits outside your study folder, so Claude Code asks whether it may read that file ([Working directories](https://code.claude.com/docs/en/permissions#working-directories)).
 Allow it: without it RAMM-AI writes the script without its patterns.
 The file holds RAMM-AI's own instructions, none of your data.
 
