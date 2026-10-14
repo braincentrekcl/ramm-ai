@@ -261,6 +261,7 @@ Add one box per level; note factors measured within a level (for example regions
 Only a factor that splits the individuals into separate groups (for example genotype, or a drug each individual receives alone) gets a box above the individual.
 A factor every individual receives more than one level of (for example both treatments in a crossover, or regions) is not above the individual, because the individuals do not sit inside it: note it inside the individual's box or the measurement's box instead.
 If there is no between-individual factor, the individual is the top box.
+If two kinds of unit sit side by side under the same level (for example a striatal-level slide and a hippocampal-level slide in every mouse), draw them as one level and name both kinds in its box, never one below the other.
 
 ```r
 hierarchy <- data.frame(
