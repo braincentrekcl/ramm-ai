@@ -621,7 +621,7 @@ Build it from the fitted results, never from hard-coded numbers, in plain langua
 - One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
 - The subgroup disclaimer from Section 8, if subgroups were compared.
-- A **Deviations from input.md** list: each change made to the analysis after the script first ran, with what prompted it (see [Deviations from the plan](../SKILL.md#deviations-from-the-plan)), or "None" when the script still follows input.md.
+- A **Deviations from the confirmed design** list: each change made to the analysis after the script first ran, with what prompted it (see [Deviations from the plan](../SKILL.md#deviations-from-the-plan)), or "None" when the script still follows the design confirmed in the design summary.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
 - A list of the other output files and what each contains, including the log in `outputs/`, the full record of the run.
 

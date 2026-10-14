@@ -59,7 +59,7 @@ Do not guess.
 
 ### Deviations from the plan
 
-Any change to the analysis after the script has run is a deviation from the plan in input.md, whatever prompted it: for example analysing on a log scale, enabling a simpler fallback model, or adding or dropping a term or comparison.
+Any change to the analysis after the script has run is a deviation from the plan, the design the user confirmed in the design summary, whatever prompted it: for example analysing on a log scale, enabling a simpler fallback model, or adding or dropping a term or comparison.
 Fixing a coding error that leaves the analysis unchanged is not.
 A deviation can be valid, but only if it is disclosed, so for each one:
 
