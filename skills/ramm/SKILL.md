@@ -205,6 +205,8 @@ For each level, determine:
 - Is it random or fixed? (see [Random vs fixed effects](#random-vs-fixed-effects))
 - Are its identifiers globally unique? (see [The non-unique ID problem](#the-non-unique-id-problem))
 - How many levels does it have? (see [Small number of levels](#small-number-of-levels))
+- Which measurements share each unit (for example striatum and sensory cortex on the same sections of one slide)?
+  Show it in the tree; if input.md does not make it clear, ask.
 
 #### Post-hoc comparisons
 
