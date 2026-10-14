@@ -48,8 +48,9 @@ def decide(rules: list[dict], action: str, resource: str) -> str:
 
 
 # OpenCode matches read and edit rules against the path relative to the study
-# folder, even when the model asks for a full path (checked in 2.0.24).
-# Paths outside the study folder are stopped by external_directory instead.
+# folder for files inside it, even when the model asks for a full path (checked
+# in 2.0.24). For files outside it, read rules match the full path, after the
+# external_directory check (OpenCode 2.0.24's file-access.ts).
 
 
 @pytest.fixture

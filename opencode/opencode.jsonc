@@ -19,7 +19,8 @@
     // they hold no user data, and edit stays denied below.
     { "action": "external_directory", "resource": "/path/to/ramm-ai/skills/*", "effect": "allow" },
     // In the study folder, read nothing except what is allowed below.
-    // OpenCode matches these against paths inside the study folder.
+    // OpenCode matches these against the path relative to the study folder
+    // inside it, and against the full path outside it (after external_directory).
     { "action": "read", "resource": "*", "effect": "deny" },
     { "action": "read", "resource": "/path/to/ramm-ai/skills/*", "effect": "allow" },
     // The scripts and environment files RAMM-AI writes, by name, so a data
