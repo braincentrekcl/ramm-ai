@@ -256,7 +256,9 @@ class Codex:
             tomllib.loads(user_config.read_text()) if user_config.exists() else {}
         )
         self.model = model or defaults.get("model")
-        self.effort = effort or defaults.get("model_reasoning_effort")
+        # Not the user's effort setting: without --effort, Codex uses the
+        # model's own default, as every other agent here does.
+        self.effort = effort
         self.home = home
         self.session: str | None = None
         # A fresh Codex home, so the plugin is the one from this commit; it
