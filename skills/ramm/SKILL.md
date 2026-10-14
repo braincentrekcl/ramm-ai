@@ -41,6 +41,7 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to the
 
 Before writing any code, extract from input.md everything listed in [What to extract](#what-to-extract) and present it to the user as a structured design summary in plain language (see [Tone and communication](#tone-and-communication)).
 End the summary with an explicit question, never a statement or a list of points to flag, so the user can see that you are waiting and what you need; put every open decision (for example an implied interaction or a missing preference) in that question.
+For every open decision, say which option you recommend and why, in one sentence, so the user can answer "go with your recommendation"; the recommendation follows the RAMM conventions in this skill, and the user decides.
 Then stop and wait for the answer: never answer the question yourself or carry on with a default.
 You may use a question tool if one works in your current mode; if it is unavailable or fails, ask in plain text and end your turn.
 The script contains only what the user confirmed: every model term (fixed effects, covariates, interactions, random effects and slopes) and any transformation of the outcome (such as a log scale) appear in the summary in plain words, and anything input.md does not name is asked about there, never added afterwards.
