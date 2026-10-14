@@ -39,13 +39,17 @@ REFERENCES = {
     "autoradiography": {
         "formula": "specific_binding ~ genotype * region + (1 | mouse_id)"
         " + (1 | slide_id) + (1 | section_uid)",
+        "labels": ["het - WT", "striatum"],
         "estimate": -14.56,
         "se": 5.86,
+        "df": 42.17,
     },
     "open-field": {
         "formula": "centre_time_s ~ treatment + session + (1 | mouse_id)",
+        "labels": ["diazepam - vehicle"],
         "estimate": 31.27,
         "se": 6.55,
+        "df": 9.01,
     },
 }
 
@@ -143,18 +147,27 @@ def same_formula(a: str, b: str) -> bool:
     return _terms(a) == _terms(b)
 
 
-def reference_matched(outputs: Path, estimate: float, se: float) -> bool:
-    """True when a row of an output table holds the estimate and its SE."""
+def label(cell: str) -> str:
+    """A table cell compared as a label: case, spaces and dash style ignored."""
+    return re.sub(r"\s+", "", cell.replace("−", "-").replace("–", "-")).lower()
+
+
+def reference_matched(outputs: Path, reference: dict) -> bool:
+    """True when one row of an output table holds the reference contrast by its
+    labels, with its estimate (sign included), SE and df."""
+    wanted_labels = {label(name) for name in reference["labels"]}
+    wanted_numbers = {reference["estimate"], reference["se"], reference["df"]}
     for table in outputs.glob("*.csv"):
         with table.open(newline="", encoding="utf-8") as handle:
             for row in csv.reader(handle):
                 numbers = set()
                 for cell in row:
                     try:
-                        numbers.add(round(abs(float(cell)), 2))
+                        numbers.add(round(float(cell), 2))
                     except ValueError:
                         continue
-                if abs(estimate) in numbers and se in numbers:
+                labels = {label(cell) for cell in row}
+                if wanted_labels <= labels and wanted_numbers <= numbers:
                     return True
     return False
 
@@ -547,7 +560,7 @@ def one_run(agent: Claude | Codex | Copilot | OpenCode, demo: str, study: Path) 
         "formula": formula,
         "same_model_as_reference": same,
         "reference_matched": (
-            reference_matched(study / "outputs", reference["estimate"], reference["se"])
+            reference_matched(study / "outputs", reference)
             if same and exit_code == 0
             else None
         ),

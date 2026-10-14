@@ -72,18 +72,43 @@ def test_same_formula_tells_a_random_slope_apart() -> None:
     assert not acceptance.same_formula("y ~ a + (1 | s)", "y ~ a + (1 + a | s)")
 
 
-def test_reference_matched_finds_estimate_and_se(tmp_path: Path) -> None:
-    (tmp_path / "results_comparisons.csv").write_text(
-        'contrast,estimate,SE\n"het - WT",-14.5576,5.8557\n'
-    )
-    assert acceptance.reference_matched(tmp_path, -14.56, 5.86)
+AUTORADIOGRAPHY = acceptance.REFERENCES["autoradiography"]
+COMPARISONS_HEADER = "contrast,region,estimate,SE,df\n"
 
 
-def test_reference_matched_is_false_for_other_numbers(tmp_path: Path) -> None:
-    (tmp_path / "results_comparisons.csv").write_text(
-        'contrast,estimate,SE\n"het - WT",-12.10,5.86\n'
+def write_comparisons(folder: Path, rows: str) -> None:
+    (folder / "results_comparisons.csv").write_text(COMPARISONS_HEADER + rows)
+
+
+def test_reference_matched_finds_the_contrast_row(tmp_path: Path) -> None:
+    write_comparisons(tmp_path, '"het − WT","striatum",-14.5576,5.8557,42.17\n')
+    assert acceptance.reference_matched(tmp_path, AUTORADIOGRAPHY)
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        '"het - WT","striatum",-12.10,5.86,42.17\n',  # another estimate
+        '"het - WT","striatum",14.56,5.86,42.17\n',  # sign reversed
+        '"het - WT","striatum",-14.56,6.10,36.40\n',  # another df method
+        '"hom - WT","striatum",-14.56,5.86,42.17\n',  # another contrast
+        '"het - WT","sensory cortex",-14.56,5.86,42.17\n',  # another region
+    ],
+)
+def test_reference_matched_rejects_other_rows(tmp_path: Path, row: str) -> None:
+    write_comparisons(tmp_path, row)
+    assert not acceptance.reference_matched(tmp_path, AUTORADIOGRAPHY)
+
+
+def test_reference_matched_ignores_the_numbers_in_another_table(
+    tmp_path: Path,
+) -> None:
+    # The fixed effects can hold the reference numbers under another label.
+    (tmp_path / "results_fixed_effects.csv").write_text(
+        'term,estimate,SE,df\n"genotypehet",-14.56,5.86,42.17\n'
     )
-    assert not acceptance.reference_matched(tmp_path, -14.56, 5.86)
+    write_comparisons(tmp_path, '"het - WT","striatum",-14.56,6.10,36.40\n')
+    assert not acceptance.reference_matched(tmp_path, AUTORADIOGRAPHY)
 
 
 def test_error_excerpt_starts_at_the_error() -> None:
