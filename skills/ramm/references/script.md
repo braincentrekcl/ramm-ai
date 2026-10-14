@@ -331,6 +331,9 @@ model <- lmer(
 #
 # If yes to convergence/singular issues, try the options below IN ORDER.
 # Uncomment ONE alternative at a time, re-run, and re-check diagnostics.
+# The model above is the one you confirmed with the AI assistant in the design
+# summary. Enabling any option below changes it: report the change, and what
+# prompted it, as a deviation with your results.
 #
 # Option A — Drop correlations between random effects. This only applies
 # when the model has random slopes; this example has intercepts only, so
