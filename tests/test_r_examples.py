@@ -11,7 +11,11 @@ BASE_PLOT = re.compile(r"^\s*(plot|hist|qqnorm|boxplot|barplot)\(", flags=re.MUL
 
 @pytest.fixture
 def ramm_skill_raw(repo_root: Path) -> str:
-    return (repo_root / "skills" / "ramm" / "SKILL.md").read_text(encoding="utf-8")
+    skill = repo_root / "skills" / "ramm"
+    return "\n".join(
+        (skill / name).read_text(encoding="utf-8")
+        for name in ("SKILL.md", "references/script.md")
+    )
 
 
 def r_blocks(skill: str) -> list[str]:

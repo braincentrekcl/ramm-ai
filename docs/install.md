@@ -7,7 +7,7 @@
 | Claude Code | `claude plugin marketplace add braincentrekcl/ramm-ai`, then `claude plugin install ramm@ramm-ai` | `/ramm:ramm` | `/ramm:reproduce` |
 | Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` | `$ramm:ramm` | `$ramm:reproduce` |
 | GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` | `/ramm` | `/reproduce` |
-| OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it | `@ramm` | `@reproduce` |
+| OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it (three places) | `@ramm` | `@reproduce` |
 
 ## From an app, without the command line
 
@@ -22,6 +22,13 @@ Then install the plugin called `ramm` from it.
 | GitHub Copilot app | [Customizing the GitHub Copilot app](https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app): add the marketplace from the Plugins view, then install |
 | GitHub Copilot in VS Code | [Agent plugins in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-plugins): add the marketplace to `chat.plugins.marketplaces`, or run **Chat: Install Plugin From Source** with the GitHub address |
 | Codex app | [Plugins](https://learn.chatgpt.com/docs/plugins): the app installs from OpenAI's and your workspace's plugin lists, so ask your workspace admin to import the marketplace, or use the command line above once |
+
+## Claude Code notes
+
+Before writing the script, RAMM-AI reads its script patterns, `skills/ramm/references/script.md` in the installed plugin.
+The plugin sits outside your study folder, so Claude Code asks whether it may read that file ([Working directories](https://code.claude.com/docs/en/permissions#working-directories)).
+Allow it: without it RAMM-AI writes the script without its patterns.
+The file holds RAMM-AI's own instructions, none of your data.
 
 ## OpenCode notes
 

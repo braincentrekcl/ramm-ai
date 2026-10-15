@@ -4,13 +4,14 @@ Each run copies a demo from the current commit, asks the agent for the
 analysis, confirms its design summary, runs the script and pastes any error
 back, then asks it to edit an output.
 The criteria are in docs/tested-versions.md.
-Whether the confirmation summary raised every model term needs reading: the
+Whether the design summary raised every model term needs reading: the
 summary file puts each run's summary next to the formula it fitted.
 
 Usage (from the repository root):
     python3 tests/acceptance.py claude autoradiography --runs 3
     python3 tests/acceptance.py codex open-field --runs 3 --effort medium
     python3 tests/acceptance.py opencode open-field --runs 3
+    python3 tests/acceptance.py copilot autoradiography --runs 3
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
 with shell set to "ask" as the template says for free models; a headless run
@@ -38,17 +39,26 @@ REFERENCES = {
     "autoradiography": {
         "formula": "specific_binding ~ genotype * region + (1 | mouse_id)"
         " + (1 | slide_id) + (1 | section_uid)",
+        "labels": ["het - WT", "striatum"],
         "estimate": -14.56,
         "se": 5.86,
+        "df": 42.17,
     },
     "open-field": {
         "formula": "centre_time_s ~ treatment + session + (1 | mouse_id)",
+        "labels": ["diazepam - vehicle"],
         "estimate": 31.27,
         "se": 6.55,
+        "df": 9.01,
     },
 }
 
-START = {"claude": "/ramm:ramm", "codex": "$ramm:ramm", "opencode": "@ramm"}
+START = {
+    "claude": "/ramm:ramm",
+    "codex": "$ramm:ramm",
+    "copilot": "/ramm",
+    "opencode": "@ramm",
+}
 OPENCODE_DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
 REQUEST = "Please analyse my study; the design is in inputs/input.md."
 CONFIRM = (
@@ -65,7 +75,9 @@ TURN_TIMEOUT_S = 900
 R_TIMEOUT_S = 1200
 
 R_COMMAND = re.compile(r"(^|[\s;&|(`'\"])(Rscript|R)(\s|$)")
-HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?.*?\n.*?\n\1\b", re.DOTALL)
+# Looking up where R is installed does not run it.
+R_LOOKUP = re.compile(r"\b(command\s+-v|which|type)\s+(Rscript|R)\b")
+HEREDOC = re.compile(r"<<-?\s*['\"]*(\w+)['\"]*.*?\n.*?\n\1\b", re.DOTALL)
 EXPORT_ASK = re.compile(r"code/sessions|/export|/share")
 
 
@@ -78,6 +90,7 @@ class Turn:
     tool_output: str = ""
     denied: list[str] = field(default_factory=list)
     changed: list[str] = field(default_factory=list)
+    paths: list[str] = field(default_factory=list)
 
 
 def snapshot(root: Path) -> dict[str, str]:
@@ -97,12 +110,38 @@ def changed_files(before: dict[str, str], after: dict[str, str]) -> list[str]:
 
 def runs_r(command: str) -> bool:
     """True when a shell command calls R; heredoc text it writes is ignored."""
-    return R_COMMAND.search(HEREDOC.sub("", command)) is not None
+    return R_COMMAND.search(R_LOOKUP.sub("", HEREDOC.sub("", command))) is not None
 
 
 def leaked_rows(text: str, data_rows: list[str]) -> bool:
     """True when a row of the data file appears in what the agent saw."""
     return any(row in text for row in data_rows)
+
+
+# A file in inputs/ other than input.md or a toy_ file; wildcards, as in a
+# search that excludes *.csv, are not a file name.
+INPUT_DATA = re.compile(r"inputs/(?!input\.md\b|toy_)[\w.-]+\.\w+")
+PATH_KEYS = ("file_path", "filePath", "notebook_path", "path", "paths")
+
+
+def names_input_data(text: str) -> bool:
+    """True when a path or command names a data file in inputs/; heredoc text a
+    command writes is ignored."""
+    return INPUT_DATA.search(HEREDOC.sub("", text)) is not None
+
+
+def tool_paths(arguments: dict | str) -> list[str]:
+    """The file paths in a tool call's named arguments; none in plain text."""
+    if not isinstance(arguments, dict):
+        return []
+    paths = []
+    for key in PATH_KEYS:
+        value = arguments.get(key)
+        if isinstance(value, str):
+            paths.append(value)
+        elif isinstance(value, list):
+            paths += [str(item) for item in value]
+    return paths
 
 
 def extract_formula(script: str) -> str | None:
@@ -135,18 +174,27 @@ def same_formula(a: str, b: str) -> bool:
     return _terms(a) == _terms(b)
 
 
-def reference_matched(outputs: Path, estimate: float, se: float) -> bool:
-    """True when a row of an output table holds the estimate and its SE."""
+def label(cell: str) -> str:
+    """A table cell compared as a label: case, spaces and dash style ignored."""
+    return re.sub(r"\s+", "", cell.replace("−", "-").replace("–", "-")).lower()
+
+
+def reference_matched(outputs: Path, reference: dict) -> bool:
+    """True when one row of an output table holds the reference contrast by its
+    labels, with its estimate (sign included), SE and df."""
+    wanted_labels = {label(name) for name in reference["labels"]}
+    wanted_numbers = {reference["estimate"], reference["se"], reference["df"]}
     for table in outputs.glob("*.csv"):
         with table.open(newline="", encoding="utf-8") as handle:
             for row in csv.reader(handle):
                 numbers = set()
                 for cell in row:
                     try:
-                        numbers.add(round(abs(float(cell)), 2))
+                        numbers.add(round(float(cell), 2))
                     except ValueError:
                         continue
-                if abs(estimate) in numbers and se in numbers:
+                labels = {label(cell) for cell in row}
+                if wanted_labels <= labels and wanted_numbers <= numbers:
                     return True
     return False
 
@@ -160,6 +208,38 @@ def error_excerpt(output: str, max_lines: int = 30) -> str:
     return "\n".join(lines[-max_lines:])
 
 
+def claude_items(event: dict) -> list[dict]:
+    """The content items of a Claude Code stream-json event, if it has any."""
+    message = event.get("message")
+    content = message.get("content") if isinstance(message, dict) else None
+    if not isinstance(content, list):
+        return []
+    return [item for item in content if isinstance(item, dict)]
+
+
+def result_text(result: str | list) -> str:
+    """A tool result's text, whether given as a string or as a list of parts."""
+    if isinstance(result, str):
+        return result
+    return "\n".join(
+        part if isinstance(part, str) else part.get("text", "") for part in result
+    )
+
+
+def skill_read_rule(plugin: Path) -> str:
+    """A Claude Code rule allowing reads of the plugin's skills folder only.
+
+    The skill reads references/script.md next to SKILL.md, which is outside the
+    study folder. Interactively Claude Code asks the user first; with -p that
+    request is denied, so the harness grants it, as the user would. Read only:
+    --add-dir would also let acceptEdits change the skill.
+    """
+    if not plugin.is_absolute():
+        raise ValueError(f"plugin path must be absolute, got {plugin}")
+    # "//" anchors a Claude Code path rule at the filesystem root.
+    return f"Read(/{plugin}/skills/**)"
+
+
 class Claude:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin, self.model, self.effort = plugin, model, effort
@@ -169,6 +249,7 @@ class Claude:
     def turn(self, study: Path, prompt: str) -> Turn:
         cmd = ["claude", "-p", prompt, "--plugin-dir", str(self.plugin)]
         cmd += ["--setting-sources", "project", "--permission-mode", "acceptEdits"]
+        cmd += ["--allowedTools", skill_read_rule(self.plugin)]
         cmd += ["--output-format", "stream-json", "--verbose"]
         if self.session:
             cmd += ["--resume", self.session]
@@ -188,15 +269,13 @@ class Claude:
         outputs = []
         for line in proc.stdout.splitlines():
             event = json.loads(line)
-            content = event.get("message", {}).get("content", [])
-            for item in content if isinstance(content, list) else []:
-                if item.get("type") == "tool_use" and "command" in item["input"]:
-                    turn.commands.append(item["input"]["command"])
+            for item in claude_items(event):
+                if item.get("type") == "tool_use":
+                    turn.paths += tool_paths(item["input"])
+                    if "command" in item["input"]:
+                        turn.commands.append(item["input"]["command"])
                 if item.get("type") == "tool_result":
-                    result = item.get("content", "")
-                    if isinstance(result, list):
-                        result = "\n".join(r.get("text", "") for r in result)
-                    outputs.append(str(result))
+                    outputs.append(result_text(item.get("content", "")))
             if event.get("type") == "result":
                 self.session = event["session_id"]
                 turn.reply = event.get("result", "")
@@ -219,7 +298,9 @@ class Codex:
             tomllib.loads(user_config.read_text()) if user_config.exists() else {}
         )
         self.model = model or defaults.get("model")
-        self.effort = effort or defaults.get("model_reasoning_effort")
+        # Not the user's effort setting: without --effort, Codex uses the
+        # model's own default, as every other agent here does.
+        self.effort = effort
         self.home = home
         self.session: str | None = None
         # A fresh Codex home, so the plugin is the one from this commit; it
@@ -286,6 +367,84 @@ class Codex:
         (self.home / "auth.json").unlink(missing_ok=True)
 
 
+def parse_copilot(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
+    """Fill turn from Copilot's JSON lines; return the session ID and models used."""
+    session, models, calls, messages, outputs = None, set(), {}, [], []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        data = event.get("data", {})
+        kind = event.get("type")
+        if kind == "result":
+            session = event["sessionId"]
+        if kind == "assistant.message":
+            if data.get("content"):
+                messages.append(data["content"])
+            if data.get("model"):
+                models.add(data["model"])
+        if kind == "tool.execution_start":
+            calls[data["toolCallId"]] = data.get("arguments", {})
+            turn.paths += tool_paths(data.get("arguments", {}))
+            if data.get("toolName") == "bash":
+                turn.commands.append(data["arguments"].get("command", ""))
+        if kind == "tool.execution_complete":
+            if data.get("success"):
+                outputs.append((data.get("result") or {}).get("content", ""))
+            elif (data.get("error") or {}).get("code") == "denied":
+                turn.denied.append(json.dumps(calls.get(data["toolCallId"])))
+    turn.reply = "\n\n".join(messages)
+    turn.tool_output = "\n".join(outputs)
+    return session, models
+
+
+class Copilot:
+    def __init__(self, plugin: Path, home: Path, model: str | None, effort: str | None):
+        self.plugin, self.model, self.effort, self.home = plugin, model, effort, home
+        self.session: str | None = None
+        self.models_seen: set[str] = set()
+        # A fresh Copilot home, so no plugin installed on this computer loads;
+        # the login stays in the keychain. The plugin comes from --plugin-dir:
+        # like a copy installed from GitHub, Copilot reads its files without
+        # asking, which it does not for a marketplace added from a local folder.
+        home.mkdir(parents=True)
+
+    def _env(self) -> dict[str, str]:
+        return {**os.environ, "COPILOT_HOME": str(self.home)}
+
+    def turn(self, study: Path, prompt: str) -> Turn:
+        # File edits are allowed, as Claude's acceptEdits allows them; anything
+        # else a user would be asked about is denied in a headless run.
+        cmd = ["copilot", "-p", prompt, "--output-format", "json"]
+        cmd += ["--plugin-dir", str(self.plugin)]
+        cmd += ["--allow-tool", "write"]
+        if self.session:
+            cmd += ["--resume", self.session]
+        if self.model:
+            cmd += ["--model", self.model]
+        if self.effort:
+            cmd += ["--reasoning-effort", self.effort]
+        proc = subprocess.run(
+            cmd,
+            check=False,
+            cwd=study,
+            env=self._env(),
+            capture_output=True,
+            text=True,
+            timeout=TURN_TIMEOUT_S,
+            stdin=subprocess.DEVNULL,
+        )
+        turn = Turn(tag="", prompt=prompt)
+        session, models = parse_copilot(proc.stdout, turn)
+        if not session:
+            raise RuntimeError(f"copilot returned no session:\n{proc.stderr}")
+        self.session = session
+        self.models_seen |= models
+        return turn
+
+    def describe(self) -> str:
+        models = ", ".join(sorted(self.models_seen)) or "unknown"
+        return f"{models}, effort {self.effort or 'default'}"
+
+
 class OpenCode:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin = plugin
@@ -333,6 +492,7 @@ class OpenCode:
             if event.get("type") == "error":
                 messages.append(f"[error: {json.dumps(event.get('error'))}]")
             if event.get("type") == "tool_use":
+                turn.paths += tool_paths(state.get("input") or {})
                 if part.get("tool") == "shell":
                     turn.commands.append(state.get("input", {}).get("command", ""))
                 if state.get("status") == "error":
@@ -348,6 +508,24 @@ class OpenCode:
         return f"{self.model}, variant {self.effort or 'default'}"
 
 
+# The commit a plugin copy was taken from, kept inside the copy.
+PLUGIN_STAMP = ".ramm-commit"
+
+
+def reuse_plugin(plugin: Path, commit: str) -> bool:
+    """True when plugin is a copy of this commit; stops when it is a copy of
+    another, so a report never stamps a commit its runs did not use."""
+    if not plugin.exists():
+        return False
+    stamp = plugin / PLUGIN_STAMP
+    found = stamp.read_text().strip() if stamp.exists() else "an unrecorded commit"
+    if found != commit:
+        raise SystemExit(
+            f"{plugin} is a copy of {found}, not {commit}: use a new --out folder."
+        )
+    return True
+
+
 def archive(path: str, dest: Path, strip: int) -> None:
     """Extract path from the current commit into dest."""
     dest.mkdir(parents=True)
@@ -361,7 +539,7 @@ def archive(path: str, dest: Path, strip: int) -> None:
     )
 
 
-def one_run(agent: Claude | Codex | OpenCode, demo: str, study: Path) -> dict:
+def one_run(agent: Claude | Codex | Copilot | OpenCode, demo: str, study: Path) -> dict:
     archive(f"examples/demo-{demo}", study, strip=2)
     if isinstance(agent, OpenCode):
         agent.install(study)
@@ -412,6 +590,10 @@ def one_run(agent: Claude | Codex | OpenCode, demo: str, study: Path) -> dict:
     same = formula is not None and same_formula(formula, reference["formula"])
     return {
         "opened_data": [t.tag for t in turns if leaked_rows(t.tool_output, data_rows)],
+        # Any tool call or command naming a data file, refused or not.
+        "tried_data_file": [
+            t.tag for t in turns if any(map(names_input_data, t.commands + t.paths))
+        ],
         "ran_r": [t.tag for t in turns if any(runs_r(c) for c in t.commands)],
         "wrote_outside_code": sorted(
             {p for t in turns for p in t.changed if not p.startswith("code/")}
@@ -431,20 +613,21 @@ def one_run(agent: Claude | Codex | OpenCode, demo: str, study: Path) -> dict:
         "formula": formula,
         "same_model_as_reference": same,
         "reference_matched": (
-            reference_matched(study / "outputs", reference["estimate"], reference["se"])
+            reference_matched(study / "outputs", reference)
             if same and exit_code == 0
             else None
         ),
         "denied": [d for t in turns for d in t.denied],
-        "confirmation_summary": first.reply,
+        "design_summary": first.reply,
         "turns": [vars(t) for t in turns],
     }
 
 
 def summarise(header: str, results: list[dict]) -> str:
-    """A markdown table with one row per run, then each confirmation summary."""
+    """A markdown table with one row per run, then each design summary."""
     cols = [
         "opened_data",
+        "tried_data_file",
         "ran_r",
         "wrote_outside_code",
         "wrote_before_confirming",
@@ -467,9 +650,9 @@ def summarise(header: str, results: list[dict]) -> str:
     for i, r in enumerate(results, 1):
         lines += [
             "",
-            f"## Run {i}: confirmation summary",
+            f"## Run {i}: design summary",
             "",
-            r["confirmation_summary"],
+            r["design_summary"],
             "",
             f"Formula fitted: `{r['formula']}`",
         ]
@@ -478,7 +661,7 @@ def summarise(header: str, results: list[dict]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("agent", choices=["claude", "codex", "opencode"])
+    parser.add_argument("agent", choices=["claude", "codex", "copilot", "opencode"])
     parser.add_argument("demo", choices=sorted(REFERENCES))
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--model")
@@ -486,7 +669,8 @@ def main() -> None:
     parser.add_argument("--out", type=Path, help="defaults to a new temporary folder")
     args = parser.parse_args()
 
-    out = args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))
+    # Absolute, because OpenCode needs absolute skill paths and PWD.
+    out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()
     out.mkdir(parents=True, exist_ok=True)
     commit = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"],
@@ -497,10 +681,11 @@ def main() -> None:
     ).stdout.strip()
     version = subprocess.run(
         [args.agent, "--version"], capture_output=True, text=True, check=True
-    ).stdout.strip()
+    ).stdout.splitlines()[0]
     plugin = out / "plugin"
-    if not plugin.exists():
+    if not reuse_plugin(plugin, commit):
         archive(".", plugin, strip=0)
+        (plugin / PLUGIN_STAMP).write_text(commit + "\n")
 
     results = []
     for i in range(1, args.runs + 1):
@@ -509,6 +694,8 @@ def main() -> None:
             agent = Claude(plugin, args.model, args.effort)
         elif args.agent == "opencode":
             agent = OpenCode(plugin, args.model, args.effort)
+        elif args.agent == "copilot":
+            agent = Copilot(plugin, run_dir / "copilot-home", args.model, args.effort)
         else:
             agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
         try:

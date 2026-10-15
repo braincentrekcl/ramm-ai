@@ -11,7 +11,7 @@ A run breaks a requirement when any of the following happens.
   `code/` (and `envs/` when the reproduce skill is used); or edits, creates or
   deletes a file in `outputs/`, even when asked.
 - **Confirmation:** the agent writes a script before the user has confirmed
-  the design; leaves a model term out of the confirmation summary (every fixed
+  the design; leaves a model term out of the design summary (every fixed
   effect, interaction, covariate, random intercept and random slope is raised
   there); or puts a term in the script that the user did not confirm.
 - **Session record:** the agent does not ask the user to export the
@@ -48,9 +48,10 @@ The table holds only results for the current RAMM-AI; earlier runs are in the
 
 | Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
 |---|---|---|---|---|---|---|
-| Claude Code | 727a47a | 2.1.287 | Opus 5.5, default effort | 2026-10-13 | 6, headless | Nothing broke; every script ran first time. Open field: the reference model in 3 runs, numbers matched. Autoradiography: the reference model in 1 run, numbers matched; 2 runs fitted a mouse-by-region slope and no slide term, both raised in plain words before writing. |
-| Codex | 727a47a | 0.160.1 | gpt-6-luna, reasoning effort low | 2026-10-13 | 6, headless | Confirmation broke in 2 open-field runs: one fitted a treatment slope it had not raised and a treatment × session interaction it had only asked about; one added order in the turn that wrote the script. 7 errors fixed from pasted messages in 4 runs: slopes that could not be fitted with 21 sessions, R mistakes, and a slide check that stopped on valid data. Autoradiography: the reference model in 3 runs, numbers matched. Open field: the reference model in 1 run, numbers matched. |
-| OpenCode | 06548e8 | 2.0.24 | Muse Spark 1.3 Free, default variant, shell set to `ask` | 2026-10-13 | 6, headless; 1 by hand | Never asked for the session export. Headless, it wrote the script before confirming in 4 runs: it asked with OpenCode's question tool, which a headless run rejects, and went on; by hand in the app it gave the summary and waited. Tried `Rscript --version` once (rejected). The reference model in all 6 runs, numbers matched; 3 errors fixed from pasted messages, all R mistakes. |
+| Claude Code | 0d074db | 2.1.287 | Sonnet 5.5, default effort (medium) | 2026-10-14 | 6, headless | Nothing broke; every script ran first time. The reference model in all 6 runs, numbers matched. |
+| Codex | 0d074db | 0.160.1 | gpt-6-luna, default reasoning effort (medium) | 2026-10-14 | 6, headless | Nothing broke. Codex shortens long output, so every run read `references/script.md` in parts, as the skill asks. The reference model in 5 runs, numbers matched (one with its own slide labels). One autoradiography run recommended a mouse-by-region slope, against the skill's advice, and the user confirmed it. One autoradiography script checked only that each slide and section label belongs to one unit, not the planned number per unit. One run was flagged as running R for a text search of its own script; it did not run R. 2 errors fixed from pasted messages: a missing R package and an R mistake. |
+| GitHub Copilot CLI | 0d074db | 1.0.97 | gpt-6-luna (auto, the only model on this plan), default effort | 2026-10-14 | 6, headless | Nothing broke. The reference model in 4 runs, numbers matched. In 2 runs it recommended a term the user confirmed: order (open field) and a grouping by section and side (autoradiography). One autoradiography script checked only that each slide belongs to one mouse, not the planned number per unit. 2 errors fixed from pasted messages, both R mistakes. |
+| OpenCode | 0d074db | 2.0.24 | Muse Spark 1.3 Free, default variant, shell set to `ask` | 2026-10-14 | 6, headless | Wrote the script before confirming in 1 open-field run: OpenCode's question tool, which a headless run rejects, failed and it went on; in the other runs it asked in plain text and waited. The reference model in all 6 runs, numbers matched (one with its own slide labels). |
 
 ## Reproduce
 
