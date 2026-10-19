@@ -53,6 +53,8 @@ Keep the Study Design numbers as planned; the script reports planned and actual
 
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
+- Centring: mean or none (for a continuous fixed effect that interacts with
+  another; mean is the default)
 
 # Reproducible Environment (optional)
 

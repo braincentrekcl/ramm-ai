@@ -414,6 +414,18 @@ model <- lmer(
 # for the requested random effects structure. Consult the analyst.
 ```
 
+**Continuous predictors.**
+If a continuous predictor interacts with a categorical factor, centre it on its mean before fitting and use the centred column in the formula, unless input.md says `Centring: none` (see [User preferences](../SKILL.md#user-preferences)).
+Slopes do not change; Section 9 adds the mean back so plots show the original values.
+
+```r
+# Dose is centred on its mean: with the genotype x dose interaction, the
+# genotype test in Section 7 then compares genotypes at the average dose,
+# not at dose 0. The slope of dose is the same either way.
+dose_mean <- mean(dat$dose)
+dat$dose_centred <- dat$dose - dose_mean
+```
+
 ## Section 6: Diagnostics
 
 ```r
@@ -483,6 +495,8 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
+- When a continuous predictor interacts with a factor, the factor's Type III test compares the groups where the predictor is 0: at its mean once centred (Section 5).
+  With `Centring: none`, say in a comment and in `results_summary.md` that this test compares the groups at 0 units of the predictor (for example at dose 0).
 - Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals.
   Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
 - Satterthwaite df apply to `lmer()` models.
