@@ -664,6 +664,31 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
 - Beside each violin, plot the group's estimated marginal mean with its 95% confidence interval from Section 8, so the reader can compare the raw data with the model's estimate.
 - Estimated marginal means are model-based group estimates.
   Label per-individual means as individual means, never as EMMs.
+- For a continuous predictor, plot the outcome against the predictor instead of violins, which summarise groups, not a range of values.
+  Show the measurements as points (the point style the user confirmed), and the model's fitted line with its 95% confidence band from Section 8's Satterthwaite settings, one line per group if the model has a factor.
+  If the predictor varies within individuals (for example age at each session), join each individual's points with a thin line (`aes(group = subject_id)`) so the reader can follow each individual.
+  Say in the subtitle that the line is the model's estimate.
+  Save it as `estimate_plot`, the plot Section 10 saves as `plot_estimates.png`:
+  <!-- chunk: slope-plot -->
+  ```r
+  # The model's fitted line with its 95% confidence band, at 50 doses across
+  # the range studied. The model used the centred dose (Section 5), so the
+  # mean is added back to plot the doses as given.
+  dose_grid <- seq(min(dat$dose_centred), max(dat$dose_centred), length.out = 50)
+  line_df <- as.data.frame(summary(
+    emmeans(model, ~ dose_centred | genotype, at = list(dose_centred = dose_grid)),
+    infer = c(TRUE, FALSE)))
+  line_df$dose <- line_df$dose_centred + dose_mean
+  estimate_plot <- ggplot(dat, aes(x = dose, y = uci_g, colour = genotype)) +
+    geom_point(size = 0.8, alpha = 0.6) +
+    geom_ribbon(data = line_df, aes(x = dose, ymin = lower.CL, ymax = upper.CL,
+                                    fill = genotype),
+                inherit.aes = FALSE, alpha = 0.2) +
+    geom_line(data = line_df, aes(x = dose, y = emmean, colour = genotype),
+              inherit.aes = FALSE, linewidth = 0.8) +
+    labs(x = "Dose (mg/kg)", y = "Binding (µCi/g)",
+         subtitle = "Lines: model estimate with 95% confidence band")
+  ```
 - Use a clean theme (`theme_classic()` or `theme_bw()`), with Set2 colours for categorical factors, magma for sequential factors, and RdBu_r for diverging (mean centered) factors.
 - If there is more than one categorical factor (e.g. genotype and drug), use shape for the factor with fewest levels.
 - Label axes clearly with units

@@ -349,16 +349,17 @@ def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
     assert "rows kept" in result.stdout
 
 
-SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr")
+SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr", "ggplot2")
 
 
 def run_slopes(
-    skill_text: str, study: Path, individuals: str
+    skill_text: str, study: Path, individuals: str, after: str = ""
 ) -> subprocess.CompletedProcess[str]:
     """Simulate a genotype x dose study, fit it, and run the slope chunks.
 
     `individuals` is R code for a data frame with one row per individual:
     subject_id, genotype and dose. WT slope is 2, het slope 0.5.
+    `after` is R code run once the chunks have run.
     """
     missing = run_r(
         "pkgs <- c(" + ", ".join(f'"{p}"' for p in SLOPE_PACKAGES) + ")\n"
@@ -366,7 +367,7 @@ def run_slopes(
         study,
     ).returncode
     if missing:
-        pytest.skip("lme4, lmerTest, emmeans or dplyr is not installed")
+        pytest.skip("lme4, lmerTest, emmeans, dplyr or ggplot2 is not installed")
     code = (
         "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
         'options(contrasts = c("contr.sum", "contr.poly"))\n'
@@ -381,6 +382,7 @@ def run_slopes(
         + "model <- lmer(uci_g ~ genotype * dose_centred + (1 | subject_id), data = dat)\n"
         + extract_r_chunk(skill_text, "slopes")
         + extract_r_chunk(skill_text, "slopes-export")
+        + after
     )
     (study / "outputs").mkdir()
     return run_r(code, study)
@@ -424,3 +426,25 @@ def test_slopes_stop_when_too_few_individuals(skill_text: str, tmp_path: Path) -
     assert result.returncode != 0
     assert "fewer than 2 degrees of freedom" in result.stderr
     assert not (tmp_path / "outputs" / "results_slopes.csv").exists()
+
+
+def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
+    skill_text: str, tmp_path: Path
+) -> None:
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2))",
+        after="suppressPackageStartupMessages(library(ggplot2))\n"
+        + extract_r_chunk(skill_text, "slope-plot")
+        + "stopifnot(all.equal(range(line_df$dose), range(dat$dose)))\n"
+        "stopifnot(all(line_df$lower.CL < line_df$emmean),\n"
+        "          all(line_df$emmean < line_df$upper.CL))\n"
+        "stopifnot(setequal(unique(line_df$genotype), levels(dat$genotype)))\n"
+        "invisible(ggplot_build(estimate_plot))\n"
+        'cat("plot ok\\n")\n',
+    )
+    assert result.returncode == 0, result.stderr
+    assert "plot ok" in result.stdout
