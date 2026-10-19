@@ -440,12 +440,12 @@ def test_slopes_stop_when_too_few_individuals(skill_text: str, tmp_path: Path) -
     assert not (tmp_path / "outputs" / "results_slopes.csv").exists()
 
 
-@pytest.mark.parametrize("centre", ["mean(dat$dose)", "0", "8"])
+@pytest.mark.parametrize("centre", ["mean(dat$dose, na.rm = TRUE)", "0", "8"])
 def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
     skill_text: str, tmp_path: Path, centre: str
 ) -> None:
     """Whatever centre input.md chooses, the plot shows the doses as given."""
-    default = "dose_centre <- mean(dat$dose)"
+    default = "dose_centre <- mean(dat$dose, na.rm = TRUE)"
     assert default in skill_text
     skill_text = skill_text.replace(default, f"dose_centre <- {centre}")
     result = run_slopes(
@@ -467,12 +467,12 @@ def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
     assert "plot ok" in result.stdout
 
 
-@pytest.mark.parametrize("centre", ["mean(dat$dose)", "0", "8"])
+@pytest.mark.parametrize("centre", ["mean(dat$dose, na.rm = TRUE)", "0", "8"])
 def test_group_difference_matches_the_f_test_at_the_centre(
     skill_text: str, tmp_path: Path, centre: str
 ) -> None:
     """A two-level difference has the F-test's p-value, whatever the centre."""
-    default = "dose_centre <- mean(dat$dose)"
+    default = "dose_centre <- mean(dat$dose, na.rm = TRUE)"
     assert default in skill_text
     skill_text = skill_text.replace(default, f"dose_centre <- {centre}")
     at_call = re.search(r"`(emmeans\(model, ~ genotype, at = [^`]*\))`", skill_text)
@@ -498,3 +498,52 @@ def test_group_difference_matches_the_f_test_at_the_centre(
     )
     assert result.returncode == 0, result.stderr
     assert "matches f test" in result.stdout
+
+
+def test_slopes_ignore_a_missing_dose(skill_text: str, tmp_path: Path) -> None:
+    """One individual without a dose leaves the centre and the model intact."""
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = c(NA, seq(0, 10, length.out = 12)[-1],\n"
+        "           seq(0, 10, length.out = 12)))",
+        after="stopifnot(is.finite(dose_centre))\n"
+        "stopifnot(nobs(model) == sum(!is.na(dat$dose)))\n"
+        'cat("missing dose ok\\n")\n',
+    )
+    assert result.returncode == 0, result.stderr
+    assert "missing dose ok" in result.stdout
+
+
+def test_one_slope_without_interaction_uses_the_original_column(
+    skill_text: str, tmp_path: Path
+) -> None:
+    """Without an interaction nothing is centred, so the slope call names dose."""
+    if run_r(
+        'pkgs <- c("lme4", "lmerTest", "emmeans")\n'
+        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
+        tmp_path,
+    ).returncode:
+        pytest.skip("lme4, lmerTest or emmeans is not installed")
+    bullet = re.search(
+        r"- With no interaction, one slope for everyone: `([^`]*)`", skill_text
+    )
+    assert bullet, "Section 8 gives no slope call for a model without interaction"
+    code = (
+        "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
+        "set.seed(1)\n"
+        "dat <- data.frame(subject_id = rep(paste0('m', 1:12), each = 4),\n"
+        "                  dose = rep(seq(0, 10, length.out = 12), each = 4))\n"
+        "dat$uci_g <- 50 + 2 * dat$dose + rep(rnorm(12), each = 4) +\n"
+        "  rnorm(48, sd = 0.5)\n"
+        "model <- lmer(uci_g ~ dose + (1 | subject_id), data = dat)\n"
+        'emm_options(lmer.df = "satterthwaite")\n'
+        f"slopes <- {bullet.group(1)}\n"
+        "stopifnot(abs(summary(slopes)$dose.trend - 2) < 0.3)\n"
+        'cat("one slope ok\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "one slope ok" in result.stdout
