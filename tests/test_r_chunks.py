@@ -347,3 +347,80 @@ def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
     result = run_r(code, tmp_path)
     assert result.returncode == 0, result.stderr
     assert "rows kept" in result.stdout
+
+
+SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr")
+
+
+def run_slopes(
+    skill_text: str, study: Path, individuals: str
+) -> subprocess.CompletedProcess[str]:
+    """Simulate a genotype x dose study, fit it, and run the slope chunks.
+
+    `individuals` is R code for a data frame with one row per individual:
+    subject_id, genotype and dose. WT slope is 2, het slope 0.5.
+    """
+    missing = run_r(
+        "pkgs <- c(" + ", ".join(f'"{p}"' for p in SLOPE_PACKAGES) + ")\n"
+        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
+        study,
+    ).returncode
+    if missing:
+        pytest.skip("lme4, lmerTest, emmeans or dplyr is not installed")
+    code = (
+        "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
+        'options(contrasts = c("contr.sum", "contr.poly"))\n'
+        "set.seed(1)\n"
+        f"ids <- {individuals}\n"
+        "ids$offset <- rnorm(nrow(ids))\n"
+        "dat <- ids[rep(seq_len(nrow(ids)), each = 4), ]\n"
+        'dat$genotype <- factor(dat$genotype, levels = c("WT", "het"))\n'
+        'dat$uci_g <- 50 + ifelse(dat$genotype == "WT", 2, 0.5) * dat$dose +\n'
+        "  dat$offset + rnorm(nrow(dat), sd = 0.5)\n"
+        + extract_r_chunk(skill_text, "centring")
+        + "model <- lmer(uci_g ~ genotype * dose_centred + (1 | subject_id), data = dat)\n"
+        + extract_r_chunk(skill_text, "slopes")
+        + extract_r_chunk(skill_text, "slopes-export")
+    )
+    (study / "outputs").mkdir()
+    return run_r(code, study)
+
+
+def test_slopes_recover_the_simulated_trends(skill_text: str, tmp_path: Path) -> None:
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2))",
+    )
+    assert result.returncode == 0, result.stderr
+    with (tmp_path / "outputs" / "results_slopes.csv").open(encoding="utf-8") as f:
+        rows = {row["genotype"]: row for row in csv.DictReader(f)}
+    assert list(rows["WT"]) == [
+        "genotype",
+        "slope",
+        "standard_error",
+        "degrees_of_freedom",
+        "ci95_lower",
+        "ci95_upper",
+        "t_value",
+        "p_value_adjusted",
+    ]
+    assert abs(float(rows["WT"]["slope"]) - 2) < 0.3
+    assert abs(float(rows["het"]["slope"]) - 0.5) < 0.3
+    # Satterthwaite df: limited by the 24 individuals, not the 96 measurements.
+    assert 2 <= float(rows["WT"]["degrees_of_freedom"]) < 24
+
+
+def test_slopes_stop_when_too_few_individuals(skill_text: str, tmp_path: Path) -> None:
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:5),\n"
+        "  genotype = c('WT', 'WT', 'WT', 'het', 'het'),\n"
+        "  dose = c(0, 5, 10, 2, 8))",
+    )
+    assert result.returncode != 0
+    assert "fewer than 2 degrees of freedom" in result.stderr
+    assert not (tmp_path / "outputs" / "results_slopes.csv").exists()

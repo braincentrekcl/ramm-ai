@@ -29,8 +29,12 @@ The script writes into `outputs/`:
 - `results_summary.md`: start here.
   The answer to each comparison in plain sentences, warnings, and a guide to the
   other files
-- `results_group_means.csv`, `results_comparisons.csv`: estimated group means
-  and the differences between groups
+- `results_group_means.csv`: estimated group means, if the model has a
+  categorical factor (such as genotype)
+- `results_slopes.csv`: estimated slopes, if the model has a continuous
+  predictor (such as dose): how much the outcome changes per unit
+- `results_comparisons.csv`: the differences between groups, or between their
+  slopes
 - `results_replicate_audit_per_individual.csv`,
   `results_replicate_audit_summary.csv`: how many replicates each individual
   contributed

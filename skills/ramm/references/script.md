@@ -418,6 +418,7 @@ model <- lmer(
 If a continuous predictor interacts with a categorical factor, centre it on its mean before fitting and use the centred column in the formula, unless input.md says `Centring: none` (see [User preferences](../SKILL.md#user-preferences)).
 Slopes do not change; Section 9 adds the mean back so plots show the original values.
 
+<!-- chunk: centring -->
 ```r
 # Dose is centred on its mean: with the genotype x dose interaction, the
 # genotype test in Section 7 then compares genotypes at the average dose,
@@ -514,6 +515,8 @@ Apply these translation rules:
 | "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise")` |
 | "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise")` |
 | "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise")` |
+| "the effect of dose" (continuous) | `emtrends(model, ~ 1, var = "dose_centred")` |
+| "compare the dose effect between genotypes" | `contrast(emtrends(model, ~ genotype, var = "dose_centred"), method = "revpairwise")` |
 
 Default p-value adjustment depends on the comparison type:
 - **Treatment vs control** (`trt.vs.ctrl`): use `adjust = "dunnett"` — designed for many-to-one comparisons
@@ -540,6 +543,7 @@ When input.md asks for no comparisons ("none"), the main effect answers the ques
 - A categorical factor with two levels: still estimate its one difference, relative to the reference level, with `adjust = "none"`.
   It is the main effect itself, with the same p-value as its F-test in Section 7, and its size and confidence interval are what a reader needs.
 - A categorical factor with three or more levels: the group means (`emm`) only, with no `contrast_output`; the F-test in Section 7 answers whether the groups differ.
+- A continuous predictor: its slope (`slopes`, see below) only.
 - Add no other comparisons.
 
 Use this pattern (adapt the formula and comparison):
@@ -568,6 +572,43 @@ if (any(contrast_df < 2)) {
 }
 
 summary(emm, infer = c(TRUE, FALSE))
+summary(contrast_output, infer = TRUE)
+```
+
+**Continuous predictors: slopes.**
+A continuous predictor has a slope, the change in the outcome per unit of the predictor (for example µCi/g per mg/kg), instead of group means.
+Estimate it with `emtrends()`, using the centred column from Section 5 (or the original one with `Centring: none`):
+- With no interaction, one slope for everyone: `emtrends(model, ~ 1, var = "dose_centred")`.
+- With an interaction with a factor (only if the user confirmed it; see [Implied interactions](../SKILL.md#implied-interactions)), one slope per group, and differences in slope between groups as `contrast_output`, relative to the reference level, with the adjustments above.
+- Test each slope against zero, unlike group means: a slope of zero is a meaningful answer (the outcome does not change with dose).
+  Adjust these tests with `adjust = "holm"` when there is more than one slope; with one, the p-value is unchanged.
+- Name the slopes object `slopes`; Section 10 exports it.
+
+<!-- chunk: slopes -->
+```r
+# --- 8. Slopes of dose ---
+
+# Satterthwaite degrees of freedom, set explicitly as above.
+emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))
+
+# Change in binding per unit of dose, in each genotype. Each slope is tested
+# against zero (no change with dose); the Holm adjustment allows for testing
+# one slope per genotype.
+slopes <- emtrends(model, ~ genotype, var = "dose_centred")
+# Difference in slope between genotypes, relative to the reference (het - WT).
+contrast_output <- contrast(slopes, method = "revpairwise", adjust = "tukey")
+
+# The Tukey adjustment cannot be calculated below 2 degrees of freedom,
+# which happens when very few individuals remain in a group.
+contrast_df <- summary(contrast_output, infer = FALSE)$df
+if (any(contrast_df < 2)) {
+  stop("Too few individuals remain for a trustworthy adjusted p-value: ",
+       "at least one comparison has fewer than 2 degrees of freedom (lowest ",
+       round(min(contrast_df), 2), "). Report the slopes and differences ",
+       "without p-values, or add individuals before testing.", call. = FALSE)
+}
+
+summary(slopes, infer = c(TRUE, TRUE), adjust = "holm")
 summary(contrast_output, infer = TRUE)
 ```
 
@@ -676,6 +717,20 @@ dev.off()
 ```
 
 Without a `contrast_output` (input.md asked for no comparisons and the factor has three or more levels; see Section 8), skip `results_comparisons.csv`.
+Write `results_group_means.csv` only when the model has a categorical factor; with a continuous predictor in the model as well, the group means are at its average value, so say so in `results_summary.md`.
+
+With a continuous predictor, export the slopes from Section 8 too; differences in slope go to `results_comparisons.csv` as above:
+
+<!-- chunk: slopes-export -->
+```r
+# Slopes of dose, with Satterthwaite confidence intervals and tests against
+# zero (a slope of zero means binding does not change with dose).
+slope_results <- as.data.frame(summary(slopes, infer = c(TRUE, TRUE), adjust = "holm")) |>
+  dplyr::rename(slope = dose_centred.trend, standard_error = SE,
+                degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
+                t_value = t.ratio, p_value_adjusted = p.value)
+write.csv(slope_results, file.path("outputs", "results_slopes.csv"), row.names = FALSE)
+```
 
 For an `lm()`, export the fixed effects with `broom::tidy(model)` (add `broom` to the required packages instead of `broom.mixed`) and skip `results_random_effects.csv`; say in `results_summary.md` that the model has no random effects because each individual was measured once.
 
@@ -687,6 +742,7 @@ Build it from the fitted results, never from hard-coded numbers, in plain langua
 - If any group has fewer individuals than planned (`fewer_than_planned` from Section 2a), start the file with a **Check first** line giving the planned and actual numbers per group, and pointing to 'Exclusions and Attrition' in inputs/input.md for who was lost and why.
 - One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
+- Each slope as a sentence, with its units per unit of the predictor (for example "binding in WT mice rose by 2.1 µCi/g per mg/kg of dose (95% CI 1.9 to 2.3; adjusted p < 0.001)"), and each difference in slope the same way.
 - If input.md asked for no comparisons, say so ("No comparisons between groups were requested: the main effect answers the question") and give each fixed effect's F-test as a sentence, with its two degrees of freedom and p-value; for a two-level factor, follow it with the difference as above, with an unadjusted p-value.
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - A **Deviations from the confirmed design** list: each change made to the analysis after the script first ran, with what prompted it (see [Deviations from the plan](../SKILL.md#deviations-from-the-plan)), or "None" when the script still follows the design confirmed in the design summary.
