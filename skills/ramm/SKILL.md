@@ -224,6 +224,7 @@ For each level, determine:
 
 - Alpha level (0.05 default)
 - Plot points: one per replicate, or one per individual (see Section 9); ask if input.md does not say.
+  For a continuous predictor that varies within individuals, one per individual means one at each value of the predictor, so say that when you ask.
   If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
 - P-value adjustment: Dunnett for comparisons with a control, Tukey for all pairwise comparisons, Holm for any other, unless input.md names another method (see Section 8)
 - Centring of each continuous predictor: its mean, zero (no centring, for example when dose 0 is the vehicle), or a value in the predictor's units (for example 8 weeks, the age at baseline); see Section 5.

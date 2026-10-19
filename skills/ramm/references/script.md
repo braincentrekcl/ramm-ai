@@ -704,7 +704,8 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   Label per-individual means as individual means, never as EMMs.
 - For a continuous predictor, plot the outcome against the predictor instead of violins, which summarise groups, not a range of values.
   Show the measurements as points (the point style the user confirmed), and the model's fitted line with its 95% confidence band from Section 8's Satterthwaite settings, one line per group if the model has a factor.
-  If the predictor varies within individuals (for example age at each session), join each individual's points with a thin line (`aes(group = subject_id)`) so the reader can follow each individual.
+  If the predictor varies within individuals (for example age at each session), an individual's overall mean has no single value of the predictor to sit at: "one point per individual" then means one point per individual at each value (the mean of its replicates there), never one overall mean.
+  Join each individual's points with a thin line (`aes(group = subject_id)`) so the reader can follow each individual.
   Say in the subtitle that the line is the model's estimate.
   With `Centring: zero` the predictor is not centred: build the grid from the original column and add nothing back.
   Save it as `estimate_plot`, the plot Section 10 saves as `plot_estimates.png`:
