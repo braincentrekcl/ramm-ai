@@ -395,8 +395,18 @@ def test_slopes_recover_the_simulated_trends(skill_text: str, tmp_path: Path) ->
         "data.frame(subject_id = paste0('m', 1:24),\n"
         "  genotype = rep(c('WT', 'het'), each = 12),\n"
         "  dose = rep(seq(0, 10, length.out = 12), 2))",
+        after="r <- slope_results\n"
+        "# 95% intervals: estimate +/- t(0.975, df) x SE, with no adjustment.\n"
+        "stopifnot(isTRUE(all.equal(r$ci95_lower,\n"
+        "  r$slope - qt(0.975, r$degrees_of_freedom) * r$standard_error)))\n"
+        "# Holm-adjusted p-values, compared as ratios: tiny p-values would pass\n"
+        "# an absolute comparison whatever they were.\n"
+        "raw_p <- 2 * pt(-abs(r$t_value), r$degrees_of_freedom)\n"
+        'stopifnot(max(abs(r$p_value / p.adjust(raw_p, "holm") - 1)) < 1e-6)\n'
+        'cat("intervals and tests ok\\n")\n',
     )
     assert result.returncode == 0, result.stderr
+    assert "intervals and tests ok" in result.stdout
     with (tmp_path / "outputs" / "results_slopes.csv").open(encoding="utf-8") as f:
         rows = {row["genotype"]: row for row in csv.DictReader(f)}
     assert list(rows["WT"]) == [
@@ -407,8 +417,10 @@ def test_slopes_recover_the_simulated_trends(skill_text: str, tmp_path: Path) ->
         "ci95_lower",
         "ci95_upper",
         "t_value",
-        "p_value_adjusted",
+        "p_value",
+        "p_value_adjustment",
     ]
+    assert rows["WT"]["p_value_adjustment"] == "holm"
     assert abs(float(rows["WT"]["slope"]) - 2) < 0.3
     assert abs(float(rows["het"]["slope"]) - 0.5) < 0.3
     # Satterthwaite df: limited by the 24 individuals, not the 96 measurements.

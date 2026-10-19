@@ -586,6 +586,7 @@ Estimate it with `emtrends()`, using the centred column from Section 5:
 - With an interaction with a factor (only if the user confirmed it; see [Implied interactions](../SKILL.md#implied-interactions)), one slope per group, and differences in slope between groups as `contrast_output`, relative to the reference level, with the adjustments above.
 - Test each slope against zero, unlike group means: a slope of zero is a meaningful answer (the outcome does not change with dose).
   Adjust these tests with `adjust = "holm"` when there is more than one slope; with one, the p-value is unchanged.
+  Take the confidence intervals from a separate call without adjustment: emmeans cannot apply Holm to intervals and silently widens them with Bonferroni instead, so they would no longer be 95% intervals.
 - Name the slopes object `slopes`; Section 10 exports it.
 
 <!-- chunk: slopes -->
@@ -612,7 +613,10 @@ if (any(contrast_df < 2)) {
        "without p-values, or add individuals before testing.", call. = FALSE)
 }
 
-summary(slopes, infer = c(TRUE, TRUE), adjust = "holm")
+# 95% intervals and Holm-adjusted tests come from separate calls: emmeans
+# cannot apply Holm to intervals and would widen them with Bonferroni.
+summary(slopes, infer = c(TRUE, FALSE))
+test(slopes, adjust = "holm")
 summary(contrast_output, infer = TRUE)
 ```
 
@@ -758,10 +762,13 @@ With a continuous predictor, export the slopes from Section 8 too; differences i
 ```r
 # Slopes of dose, with Satterthwaite confidence intervals and tests against
 # zero (a slope of zero means binding does not change with dose).
-slope_results <- as.data.frame(summary(slopes, infer = c(TRUE, TRUE), adjust = "holm")) |>
+slope_intervals <- as.data.frame(summary(slopes, infer = c(TRUE, FALSE)))
+slope_tests <- as.data.frame(test(slopes, adjust = "holm"))
+slope_results <- cbind(slope_intervals, slope_tests[, c("t.ratio", "p.value")]) |>
   dplyr::rename(slope = dose_centred.trend, standard_error = SE,
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
-                t_value = t.ratio, p_value_adjusted = p.value)
+                t_value = t.ratio, p_value = p.value)
+slope_results$p_value_adjustment <- "holm"
 write.csv(slope_results, file.path("outputs", "results_slopes.csv"), row.names = FALSE)
 ```
 
