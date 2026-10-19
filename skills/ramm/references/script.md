@@ -608,11 +608,11 @@ summary(contrast_output, infer = TRUE)
 A continuous predictor has a slope, the change in the outcome per unit of the predictor (for example µCi/g per mg/kg), instead of group means.
 Estimate it with `emtrends()`, using the centred column from Section 5 (the original one with `Centring: zero`):
 - With no interaction, one slope for everyone: `emtrends(model, ~ 1, var = "dose_centred")`.
-- With an interaction with a factor (only if the user confirmed it; see [Implied interactions](../SKILL.md#implied-interactions)), one slope per group, and differences in slope between groups as `contrast_output`, relative to the reference level, with the adjustments above.
+- With an interaction with a factor (only if the user confirmed it; see [Implied interactions](../SKILL.md#implied-interactions)), one slope per group, and differences in slope between groups as `slope_contrasts`, relative to the reference level, with the adjustments above; keep `contrast_output` for differences between group means, so a study can have both.
 - Test each slope against zero, unlike group means: a slope of zero is a meaningful answer (the outcome does not change with dose).
   Adjust these tests with `adjust = "holm"` when there is more than one slope; with one, the p-value is unchanged.
   Take the confidence intervals from a separate call without adjustment: emmeans cannot apply Holm to intervals and silently widens them with Bonferroni instead, so they would no longer be 95% intervals.
-- Name the slopes object `slopes`; Section 10 exports it.
+- Name the slopes object `slopes`; Section 10 exports it with `slope_contrasts`.
 
 <!-- chunk: slopes -->
 ```r
@@ -626,15 +626,15 @@ emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))
 # one slope per genotype.
 slopes <- emtrends(model, ~ genotype, var = "dose_centred")
 # Difference in slope between genotypes, relative to the reference (het - WT).
-contrast_output <- contrast(slopes, method = "revpairwise", adjust = "tukey")
+slope_contrasts <- contrast(slopes, method = "revpairwise", adjust = "tukey")
 
 # The Tukey adjustment cannot be calculated below 2 degrees of freedom,
 # which happens when very few individuals remain in a group.
-contrast_df <- summary(contrast_output, infer = FALSE)$df
-if (any(contrast_df < 2)) {
+slope_contrast_df <- summary(slope_contrasts, infer = FALSE)$df
+if (any(slope_contrast_df < 2)) {
   stop("Too few individuals remain for a trustworthy adjusted p-value: ",
        "at least one comparison has fewer than 2 degrees of freedom (lowest ",
-       round(min(contrast_df), 2), "). Report the slopes and differences ",
+       round(min(slope_contrast_df), 2), "). Report the slopes and differences ",
        "without p-values, or add individuals before testing.", call. = FALSE)
 }
 
@@ -642,7 +642,7 @@ if (any(contrast_df < 2)) {
 # cannot apply Holm to intervals and would widen them with Bonferroni.
 summary(slopes, infer = c(TRUE, FALSE))
 test(slopes, adjust = "holm")
-summary(contrast_output, infer = TRUE)
+summary(slope_contrasts, infer = TRUE)
 ```
 
 **Kenward-Roger, only if the user asks for it.**
@@ -751,14 +751,24 @@ emm_results <- as.data.frame(summary(emm, infer = c(TRUE, FALSE))) |>
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL)
 write.csv(emm_results, file.path("outputs", "results_group_means.csv"), row.names = FALSE)
 
-contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE)) |>
-  dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
-                degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
-                t_value = t.ratio, p_value = p.value)
-# Name the adjustment used for these p-values (for example dunnett, tukey,
-# or none for a single comparison), so no p-value is read as adjusted when
-# it is not.
-contrast_results$p_value_adjustment <- contrast_output@misc$adjust
+# Differences between group means and, with a continuous predictor, between
+# slopes (Section 8), in one table; `compares` says which each row is.
+tidy_comparisons <- function(contrasts, compares) {
+  out <- as.data.frame(summary(contrasts, infer = TRUE)) |>
+    dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
+                  degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
+                  t_value = t.ratio, p_value = p.value)
+  # Name the adjustment used for these p-values (for example dunnett, tukey,
+  # or none for a single comparison), so no p-value is read as adjusted when
+  # it is not.
+  out$p_value_adjustment <- contrasts@misc$adjust
+  out$compares <- compares
+  out
+}
+contrast_results <- dplyr::bind_rows(
+  tidy_comparisons(contrast_output, "group means"),
+  tidy_comparisons(slope_contrasts, "slopes")
+)
 write.csv(contrast_results, file.path("outputs", "results_comparisons.csv"), row.names = FALSE)
 
 # Save plots
@@ -779,10 +789,10 @@ plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
 dev.off()
 ```
 
-Without a `contrast_output` (input.md asked for no comparisons and the factor has three or more levels; see Section 8), skip `results_comparisons.csv`.
+List in `bind_rows()` only the comparisons the script has: leave out `contrast_output` when there are no group differences (input.md asked for none and the factor has three or more levels; see Section 8), and `slope_contrasts` when there are no slope differences; with neither, skip `results_comparisons.csv`.
 Write `results_group_means.csv` only when the model has a categorical factor; with a centred continuous predictor in the model as well, the group means are at its centre (Section 8), so say at which value in `results_summary.md` (for example "at the average dose, 4.2 mg/kg" or "at 8 weeks").
 
-With a continuous predictor, export the slopes from Section 8 too; differences in slope go to `results_comparisons.csv` as above:
+With a continuous predictor, export the slopes from Section 8 too; differences in slope are already in `results_comparisons.csv`:
 
 <!-- chunk: slopes-export -->
 ```r
