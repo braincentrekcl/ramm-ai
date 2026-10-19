@@ -523,10 +523,8 @@ def test_slopes_ignore_a_missing_dose(skill_text: str, tmp_path: Path) -> None:
     assert "missing dose ok" in result.stdout
 
 
-def test_one_slope_without_interaction_uses_the_original_column(
-    skill_text: str, tmp_path: Path
-) -> None:
-    """Without an interaction nothing is centred, so the slope call names dose."""
+def test_one_slope_without_interaction(skill_text: str, tmp_path: Path) -> None:
+    """The no-interaction slope call runs on the centred column and finds the slope."""
     if run_r(
         'pkgs <- c("lme4", "lmerTest", "emmeans")\n'
         "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
@@ -544,10 +542,11 @@ def test_one_slope_without_interaction_uses_the_original_column(
         "                  dose = rep(seq(0, 10, length.out = 12), each = 4))\n"
         "dat$uci_g <- 50 + 2 * dat$dose + rep(rnorm(12), each = 4) +\n"
         "  rnorm(48, sd = 0.5)\n"
-        "model <- lmer(uci_g ~ dose + (1 | subject_id), data = dat)\n"
+        + extract_r_chunk(skill_text, "centring")
+        + "model <- lmer(uci_g ~ dose_centred + (1 | subject_id), data = dat)\n"
         'emm_options(lmer.df = "satterthwaite")\n'
         f"slopes <- {bullet.group(1)}\n"
-        "stopifnot(abs(summary(slopes)$dose.trend - 2) < 0.3)\n"
+        "stopifnot(abs(summary(slopes)$dose_centred.trend - 2) < 0.3)\n"
         'cat("one slope ok\\n")\n'
     )
     result = run_r(code, tmp_path)

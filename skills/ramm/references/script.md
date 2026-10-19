@@ -439,12 +439,11 @@ model <- lmer(
 ```
 
 **Continuous predictors.**
-If a continuous predictor interacts with a categorical factor, centre it before fitting and use the centred column in the formula (see [User preferences](../SKILL.md#user-preferences)).
-The centre is its mean, unless input.md gives `Centring: zero` (set the centre to 0) or a value in the predictor's units (set the centre to that value, for example 8 for `Centring: 8 weeks`).
+Centre each continuous predictor as the user confirmed in the design summary (see [User preferences](../SKILL.md#user-preferences)), and use the centred column in the formula: subtract its mean, or the chosen value (for example 8 for `Centring: 8 weeks`).
 Say in the comment where the groups are compared and why.
 Slopes do not change; Section 9 adds the centre back so plots show the original values.
-Without an interaction, do not centre: it would change neither the slope nor any test.
-Use the original column (`dose`) wherever the patterns below use `dose_centred`, with no centre to add back in Section 9.
+With `Centring: zero` nothing is centred: use the original column (`dose`) wherever the patterns below use `dose_centred`, with no centre to add back.
+If the uncorrelated random slope fallback (Option A) is used, its fit depends on the centre too: keep the confirmed centre and say so in the comment.
 
 <!-- chunk: centring -->
 ```r
@@ -543,7 +542,7 @@ Apply these translation rules:
 | "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise")` |
 | "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise")` |
 | "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise")` |
-| "the effect of dose" (continuous, no interaction) | `emtrends(model, ~ 1, var = "dose")` |
+| "the effect of dose" (continuous, no interaction) | `emtrends(model, ~ 1, var = "dose_centred")` |
 | "compare the dose effect between genotypes" | `contrast(emtrends(model, ~ genotype, var = "dose_centred"), method = "revpairwise")` |
 
 Default p-value adjustment depends on the comparison type:
@@ -607,8 +606,8 @@ summary(contrast_output, infer = TRUE)
 
 **Continuous predictors: slopes.**
 A continuous predictor has a slope, the change in the outcome per unit of the predictor (for example µCi/g per mg/kg), instead of group means.
-Estimate it with `emtrends()`, using the centred column from Section 5, or the original column if there is no interaction:
-- With no interaction, one slope for everyone: `emtrends(model, ~ 1, var = "dose")`.
+Estimate it with `emtrends()`, using the centred column from Section 5 (the original one with `Centring: zero`):
+- With no interaction, one slope for everyone: `emtrends(model, ~ 1, var = "dose_centred")`.
 - With an interaction with a factor (only if the user confirmed it; see [Implied interactions](../SKILL.md#implied-interactions)), one slope per group, and differences in slope between groups as `contrast_output`, relative to the reference level, with the adjustments above.
 - Test each slope against zero, unlike group means: a slope of zero is a meaningful answer (the outcome does not change with dose).
   Adjust these tests with `adjust = "holm"` when there is more than one slope; with one, the p-value is unchanged.
@@ -702,7 +701,7 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   Show the measurements as points (the point style the user confirmed), and the model's fitted line with its 95% confidence band from Section 8's Satterthwaite settings, one line per group if the model has a factor.
   If the predictor varies within individuals (for example age at each session), join each individual's points with a thin line (`aes(group = subject_id)`) so the reader can follow each individual.
   Say in the subtitle that the line is the model's estimate.
-  Without an interaction the predictor is not centred: build the grid from the original column and add nothing back.
+  With `Centring: zero` the predictor is not centred: build the grid from the original column and add nothing back.
   Save it as `estimate_plot`, the plot Section 10 saves as `plot_estimates.png`:
   <!-- chunk: slope-plot -->
   ```r

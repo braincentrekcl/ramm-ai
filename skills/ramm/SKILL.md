@@ -226,8 +226,9 @@ For each level, determine:
 - Plot points: one per replicate, or one per individual (see Section 9); ask if input.md does not say.
   If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
 - P-value adjustment: Dunnett for comparisons with a control, Tukey for all pairwise comparisons, Holm for any other, unless input.md names another method (see Section 8)
-- Centring of a continuous predictor that interacts with a factor, which sets the value of the predictor at which groups are compared: its mean (the default), zero (for example when dose 0 is the vehicle), or a value in the predictor's units (for example 8 weeks, the age at baseline); see Section 5.
-  Say which in the design summary.
+- Centring of each continuous predictor: its mean, zero (no centring, for example when dose 0 is the vehicle), or a value in the predictor's units (for example 8 weeks, the age at baseline); see Section 5.
+  It sets the value of the predictor at which groups are compared, so it is the researcher's decision: never choose it yourself.
+  If input.md does not say, ask in the design summary: recommend the mean when the predictor interacts with a factor (groups are then compared at a typical value rather than at 0); otherwise say that centring changes no test, difference or slope, only the value at which group means are given (the average for mean or zero, or the chosen value), and recommend zero.
 - Any other preferences stated
 
 #### QC rules
@@ -418,7 +419,7 @@ nesting, any known issues like non-unique IDs or missing data]
 # Preferences (optional)
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
-- Centring: mean, zero or a value such as 8 weeks (for a continuous fixed effect that interacts with another)
+- Centring: mean, zero or a value such as 8 weeks (for each continuous fixed effect)
 
 # Reproducible Environment (optional)
 - Reproducible environment: container or renv
