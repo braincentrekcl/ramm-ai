@@ -181,9 +181,12 @@ From input.md, extract the following for the design summary (see [Confirm the de
 #### Fixed effects
 
 - Column name(s)
-- Categorical or continuous
+- Categorical or continuous, as input.md states for each fixed effect.
+  Never decide from the values: a predictor such as weeks, session or dose can be either (one trend across all weeks, or an estimate at each week), and the choice changes the question the model answers.
+  If input.md does not say, ask.
 - For categorical: list all levels
 - Reference level (if stated; default to "vehicle", "control", "WT", or alphabetically first)
+- For continuous: units
 
 #### Hierarchy and nesting
 
@@ -387,7 +390,8 @@ nesting, any known issues like non-unique IDs or missing data]
 
 # Column Mappings (required)
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread)
-- Fixed effect: `column_name` (levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (continuous, units)
 - Subject ID: `column_name` (globally unique)
 - Nesting level: `column_name` (unique or NOT unique across subjects)
 

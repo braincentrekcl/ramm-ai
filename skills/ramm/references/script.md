@@ -19,7 +19,7 @@ Before writing the script to disk, check it against every rule in this skill; if
 #
 # Study: {brief description from input.md}
 # Dependent variable: {name} ({type}, {units})
-# Fixed effects: {list with levels}
+# Fixed effects: {list: categorical with levels, or continuous with units}
 # Random effects: {list with nesting description}
 # Post-hoc comparisons: {what was requested}
 #

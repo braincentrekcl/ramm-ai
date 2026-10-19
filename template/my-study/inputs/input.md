@@ -19,7 +19,9 @@ Mention anything unusual, such as slide numbers that restart for every individua
 # Column Mappings (required)
 
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread, for example a long tail of high values or many zeros)
-- Fixed effect: `column_name` (levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (continuous, units); say categorical or
+  continuous for every fixed effect, such as weeks or dose, that could be either
 - Subject ID: `column_name` (globally unique)
 - Nesting level: `column_name` (unique or NOT unique across subjects)
 
