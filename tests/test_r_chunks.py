@@ -352,6 +352,17 @@ def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
 SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr")
 
 
+def skip_without(packages: tuple[str, ...], folder: Path) -> None:
+    """Skip the test unless every R package in `packages` is installed."""
+    missing = run_r(
+        "pkgs <- c(" + ", ".join(f'"{p}"' for p in packages) + ")\n"
+        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
+        folder,
+    ).returncode
+    if missing:
+        pytest.skip(f"one of {', '.join(packages)} is not installed")
+
+
 def run_slopes(
     skill_text: str,
     study: Path,
@@ -366,13 +377,7 @@ def run_slopes(
     `after` is R code run once the chunks have run; `packages` are the R
     packages the test needs, and it is skipped if any is missing.
     """
-    missing = run_r(
-        "pkgs <- c(" + ", ".join(f'"{p}"' for p in packages) + ")\n"
-        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
-        study,
-    ).returncode
-    if missing:
-        pytest.skip(f"one of {', '.join(packages)} is not installed")
+    skip_without(packages, study)
     code = (
         "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
         'options(contrasts = c("contr.sum", "contr.poly"))\n'
@@ -530,12 +535,7 @@ def test_slopes_ignore_a_missing_dose(skill_text: str, tmp_path: Path) -> None:
 
 def test_one_slope_without_interaction(skill_text: str, tmp_path: Path) -> None:
     """The no-interaction slope call runs on the centred column and finds the slope."""
-    if run_r(
-        'pkgs <- c("lme4", "lmerTest", "emmeans")\n'
-        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
-        tmp_path,
-    ).returncode:
-        pytest.skip("lme4, lmerTest or emmeans is not installed")
+    skip_without(("lme4", "lmerTest", "emmeans"), tmp_path)
     bullet = re.search(
         r"- With no interaction, one slope for everyone: `([^`]*)`", skill_text
     )
@@ -597,12 +597,7 @@ def test_continuous_check_stops_on_text(skill_text: str, tmp_path: Path) -> None
 
 def test_every_comparison_in_the_table_exports(skill_text: str, tmp_path: Path) -> None:
     """Each translation-table comparison goes through the Section 10 export."""
-    if run_r(
-        'pkgs <- c("emmeans", "dplyr")\n'
-        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
-        tmp_path,
-    ).returncode:
-        pytest.skip("emmeans or dplyr is not installed")
+    skip_without(("emmeans", "dplyr"), tmp_path)
     table = skill_text.split("| User says | emmeans code |", 1)[1].split("\n\n", 1)[0]
     calls = [c.replace("\\|", "|") for c in re.findall(r"`(contrast\([^`]*)`", table)]
     assert len(calls) == 5, calls
