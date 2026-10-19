@@ -217,6 +217,8 @@ For each level, determine:
 - What comparisons does the user want?
 - Which factor(s) are involved?
 - Any specific adjustment method requested?
+- "None" is a valid answer when the main effect answers the question, for example a factor with two levels, whose one comparison is the main effect; Section 8 says what the script reports then.
+  A missing or empty section is not "none": ask.
 
 #### User preferences
 
@@ -398,6 +400,7 @@ nesting, any known issues like non-unique IDs or missing data]
 # Post-Hoc Comparisons (required)
 - Compare each treatment to vehicle
 - Pairwise comparisons within genotype
+- Or: none (the main effect answers the question, for example a factor with two levels)
 
 # Data File (required)
 - File: `data.csv` (read from inputs/)

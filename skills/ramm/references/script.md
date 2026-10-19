@@ -21,7 +21,7 @@ Before writing the script to disk, check it against every rule in this skill; if
 # Dependent variable: {name} ({type}, {units})
 # Fixed effects: {list: categorical with levels, or continuous with units}
 # Random effects: {list with nesting description}
-# Post-hoc comparisons: {what was requested}
+# Post-hoc comparisons: {what was requested, or "none (main effect only)"}
 #
 # Run from your study folder (the one holding inputs/, code/ and outputs/),
 # once your data file is in inputs/:
@@ -522,6 +522,12 @@ Always:
   Only a test of the difference itself (an interaction) shows that.
   If that question matters to your study, specify it in input.md."
 
+When input.md asks for no comparisons ("none"), the main effect answers the question:
+- A categorical factor with two levels: still estimate its one difference, relative to the reference level, with `adjust = "none"`.
+  It is the main effect itself, with the same p-value as its F-test in Section 7, and its size and confidence interval are what a reader needs.
+- A categorical factor with three or more levels: the group means (`emm`) only, with no `contrast_output`; the F-test in Section 7 answers whether the groups differ.
+- Add no other comparisons.
+
 Use this pattern (adapt the formula and comparison):
 
 ```r
@@ -655,6 +661,8 @@ plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
 dev.off()
 ```
 
+Without a `contrast_output` (input.md asked for no comparisons and the factor has three or more levels; see Section 8), skip `results_comparisons.csv`.
+
 For an `lm()`, export the fixed effects with `broom::tidy(model)` (add `broom` to the required packages instead of `broom.mixed`) and skip `results_random_effects.csv`; say in `results_summary.md` that the model has no random effects because each individual was measured once.
 
 Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
@@ -665,6 +673,7 @@ Build it from the fitted results, never from hard-coded numbers, in plain langua
 - If any group has fewer individuals than planned (`fewer_than_planned` from Section 2a), start the file with a **Check first** line giving the planned and actual numbers per group, and pointing to 'Exclusions and Attrition' in inputs/input.md for who was lost and why.
 - One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
+- If input.md asked for no comparisons, say so ("No comparisons between groups were requested: the main effect answers the question") and give each fixed effect's F-test as a sentence, with its two degrees of freedom and p-value; for a two-level factor, follow it with the difference as above, with an unadjusted p-value.
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - A **Deviations from the confirmed design** list: each change made to the analysis after the script first ran, with what prompted it (see [Deviations from the plan](../SKILL.md#deviations-from-the-plan)), or "None" when the script still follows the design confirmed in the design summary.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).

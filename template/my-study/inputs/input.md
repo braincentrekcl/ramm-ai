@@ -28,6 +28,8 @@ Mention anything unusual, such as slide numbers that restart for every individua
 # Post-Hoc Comparisons (required)
 
 - For example: compare each treatment with vehicle
+- Or write none, if the main effect answers your question (for example a factor
+  with only two levels)
 
 # Data File (required)
 
