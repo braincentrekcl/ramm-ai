@@ -19,9 +19,9 @@ Before writing the script to disk, check it against every rule in this skill; if
 #
 # Study: {brief description from input.md}
 # Dependent variable: {name} ({type}, {units})
-# Fixed effects: {list with levels}
+# Fixed effects: {list: categorical with levels, or continuous with units}
 # Random effects: {list with nesting description}
-# Post-hoc comparisons: {what was requested}
+# Post-hoc comparisons: {what was requested, or "none (main effect only)"}
 #
 # Run from your study folder (the one holding inputs/, code/ and outputs/),
 # once your data file is in inputs/:
@@ -162,6 +162,34 @@ if (length(fewer_than_planned) > 0) {
 }
 ```
 
+- For each fixed effect input.md calls continuous, add this check after the column check:
+
+<!-- chunk: continuous-check -->
+```r
+# Dose is continuous (inputs/input.md), so it must hold numbers. A column
+# read as text is converted when every filled-in cell is a number (for
+# example one with stray spaces); otherwise the script stops. Units are
+# never stripped automatically: "<0.1" would silently become 0.1.
+if (all(is.na(dat$dose) | trimws(as.character(dat$dose)) == "")) {
+  stop("The dose column has no values, but inputs/input.md names it as a ",
+       "continuous fixed effect. Check the column in the data file.", call. = FALSE)
+}
+if (!is.numeric(dat$dose)) {
+  dose_text <- trimws(as.character(dat$dose))
+  dose_numbers <- suppressWarnings(as.numeric(dose_text))
+  not_numbers <- sum(!is.na(dose_text) & dose_text != "" & is.na(dose_numbers))
+  if (not_numbers > 0) {
+    stop("The dose column should hold numbers (inputs/input.md says it is ",
+         "continuous), but ", not_numbers, " filled-in rows are not numbers, ",
+         "for example 'n/a' or a unit typed next to the number. Correct them in ",
+         "the data file, and leave missing values empty.", call. = FALSE)
+  }
+  dat$dose <- dose_numbers
+  message("The dose column was read as text; every filled-in value is a ",
+          "number, so it was converted to numbers.")
+}
+```
+
 - Convert grouping variables to factors with explicit levels
 - Set reference levels (vehicle/control first)
 - Create unique IDs for nested factors where needed (see [The non-unique ID problem](../SKILL.md#the-non-unique-id-problem))
@@ -209,7 +237,8 @@ for (i in seq_len(nrow(planned_per_unit))) {
 - Print the number of rows, columns and individuals per group.
   Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data itself), so the log can be shown to the AI assistant safely.
 - **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data.
-  Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line:
+  Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line.
+  For each continuous fixed effect, add a missing-value line for it as well, in both `case_when` calls (for example `is.na(dose) ~ "no dose recorded"` and `is.na(dose) ~ "missing"`): the model cannot use a row without it and would drop it without recording it, so the exclusions file and the summary's count of kept measurements would be wrong.
 
 ```r
 # --- 2b. Quality control ---
@@ -414,6 +443,22 @@ model <- lmer(
 # for the requested random effects structure. Consult the analyst.
 ```
 
+**Continuous predictors.**
+Centre each continuous predictor as the user confirmed in the design summary (see [User preferences](../SKILL.md#user-preferences)), and use the centred column in the formula: subtract its mean, or the chosen value (for example 8 for `Centring: 8 weeks`).
+Say in the comment where the groups are compared and why.
+Slopes do not change; Section 9 adds the centre back so plots show the original values.
+With `Centring: zero` nothing is centred: use the original column (`dose`) wherever the patterns below use `dose_centred`, with no centre to add back.
+If the uncorrelated random slope fallback (Option A) is used, its fit depends on the centre too: keep the confirmed centre and say so in the comment.
+
+<!-- chunk: centring -->
+```r
+# Dose is centred on its mean: with the genotype x dose interaction, the
+# genotype test in Section 7 then compares genotypes at the average dose,
+# not at dose 0. The slope of dose is the same either way.
+dose_centre <- mean(dat$dose, na.rm = TRUE)
+dat$dose_centred <- dat$dose - dose_centre
+```
+
 ## Section 6: Diagnostics
 
 ```r
@@ -483,6 +528,8 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
+- When a continuous predictor interacts with a factor, the factor's Type III test compares the groups where the centred predictor is 0, that is at the centre chosen in Section 5.
+  Say in a comment and in `results_summary.md` at which value of the predictor this test compares the groups (for example "at the average dose, 4.2 mg/kg", "at dose 0" or "at 8 weeks").
 - Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals.
   Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
 - Satterthwaite df apply to `lmer()` models.
@@ -492,14 +539,16 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 
 ## Section 8: Post-Hoc Comparisons
 
-Apply these translation rules:
+Apply these translation rules; each gives one set of comparisons, which Section 10 exports:
 
 | User says | emmeans code |
 |-----------|-------------|
-| "compare each group to vehicle/control" | `emmeans(model, trt.vs.ctrl ~ treatment, ref = "vehicle")` |
-| "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise")` |
-| "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise")` |
-| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise")` |
+| "compare each group to vehicle/control" | `contrast(emmeans(model, ~ treatment), method = "trt.vs.ctrl", ref = "vehicle", adjust = "dunnett")` |
+| "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise", adjust = "tukey")` |
+| "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise", adjust = "tukey")` |
+| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise", adjust = "holm")` |
+| "the effect of dose" (continuous, no interaction) | `emtrends(model, ~ 1, var = "dose_centred")` |
+| "compare the dose effect between genotypes" | `contrast(emtrends(model, ~ genotype, var = "dose_centred"), method = "revpairwise", adjust = "tukey")` |
 
 Default p-value adjustment depends on the comparison type:
 - **Treatment vs control** (`trt.vs.ctrl`): use `adjust = "dunnett"` — designed for many-to-one comparisons
@@ -517,10 +566,19 @@ Always:
   `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment.
   The same holds for interaction contrasts: `interaction = "revpairwise"` labels them as, for example, `diazepam - vehicle` by `second - first`; `"pairwise"` gives the same size with the labels reversed
 - Test differences, not means: for the group means use `summary(emm, infer = c(TRUE, FALSE))`, which gives confidence intervals without testing whether each mean is zero (a meaningless test for most measurements)
+- If the model has a continuous predictor, estimate every group mean and difference at its centre (Section 5), the point where the F-test in Section 7 compares the groups: `emmeans(model, ~ genotype, at = list(dose_centred = 0))`, or `at = list(dose = 0)` with `Centring: zero`.
+  Without `at`, emmeans uses the predictor's average whatever the centre, and treats a predictor with only two distinct values as a factor, so the group results would not match the F-test.
 - Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
 - If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ.
   Only a test of the difference itself (an interaction) shows that.
   If that question matters to your study, specify it in input.md."
+
+When input.md asks for no comparisons ("none"), the main effect answers the question:
+- A categorical factor with two levels: still estimate its one difference, relative to the reference level, with `adjust = "none"`.
+  It is the main effect itself, with the same p-value as its F-test in Section 7 (estimated at the centre of any continuous predictor, as above), and its size and confidence interval are what a reader needs.
+- A categorical factor with three or more levels: the group means (`emm`) only, with no `contrast_output`; the F-test in Section 7 answers whether the groups differ.
+- A continuous predictor: its slope (`slopes`, see below) only.
+- Add no other comparisons.
 
 Use this pattern (adapt the formula and comparison):
 
@@ -549,6 +607,47 @@ if (any(contrast_df < 2)) {
 
 summary(emm, infer = c(TRUE, FALSE))
 summary(contrast_output, infer = TRUE)
+```
+
+**Continuous predictors: slopes.**
+A continuous predictor has a slope, the change in the outcome per unit of the predictor (for example µCi/g per mg/kg), instead of group means.
+Estimate it with `emtrends()`, using the centred column from Section 5 (the original one with `Centring: zero`):
+- With no interaction, one slope for everyone: `emtrends(model, ~ 1, var = "dose_centred")`.
+- With an interaction with a factor (only if the user confirmed it; see [Implied interactions](../SKILL.md#implied-interactions)), one slope per group, and differences in slope between groups as `slope_contrasts`, relative to the reference level, with the adjustments above; keep `contrast_output` for differences between group means, so a study can have both.
+- Test each slope against zero, unlike group means: a slope of zero is a meaningful answer (the outcome does not change with dose).
+  Adjust these tests with `adjust = "holm"` when there is more than one slope; with one, the p-value is unchanged.
+  Take the confidence intervals from a separate call without adjustment: emmeans cannot apply Holm to intervals and silently widens them with Bonferroni instead, so they would no longer be 95% intervals.
+- Name the slopes object `slopes`; Section 10 exports it with `slope_contrasts`.
+
+<!-- chunk: slopes -->
+```r
+# --- 8. Slopes of dose ---
+
+# Satterthwaite degrees of freedom, set explicitly as above.
+emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))
+
+# Change in binding per unit of dose, in each genotype. Each slope is tested
+# against zero (no change with dose); the Holm adjustment allows for testing
+# one slope per genotype.
+slopes <- emtrends(model, ~ genotype, var = "dose_centred")
+# Difference in slope between genotypes, relative to the reference (het - WT).
+slope_contrasts <- contrast(slopes, method = "revpairwise", adjust = "tukey")
+
+# The Tukey adjustment cannot be calculated below 2 degrees of freedom,
+# which happens when very few individuals remain in a group.
+slope_contrast_df <- summary(slope_contrasts, infer = FALSE)$df
+if (any(slope_contrast_df < 2)) {
+  stop("Too few individuals remain for a trustworthy adjusted p-value: ",
+       "at least one comparison has fewer than 2 degrees of freedom (lowest ",
+       round(min(slope_contrast_df), 2), "). Report the slopes and differences ",
+       "without p-values, or add individuals before testing.", call. = FALSE)
+}
+
+# 95% intervals and Holm-adjusted tests come from separate calls: emmeans
+# cannot apply Holm to intervals and would widen them with Bonferroni.
+summary(slopes, infer = c(TRUE, FALSE))
+test(slopes, adjust = "holm")
+summary(slope_contrasts, infer = TRUE)
 ```
 
 **Kenward-Roger, only if the user asks for it.**
@@ -585,7 +684,7 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   plot_dat <- dplyr::left_join(dat, strip_x, by = c("drug_group", "subject_id"))
   # Violin width 0.6 spans +/- 0.3 around each group, so the strips (+/- 0.2)
   # sit inside it and the estimate at +0.4 sits clear of the last strip.
-  emm_plot <- ggplot(plot_dat, aes(y = uci_g)) +
+  estimate_plot <- ggplot(plot_dat, aes(y = uci_g)) +
     geom_violin(aes(x = as.numeric(drug_group), fill = drug_group,
                     group = drug_group), width = 0.6, alpha = 0.25, colour = NA) +
     stat_summary(aes(x = x_strip, group = subject_id, colour = drug_group),
@@ -603,6 +702,33 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
 - Beside each violin, plot the group's estimated marginal mean with its 95% confidence interval from Section 8, so the reader can compare the raw data with the model's estimate.
 - Estimated marginal means are model-based group estimates.
   Label per-individual means as individual means, never as EMMs.
+- For a continuous predictor, plot the outcome against the predictor instead of violins, which summarise groups, not a range of values.
+  Show the measurements as points (the point style the user confirmed), and the model's fitted line with its 95% confidence band from Section 8's Satterthwaite settings, one line per group if the model has a factor.
+  If the predictor varies within individuals (for example age at each session), an individual's overall mean has no single value of the predictor to sit at: "one point per individual" then means one point per individual at each value (the mean of its replicates there), never one overall mean.
+  Join each individual's points with a thin line (`aes(group = subject_id)`) so the reader can follow each individual.
+  Say in the subtitle that the line is the model's estimate.
+  With `Centring: zero` the predictor is not centred: build the grid from the original column and add nothing back.
+  Save it as `estimate_plot`, the plot Section 10 saves as `plot_estimates.png`:
+  <!-- chunk: slope-plot -->
+  ```r
+  # The model's fitted line with its 95% confidence band, at 50 doses across
+  # the range studied. The model used the centred dose (Section 5), so the
+  # centre is added back to plot the doses as given.
+  dose_grid <- seq(min(dat$dose_centred), max(dat$dose_centred), length.out = 50)
+  line_df <- as.data.frame(summary(
+    emmeans(model, ~ dose_centred | genotype, at = list(dose_centred = dose_grid)),
+    infer = c(TRUE, FALSE)))
+  line_df$dose <- line_df$dose_centred + dose_centre
+  estimate_plot <- ggplot(dat, aes(x = dose, y = uci_g, colour = genotype)) +
+    geom_point(size = 0.8, alpha = 0.6) +
+    geom_ribbon(data = line_df, aes(x = dose, ymin = lower.CL, ymax = upper.CL,
+                                    fill = genotype),
+                inherit.aes = FALSE, alpha = 0.2) +
+    geom_line(data = line_df, aes(x = dose, y = emmean, colour = genotype),
+              inherit.aes = FALSE, linewidth = 0.8) +
+    labs(x = "Dose (mg/kg)", y = "Binding (µCi/g)",
+         subtitle = "Lines: model estimate with 95% confidence band")
+  ```
 - Use a clean theme (`theme_classic()` or `theme_bw()`), with Set2 colours for categorical factors, magma for sequential factors, and RdBu_r for diverging (mean centered) factors.
 - If there is more than one categorical factor (e.g. genotype and drug), use shape for the factor with fewest levels.
 - Label axes clearly with units
@@ -631,14 +757,31 @@ emm_results <- as.data.frame(summary(emm, infer = c(TRUE, FALSE))) |>
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL)
 write.csv(emm_results, file.path("outputs", "results_group_means.csv"), row.names = FALSE)
 
-contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE)) |>
-  dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
-                degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
-                t_value = t.ratio, p_value_adjusted = p.value)
+# Differences between group means and, with a continuous predictor, between
+# slopes (Section 8), in one table; `compares` says which each row is.
+tidy_comparisons <- function(contrasts, compares) {
+  # Interaction contrasts name their comparisons in one column per factor
+  # (for example drug_revpairwise) instead of a `contrast` column.
+  out <- as.data.frame(summary(contrasts, infer = TRUE)) |>
+    dplyr::rename(dplyr::any_of(c(comparison = "contrast"))) |>
+    dplyr::rename(difference = estimate, standard_error = SE,
+                  degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
+                  t_value = t.ratio, p_value = p.value)
+  # Name the adjustment used for these p-values (for example dunnett, tukey,
+  # or none for a single comparison), so no p-value is read as adjusted when
+  # it is not.
+  out$p_value_adjustment <- contrasts@misc$adjust
+  out$compares <- compares
+  out
+}
+contrast_results <- dplyr::bind_rows(
+  tidy_comparisons(contrast_output, "group means"),
+  tidy_comparisons(slope_contrasts, "slopes")
+)
 write.csv(contrast_results, file.path("outputs", "results_comparisons.csv"), row.names = FALSE)
 
 # Save plots
-ggsave(file.path("outputs", "plot_emmeans.png"), plot = emm_plot, width = 8, height = 6, dpi = 300)
+ggsave(file.path("outputs", "plot_estimates.png"), plot = estimate_plot, width = 8, height = 6, dpi = 300)
 # The residual panels are base-R plots, so ggsave() would save the last
 # ggplot instead: redraw them into a png device.
 png(file.path("outputs", "plot_residuals.png"), width = 10, height = 8, units = "in", res = 300)
@@ -655,6 +798,25 @@ plot(sqrt(abs(resid(model))) ~ fitted(model), main = "Scale-Location",
 dev.off()
 ```
 
+List in `bind_rows()` only the comparisons the script has: leave out `contrast_output` when there are no group differences (input.md asked for none and the factor has three or more levels; see Section 8), and `slope_contrasts` when there are no slope differences; with neither, skip `results_comparisons.csv`.
+Write `results_group_means.csv` only when the model has a categorical factor; with a continuous predictor in the model as well, the group means are at its centre (Section 8), so say at which value in `results_summary.md` (for example "at the average dose, 4.2 mg/kg", "at dose 0" or "at 8 weeks").
+
+With a continuous predictor, export the slopes from Section 8 too; differences in slope are already in `results_comparisons.csv`:
+
+<!-- chunk: slopes-export -->
+```r
+# Slopes of dose, with Satterthwaite confidence intervals and tests against
+# zero (a slope of zero means binding does not change with dose).
+slope_intervals <- as.data.frame(summary(slopes, infer = c(TRUE, FALSE)))
+slope_tests <- as.data.frame(test(slopes, adjust = "holm"))
+slope_results <- cbind(slope_intervals, slope_tests[, c("t.ratio", "p.value")]) |>
+  dplyr::rename(slope = dose_centred.trend, standard_error = SE,
+                degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
+                t_value = t.ratio, p_value = p.value)
+slope_results$p_value_adjustment <- "holm"
+write.csv(slope_results, file.path("outputs", "results_slopes.csv"), row.names = FALSE)
+```
+
 For an `lm()`, export the fixed effects with `broom::tidy(model)` (add `broom` to the required packages instead of `broom.mixed`) and skip `results_random_effects.csv`; say in `results_summary.md` that the model has no random effects because each individual was measured once.
 
 Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
@@ -665,6 +827,8 @@ Build it from the fitted results, never from hard-coded numbers, in plain langua
 - If any group has fewer individuals than planned (`fewer_than_planned` from Section 2a), start the file with a **Check first** line giving the planned and actual numbers per group, and pointing to 'Exclusions and Attrition' in inputs/input.md for who was lost and why.
 - One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
+- Each slope as a sentence, with its units per unit of the predictor (for example "binding in WT mice rose by 2.1 µCi/g per mg/kg of dose (95% CI 1.9 to 2.3; adjusted p < 0.001)"), and each difference in slope the same way.
+- If input.md asked for no comparisons, say so ("No comparisons between groups were requested: the main effect answers the question") and give each fixed effect's F-test as a sentence, with its two degrees of freedom and p-value; for a two-level factor, follow it with the difference as above, with an unadjusted p-value.
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - A **Deviations from the confirmed design** list: each change made to the analysis after the script first ran, with what prompted it (see [Deviations from the plan](../SKILL.md#deviations-from-the-plan)), or "None" when the script still follows the design confirmed in the design summary.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).

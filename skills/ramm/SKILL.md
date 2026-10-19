@@ -181,9 +181,12 @@ From input.md, extract the following for the design summary (see [Confirm the de
 #### Fixed effects
 
 - Column name(s)
-- Categorical or continuous
+- Categorical or continuous, as input.md states for each fixed effect.
+  Never decide from the values: a predictor such as weeks, session or dose can be either (one trend across all weeks, or an estimate at each week), and the choice changes the question the model answers.
+  If input.md does not say, ask.
 - For categorical: list all levels
 - Reference level (if stated; default to "vehicle", "control", "WT", or alphabetically first)
+- For continuous: units
 
 #### Hierarchy and nesting
 
@@ -214,13 +217,19 @@ For each level, determine:
 - What comparisons does the user want?
 - Which factor(s) are involved?
 - Any specific adjustment method requested?
+- "None" is a valid answer when the main effect answers the question, for example a factor with two levels, whose one comparison is the main effect; Section 8 says what the script reports then.
+  A missing or empty section is not "none": ask.
 
 #### User preferences
 
 - Alpha level (0.05 default)
 - Plot points: one per replicate, or one per individual (see Section 9); ask if input.md does not say.
+  For a continuous predictor that varies within individuals, one per individual means one at each value of the predictor, so say that when you ask.
   If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
 - P-value adjustment: Dunnett for comparisons with a control, Tukey for all pairwise comparisons, Holm for any other, unless input.md names another method (see Section 8)
+- Centring of each continuous predictor: its mean, zero (no centring, for example when dose 0 is the vehicle), or a value in the predictor's units (for example 8 weeks, the age at baseline); see Section 5.
+  It sets the value of the predictor at which group means are given and, when the predictor interacts with a factor, at which groups are compared, so it is the researcher's decision: never choose it yourself.
+  If input.md does not say, ask in the design summary and recommend the mean, saying why: group means (and, with an interaction, group comparisons) are then at a typical value rather than at 0, which may lie outside the data (for example age 0); slopes, and without an interaction every test and difference, are the same whatever the centre.
 - Any other preferences stated
 
 #### QC rules
@@ -248,6 +257,8 @@ When subgroup comparisons are generated, report all of them; never hide or suppr
 
 No random slope by default.
 When a factor varies within individuals and input.md implies more than one measurement per individual at each of its levels (for example several sections per region in every mouse), raise a slope in the design summary in plain words: it would let the effect of that factor differ from one individual to the next.
+Do the same when a continuous predictor varies within individuals and each individual is measured at three or more of its values (for example weekly body weights), or at two with more than one measurement at each: the slope would let each individual's trend differ.
+With only two values and one measurement at each, an individual's own slope cannot be told apart from measurement noise (lme4 refuses to fit it), so do not raise it.
 Say that leaving it out is simpler and fits more reliably, but if individuals do differ, leaving it out can make results look more certain than they are; recommend leaving it out unless individuals are expected to differ, and ask.
 Otherwise do not mention slopes.
 
@@ -387,13 +398,15 @@ nesting, any known issues like non-unique IDs or missing data]
 
 # Column Mappings (required)
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread)
-- Fixed effect: `column_name` (levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (continuous, units)
 - Subject ID: `column_name` (globally unique)
 - Nesting level: `column_name` (unique or NOT unique across subjects)
 
 # Post-Hoc Comparisons (required)
 - Compare each treatment to vehicle
 - Pairwise comparisons within genotype
+- Or: none (the main effect answers the question, for example a factor with two levels)
 
 # Data File (required)
 - File: `data.csv` (read from inputs/)
@@ -407,6 +420,7 @@ nesting, any known issues like non-unique IDs or missing data]
 # Preferences (optional)
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
+- Centring: mean, zero or a value such as 8 weeks (for each continuous fixed effect)
 
 # Reproducible Environment (optional)
 - Reproducible environment: container or renv

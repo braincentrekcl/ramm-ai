@@ -347,3 +347,328 @@ def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
     result = run_r(code, tmp_path)
     assert result.returncode == 0, result.stderr
     assert "rows kept" in result.stdout
+
+
+SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr")
+
+
+def skip_without(packages: tuple[str, ...], folder: Path) -> None:
+    """Skip the test unless every R package in `packages` is installed."""
+    missing = run_r(
+        "pkgs <- c(" + ", ".join(f'"{p}"' for p in packages) + ")\n"
+        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
+        folder,
+    ).returncode
+    if missing:
+        pytest.skip(f"one of {', '.join(packages)} is not installed")
+
+
+def run_slopes(
+    skill_text: str,
+    study: Path,
+    individuals: str,
+    after: str = "",
+    packages: tuple[str, ...] = SLOPE_PACKAGES,
+) -> subprocess.CompletedProcess[str]:
+    """Simulate a genotype x dose study, fit it, and run the slope chunks.
+
+    `individuals` is R code for a data frame with one row per individual:
+    subject_id, genotype and dose. WT slope is 2, het slope 0.5.
+    `after` is R code run once the chunks have run; `packages` are the R
+    packages the test needs, and it is skipped if any is missing.
+    """
+    skip_without(packages, study)
+    code = (
+        "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
+        'options(contrasts = c("contr.sum", "contr.poly"))\n'
+        "set.seed(1)\n"
+        f"ids <- {individuals}\n"
+        "ids$offset <- rnorm(nrow(ids))\n"
+        "dat <- ids[rep(seq_len(nrow(ids)), each = 4), ]\n"
+        'dat$genotype <- factor(dat$genotype, levels = c("WT", "het"))\n'
+        'dat$uci_g <- 50 + ifelse(dat$genotype == "WT", 2, 0.5) * dat$dose +\n'
+        "  dat$offset + rnorm(nrow(dat), sd = 0.5)\n"
+        + extract_r_chunk(skill_text, "centring")
+        + "model <- lmer(uci_g ~ genotype * dose_centred + (1 | subject_id), data = dat)\n"
+        + extract_r_chunk(skill_text, "slopes")
+        + extract_r_chunk(skill_text, "slopes-export")
+        + after
+    )
+    (study / "outputs").mkdir()
+    return run_r(code, study)
+
+
+def test_slopes_recover_the_simulated_trends(skill_text: str, tmp_path: Path) -> None:
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2))",
+        after="r <- slope_results\n"
+        "# 95% intervals: estimate +/- t(0.975, df) x SE, with no adjustment.\n"
+        "stopifnot(isTRUE(all.equal(r$ci95_lower,\n"
+        "  r$slope - qt(0.975, r$degrees_of_freedom) * r$standard_error)))\n"
+        "# Holm-adjusted p-values, compared as ratios: tiny p-values would pass\n"
+        "# an absolute comparison whatever they were.\n"
+        "raw_p <- 2 * pt(-abs(r$t_value), r$degrees_of_freedom)\n"
+        'stopifnot(max(abs(r$p_value / p.adjust(raw_p, "holm") - 1)) < 1e-6)\n'
+        'cat("intervals and tests ok\\n")\n',
+    )
+    assert result.returncode == 0, result.stderr
+    assert "intervals and tests ok" in result.stdout
+    with (tmp_path / "outputs" / "results_slopes.csv").open(encoding="utf-8") as f:
+        rows = {row["genotype"]: row for row in csv.DictReader(f)}
+    assert list(rows["WT"]) == [
+        "genotype",
+        "slope",
+        "standard_error",
+        "degrees_of_freedom",
+        "ci95_lower",
+        "ci95_upper",
+        "t_value",
+        "p_value",
+        "p_value_adjustment",
+    ]
+    assert rows["WT"]["p_value_adjustment"] == "holm"
+    assert abs(float(rows["WT"]["slope"]) - 2) < 0.3
+    assert abs(float(rows["het"]["slope"]) - 0.5) < 0.3
+    # Satterthwaite df: limited by the 24 individuals, not the 96 measurements.
+    assert 2 <= float(rows["WT"]["degrees_of_freedom"]) < 24
+
+
+def test_slopes_stop_when_too_few_individuals(skill_text: str, tmp_path: Path) -> None:
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:5),\n"
+        "  genotype = c('WT', 'WT', 'WT', 'het', 'het'),\n"
+        "  dose = c(0, 5, 10, 2, 8))",
+    )
+    assert result.returncode != 0
+    assert "fewer than 2 degrees of freedom" in result.stderr
+    assert not (tmp_path / "outputs" / "results_slopes.csv").exists()
+
+
+@pytest.mark.parametrize("centre", ["mean(dat$dose, na.rm = TRUE)", "0", "8"])
+def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
+    skill_text: str, tmp_path: Path, centre: str
+) -> None:
+    """Whatever centre input.md chooses, the plot shows the doses as given."""
+    default = "dose_centre <- mean(dat$dose, na.rm = TRUE)"
+    assert default in skill_text
+    skill_text = skill_text.replace(default, f"dose_centre <- {centre}")
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2))",
+        after="suppressPackageStartupMessages(library(ggplot2))\n"
+        + extract_r_chunk(skill_text, "slope-plot")
+        + "stopifnot(all.equal(range(line_df$dose), range(dat$dose)))\n"
+        "stopifnot(all(line_df$lower.CL < line_df$emmean),\n"
+        "          all(line_df$emmean < line_df$upper.CL))\n"
+        "stopifnot(setequal(unique(line_df$genotype), levels(dat$genotype)))\n"
+        "invisible(ggplot_build(estimate_plot))\n"
+        'cat("plot ok\\n")\n',
+        packages=(*SLOPE_PACKAGES, "ggplot2"),
+    )
+    assert result.returncode == 0, result.stderr
+    assert "plot ok" in result.stdout
+
+
+@pytest.mark.parametrize("centre", ["mean(dat$dose, na.rm = TRUE)", "0", "8"])
+def test_group_difference_matches_the_f_test_at_the_centre(
+    skill_text: str, tmp_path: Path, centre: str
+) -> None:
+    """A two-level difference has the F-test's p-value, whatever the centre,
+    and is exported next to the slope difference, not replaced by it."""
+    default = "dose_centre <- mean(dat$dose, na.rm = TRUE)"
+    assert default in skill_text
+    skill_text = skill_text.replace(default, f"dose_centre <- {centre}")
+    at_call = re.search(r"`(emmeans\(model, ~ genotype, at = [^`]*\))`", skill_text)
+    assert at_call, "Section 8 gives no emmeans() call at the predictor's centre"
+    export = skill_text.split("tidy_comparisons <- function", 1)[1].split(
+        "write.csv(contrast_results", 1
+    )[0]
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2))",
+        after=f"emm <- {at_call.group(1)}\n"
+        'contrast_output <- contrast(emm, method = "revpairwise", adjust = "none")\n'
+        "tidy_comparisons <- function" + export + "\n"
+        "means <- contrast_results[contrast_results$compares == 'group means', ]\n"
+        "slope_rows <- contrast_results[contrast_results$compares == 'slopes', ]\n"
+        "stopifnot(nrow(means) == 1, nrow(slope_rows) == 1)\n"
+        "stopifnot(abs(slope_rows$difference - (0.5 - 2)) < 0.3)\n"
+        'f_test <- anova(model, type = 3, ddf = "Satterthwaite")["genotype", ]\n'
+        "# One difference: t squared is F, so the tests are the same test.\n"
+        "# (all.equal() would compare tiny p-values on an absolute scale.)\n"
+        'stopifnot(abs(means$t_value^2 / f_test[["F value"]] - 1) < 1e-6)\n'
+        'stopifnot(identical(means$p_value_adjustment, "none"))\n'
+        'cat("matches f test\\n")\n',
+    )
+    assert result.returncode == 0, result.stderr
+    assert "matches f test" in result.stdout
+
+
+def test_slopes_ignore_a_missing_dose(skill_text: str, tmp_path: Path) -> None:
+    """One individual without a dose leaves the centre and the model intact."""
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = c(NA, seq(0, 10, length.out = 12)[-1],\n"
+        "           seq(0, 10, length.out = 12)))",
+        after="stopifnot(is.finite(dose_centre))\n"
+        "stopifnot(nobs(model) == sum(!is.na(dat$dose)))\n"
+        'cat("missing dose ok\\n")\n',
+    )
+    assert result.returncode == 0, result.stderr
+    assert "missing dose ok" in result.stdout
+
+
+def test_one_slope_without_interaction(skill_text: str, tmp_path: Path) -> None:
+    """The no-interaction slope call runs on the centred column and finds the slope."""
+    skip_without(("lme4", "lmerTest", "emmeans"), tmp_path)
+    bullet = re.search(
+        r"- With no interaction, one slope for everyone: `([^`]*)`", skill_text
+    )
+    assert bullet, "Section 8 gives no slope call for a model without interaction"
+    code = (
+        "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
+        "set.seed(1)\n"
+        "dat <- data.frame(subject_id = rep(paste0('m', 1:12), each = 4),\n"
+        "                  dose = rep(seq(0, 10, length.out = 12), each = 4))\n"
+        "dat$uci_g <- 50 + 2 * dat$dose + rep(rnorm(12), each = 4) +\n"
+        "  rnorm(48, sd = 0.5)\n"
+        + extract_r_chunk(skill_text, "centring")
+        + "model <- lmer(uci_g ~ dose_centred + (1 | subject_id), data = dat)\n"
+        'emm_options(lmer.df = "satterthwaite")\n'
+        f"slopes <- {bullet.group(1)}\n"
+        "stopifnot(abs(summary(slopes)$dose_centred.trend - 2) < 0.3)\n"
+        'cat("one slope ok\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "one slope ok" in result.stdout
+
+
+def run_continuous_check(
+    skill_text: str, tmp_path: Path, dose: str
+) -> subprocess.CompletedProcess[str]:
+    """Run the continuous-column check on a data frame whose dose is `dose`."""
+    code = (
+        f"dat <- data.frame(subject_id = c('m1', 'm2', 'm3'), dose = {dose})\n"
+        + extract_r_chunk(skill_text, "continuous-check")
+        + 'cat("dose is", class(dat$dose), paste(dat$dose, collapse = " "), "\\n")\n'
+    )
+    return run_r(code, tmp_path)
+
+
+def test_continuous_check_keeps_numbers(skill_text: str, tmp_path: Path) -> None:
+    result = run_continuous_check(skill_text, tmp_path, "c(0, 2.5, 5)")
+    assert result.returncode == 0, result.stderr
+    assert "dose is numeric 0 2.5 5" in result.stdout
+    assert "converted" not in result.stderr
+
+
+def test_continuous_check_converts_numbers_read_as_text(
+    skill_text: str, tmp_path: Path
+) -> None:
+    result = run_continuous_check(skill_text, tmp_path, "c(' 2.5', '5 ', '')")
+    assert result.returncode == 0, result.stderr
+    assert "dose is numeric 2.5 5 NA" in result.stdout
+    assert "converted to numbers" in result.stderr
+
+
+def test_continuous_check_stops_on_text(skill_text: str, tmp_path: Path) -> None:
+    result = run_continuous_check(skill_text, tmp_path, "c('2.5', 'zz9', 'n/a')")
+    assert result.returncode != 0
+    assert "2 filled-in rows are not numbers" in result.stderr
+    # The message counts the rows; it never prints the data values.
+    assert "zz9" not in result.stderr
+
+
+def test_every_comparison_in_the_table_exports(skill_text: str, tmp_path: Path) -> None:
+    """Each translation-table comparison goes through the Section 10 export."""
+    skip_without(("emmeans", "dplyr"), tmp_path)
+    table = skill_text.split("| User says | emmeans code |", 1)[1].split("\n\n", 1)[0]
+    calls = [c.replace("\\|", "|") for c in re.findall(r"`(contrast\([^`]*)`", table)]
+    assert len(calls) == 5, calls
+    export = skill_text.split("tidy_comparisons <- function", 1)[1].split(
+        "contrast_results <- dplyr::bind_rows", 1
+    )[0]
+    checks = "".join(
+        f"co <- {call}\n"
+        "out <- tidy_comparisons(co, 'x')\n"
+        f"stopifnot(nrow(out) > 0, out$p_value_adjustment[1] == {adjust!r})\n"
+        for call, adjust in (
+            (c, re.search(r'adjust = "(\w+)"', c).group(1)) for c in calls
+        )
+    )
+    code = (
+        "suppressPackageStartupMessages(library(emmeans))\n"
+        "set.seed(1)\n"
+        "n <- 240\n"
+        "dat <- data.frame(\n"
+        "  treatment = factor(sample(c('vehicle', 'a', 'b'), n, TRUE),\n"
+        "                     levels = c('vehicle', 'a', 'b')),\n"
+        "  factor = factor(sample(c('x', 'y'), n, TRUE)),\n"
+        "  A = factor(sample(c('p', 'q'), n, TRUE)),\n"
+        "  B = factor(sample(c('r', 's'), n, TRUE)),\n"
+        "  genotype = factor(sample(c('WT', 'het'), n, TRUE), levels = c('WT', 'het')),\n"
+        "  dose_centred = runif(n, -5, 5))\n"
+        "dat$y <- rnorm(n)\n"
+        "model <- lm(y ~ treatment * factor + A * B + genotype * dose_centred, data = dat)\n"
+        "tidy_comparisons <- function" + export + checks + 'cat("all exported\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "all exported" in result.stdout
+
+
+@pytest.mark.parametrize("dose", ["c(NA, NA, NA)", "c('', ' ', NA)"])
+def test_continuous_check_stops_on_an_empty_column(
+    skill_text: str, tmp_path: Path, dose: str
+) -> None:
+    result = run_continuous_check(skill_text, tmp_path, dose)
+    assert result.returncode != 0
+    assert "The dose column has no values" in result.stderr
+    assert "converted" not in result.stderr
+
+
+def test_group_difference_matches_the_f_test_without_centring(
+    skill_text: str, tmp_path: Path
+) -> None:
+    """With Centring: zero the original column is used, at its 0."""
+    skip_without(("lme4", "lmerTest", "emmeans"), tmp_path)
+    at_zero = re.search(r"`(at = list\(dose = 0\))` with `Centring: zero`", skill_text)
+    assert at_zero, "Section 8 gives no emmeans() setting for Centring: zero"
+    code = (
+        "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
+        'options(contrasts = c("contr.sum", "contr.poly"))\n'
+        "set.seed(1)\n"
+        "ids <- data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2), offset = rnorm(24))\n"
+        "dat <- ids[rep(1:24, each = 4), ]\n"
+        'dat$genotype <- factor(dat$genotype, levels = c("WT", "het"))\n'
+        'dat$uci_g <- 50 + ifelse(dat$genotype == "WT", 2, 0.5) * dat$dose +\n'
+        "  dat$offset + rnorm(nrow(dat), sd = 0.5)\n"
+        "model <- lmer(uci_g ~ genotype * dose + (1 | subject_id), data = dat)\n"
+        'emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))\n'
+        f"emm <- emmeans(model, ~ genotype, {at_zero.group(1)})\n"
+        'd <- summary(contrast(emm, method = "revpairwise", adjust = "none"))\n'
+        'f_test <- anova(model, type = 3, ddf = "Satterthwaite")["genotype", ]\n'
+        'stopifnot(abs(d$t.ratio^2 / f_test[["F value"]] - 1) < 1e-6)\n'
+        'cat("matches f test\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "matches f test" in result.stdout
