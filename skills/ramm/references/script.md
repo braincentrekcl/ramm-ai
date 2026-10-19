@@ -233,7 +233,8 @@ for (i in seq_len(nrow(planned_per_unit))) {
 - Print the number of rows, columns and individuals per group.
   Never print data rows (no `head()`, `str()`, `glimpse()` or printing the data itself), so the log can be shown to the AI assistant safely.
 - **Quality control**, before any exploration or modelling, so the replicate audit (Section 3) counts only kept data.
-  Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line:
+  Use this pattern, with one `case_when` line per QC rule from input.md; with no QC rules, keep only the missing-value line.
+  For each continuous fixed effect, add a missing-value line for it as well, in both `case_when` calls (for example `is.na(dose) ~ "no dose recorded"` and `is.na(dose) ~ "missing"`): the model cannot use a row without it and would drop it without recording it, so the exclusions file and the summary's count of kept measurements would be wrong.
 
 ```r
 # --- 2b. Quality control ---
