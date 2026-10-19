@@ -415,16 +415,18 @@ model <- lmer(
 ```
 
 **Continuous predictors.**
-If a continuous predictor interacts with a categorical factor, centre it on its mean before fitting and use the centred column in the formula, unless input.md says `Centring: none` (see [User preferences](../SKILL.md#user-preferences)).
-Slopes do not change; Section 9 adds the mean back so plots show the original values.
+If a continuous predictor interacts with a categorical factor, centre it before fitting and use the centred column in the formula (see [User preferences](../SKILL.md#user-preferences)).
+The centre is its mean, unless input.md gives `Centring: zero` (set the centre to 0) or a value in the predictor's units (set the centre to that value, for example 8 for `Centring: 8 weeks`).
+Say in the comment where the groups are compared and why.
+Slopes do not change; Section 9 adds the centre back so plots show the original values.
 
 <!-- chunk: centring -->
 ```r
 # Dose is centred on its mean: with the genotype x dose interaction, the
 # genotype test in Section 7 then compares genotypes at the average dose,
 # not at dose 0. The slope of dose is the same either way.
-dose_mean <- mean(dat$dose)
-dat$dose_centred <- dat$dose - dose_mean
+dose_centre <- mean(dat$dose)
+dat$dose_centred <- dat$dose - dose_centre
 ```
 
 ## Section 6: Diagnostics
@@ -496,8 +498,8 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
-- When a continuous predictor interacts with a factor, the factor's Type III test compares the groups where the predictor is 0: at its mean once centred (Section 5).
-  With `Centring: none`, say in a comment and in `results_summary.md` that this test compares the groups at 0 units of the predictor (for example at dose 0).
+- When a continuous predictor interacts with a factor, the factor's Type III test compares the groups where the centred predictor is 0, that is at the centre chosen in Section 5.
+  Say in a comment and in `results_summary.md` at which value of the predictor this test compares the groups (for example "at the average dose, 4.2 mg/kg", "at dose 0" or "at 8 weeks").
 - Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals.
   Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
 - Satterthwaite df apply to `lmer()` models.
@@ -577,7 +579,7 @@ summary(contrast_output, infer = TRUE)
 
 **Continuous predictors: slopes.**
 A continuous predictor has a slope, the change in the outcome per unit of the predictor (for example µCi/g per mg/kg), instead of group means.
-Estimate it with `emtrends()`, using the centred column from Section 5 (or the original one with `Centring: none`):
+Estimate it with `emtrends()`, using the centred column from Section 5:
 - With no interaction, one slope for everyone: `emtrends(model, ~ 1, var = "dose_centred")`.
 - With an interaction with a factor (only if the user confirmed it; see [Implied interactions](../SKILL.md#implied-interactions)), one slope per group, and differences in slope between groups as `contrast_output`, relative to the reference level, with the adjustments above.
 - Test each slope against zero, unlike group means: a slope of zero is a meaningful answer (the outcome does not change with dose).
@@ -673,12 +675,12 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   ```r
   # The model's fitted line with its 95% confidence band, at 50 doses across
   # the range studied. The model used the centred dose (Section 5), so the
-  # mean is added back to plot the doses as given.
+  # centre is added back to plot the doses as given.
   dose_grid <- seq(min(dat$dose_centred), max(dat$dose_centred), length.out = 50)
   line_df <- as.data.frame(summary(
     emmeans(model, ~ dose_centred | genotype, at = list(dose_centred = dose_grid)),
     infer = c(TRUE, FALSE)))
-  line_df$dose <- line_df$dose_centred + dose_mean
+  line_df$dose <- line_df$dose_centred + dose_centre
   estimate_plot <- ggplot(dat, aes(x = dose, y = uci_g, colour = genotype)) +
     geom_point(size = 0.8, alpha = 0.6) +
     geom_ribbon(data = line_df, aes(x = dose, ymin = lower.CL, ymax = upper.CL,

@@ -428,9 +428,14 @@ def test_slopes_stop_when_too_few_individuals(skill_text: str, tmp_path: Path) -
     assert not (tmp_path / "outputs" / "results_slopes.csv").exists()
 
 
+@pytest.mark.parametrize("centre", ["mean(dat$dose)", "0", "8"])
 def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
-    skill_text: str, tmp_path: Path
+    skill_text: str, tmp_path: Path, centre: str
 ) -> None:
+    """Whatever centre input.md chooses, the plot shows the doses as given."""
+    default = "dose_centre <- mean(dat$dose)"
+    assert default in skill_text
+    skill_text = skill_text.replace(default, f"dose_centre <- {centre}")
     result = run_slopes(
         skill_text,
         tmp_path,

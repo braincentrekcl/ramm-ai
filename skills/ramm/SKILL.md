@@ -226,7 +226,7 @@ For each level, determine:
 - Plot points: one per replicate, or one per individual (see Section 9); ask if input.md does not say.
   If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
 - P-value adjustment: Dunnett for comparisons with a control, Tukey for all pairwise comparisons, Holm for any other, unless input.md names another method (see Section 8)
-- Centring of a continuous predictor that interacts with a factor: on its mean (the default), or none, which keeps 0 as the point where groups are compared (for example when dose 0 is the vehicle); see Section 5.
+- Centring of a continuous predictor that interacts with a factor, which sets the value of the predictor at which groups are compared: its mean (the default), zero (for example when dose 0 is the vehicle), or a value in the predictor's units (for example 8 weeks, the age at baseline); see Section 5.
   Say which in the design summary.
 - Any other preferences stated
 
@@ -416,7 +416,7 @@ nesting, any known issues like non-unique IDs or missing data]
 # Preferences (optional)
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
-- Centring: mean or none (for a continuous fixed effect that interacts with another)
+- Centring: mean, zero or a value such as 8 weeks (for a continuous fixed effect that interacts with another)
 
 # Reproducible Environment (optional)
 - Reproducible environment: container or renv
