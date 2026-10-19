@@ -349,25 +349,30 @@ def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
     assert "rows kept" in result.stdout
 
 
-SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr", "ggplot2")
+SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr")
 
 
 def run_slopes(
-    skill_text: str, study: Path, individuals: str, after: str = ""
+    skill_text: str,
+    study: Path,
+    individuals: str,
+    after: str = "",
+    packages: tuple[str, ...] = SLOPE_PACKAGES,
 ) -> subprocess.CompletedProcess[str]:
     """Simulate a genotype x dose study, fit it, and run the slope chunks.
 
     `individuals` is R code for a data frame with one row per individual:
     subject_id, genotype and dose. WT slope is 2, het slope 0.5.
-    `after` is R code run once the chunks have run.
+    `after` is R code run once the chunks have run; `packages` are the R
+    packages the test needs, and it is skipped if any is missing.
     """
     missing = run_r(
-        "pkgs <- c(" + ", ".join(f'"{p}"' for p in SLOPE_PACKAGES) + ")\n"
+        "pkgs <- c(" + ", ".join(f'"{p}"' for p in packages) + ")\n"
         "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
         study,
     ).returncode
     if missing:
-        pytest.skip("lme4, lmerTest, emmeans, dplyr or ggplot2 is not installed")
+        pytest.skip(f"one of {', '.join(packages)} is not installed")
     code = (
         "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
         'options(contrasts = c("contr.sum", "contr.poly"))\n'
@@ -462,6 +467,7 @@ def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
         "stopifnot(setequal(unique(line_df$genotype), levels(dat$genotype)))\n"
         "invisible(ggplot_build(estimate_plot))\n"
         'cat("plot ok\\n")\n',
+        packages=(*SLOPE_PACKAGES, "ggplot2"),
     )
     assert result.returncode == 0, result.stderr
     assert "plot ok" in result.stdout
