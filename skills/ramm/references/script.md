@@ -535,16 +535,16 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 
 ## Section 8: Post-Hoc Comparisons
 
-Apply these translation rules:
+Apply these translation rules; each gives one set of comparisons, which Section 10 exports:
 
 | User says | emmeans code |
 |-----------|-------------|
-| "compare each group to vehicle/control" | `emmeans(model, trt.vs.ctrl ~ treatment, ref = "vehicle")` |
-| "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise")` |
-| "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise")` |
-| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise")` |
+| "compare each group to vehicle/control" | `contrast(emmeans(model, ~ treatment), method = "trt.vs.ctrl", ref = "vehicle", adjust = "dunnett")` |
+| "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise", adjust = "tukey")` |
+| "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise", adjust = "tukey")` |
+| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise", adjust = "holm")` |
 | "the effect of dose" (continuous, no interaction) | `emtrends(model, ~ 1, var = "dose_centred")` |
-| "compare the dose effect between genotypes" | `contrast(emtrends(model, ~ genotype, var = "dose_centred"), method = "revpairwise")` |
+| "compare the dose effect between genotypes" | `contrast(emtrends(model, ~ genotype, var = "dose_centred"), method = "revpairwise", adjust = "tukey")` |
 
 Default p-value adjustment depends on the comparison type:
 - **Treatment vs control** (`trt.vs.ctrl`): use `adjust = "dunnett"` — designed for many-to-one comparisons
@@ -755,8 +755,11 @@ write.csv(emm_results, file.path("outputs", "results_group_means.csv"), row.name
 # Differences between group means and, with a continuous predictor, between
 # slopes (Section 8), in one table; `compares` says which each row is.
 tidy_comparisons <- function(contrasts, compares) {
+  # Interaction contrasts name their comparisons in one column per factor
+  # (for example drug_revpairwise) instead of a `contrast` column.
   out <- as.data.frame(summary(contrasts, infer = TRUE)) |>
-    dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
+    dplyr::rename(dplyr::any_of(c(comparison = "contrast"))) |>
+    dplyr::rename(difference = estimate, standard_error = SE,
                   degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
                   t_value = t.ratio, p_value = p.value)
   # Name the adjustment used for these p-values (for example dunnett, tukey,

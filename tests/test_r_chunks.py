@@ -593,3 +593,46 @@ def test_continuous_check_stops_on_text(skill_text: str, tmp_path: Path) -> None
     assert "2 filled-in rows are not numbers" in result.stderr
     # The message counts the rows; it never prints the data values.
     assert "zz9" not in result.stderr
+
+
+def test_every_comparison_in_the_table_exports(skill_text: str, tmp_path: Path) -> None:
+    """Each translation-table comparison goes through the Section 10 export."""
+    if run_r(
+        'pkgs <- c("emmeans", "dplyr")\n'
+        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
+        tmp_path,
+    ).returncode:
+        pytest.skip("emmeans or dplyr is not installed")
+    table = skill_text.split("| User says | emmeans code |", 1)[1].split("\n\n", 1)[0]
+    calls = [c.replace("\\|", "|") for c in re.findall(r"`(contrast\([^`]*)`", table)]
+    assert len(calls) == 5, calls
+    export = skill_text.split("tidy_comparisons <- function", 1)[1].split(
+        "contrast_results <- dplyr::bind_rows", 1
+    )[0]
+    checks = "".join(
+        f"co <- {call}\n"
+        "out <- tidy_comparisons(co, 'x')\n"
+        f"stopifnot(nrow(out) > 0, out$p_value_adjustment[1] == {adjust!r})\n"
+        for call, adjust in (
+            (c, re.search(r'adjust = "(\w+)"', c).group(1)) for c in calls
+        )
+    )
+    code = (
+        "suppressPackageStartupMessages(library(emmeans))\n"
+        "set.seed(1)\n"
+        "n <- 240\n"
+        "dat <- data.frame(\n"
+        "  treatment = factor(sample(c('vehicle', 'a', 'b'), n, TRUE),\n"
+        "                     levels = c('vehicle', 'a', 'b')),\n"
+        "  factor = factor(sample(c('x', 'y'), n, TRUE)),\n"
+        "  A = factor(sample(c('p', 'q'), n, TRUE)),\n"
+        "  B = factor(sample(c('r', 's'), n, TRUE)),\n"
+        "  genotype = factor(sample(c('WT', 'het'), n, TRUE), levels = c('WT', 'het')),\n"
+        "  dose_centred = runif(n, -5, 5))\n"
+        "dat$y <- rnorm(n)\n"
+        "model <- lm(y ~ treatment * factor + A * B + genotype * dose_centred, data = dat)\n"
+        "tidy_comparisons <- function" + export + checks + 'cat("all exported\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "all exported" in result.stdout
