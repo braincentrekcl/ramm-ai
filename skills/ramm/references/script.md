@@ -566,7 +566,7 @@ Always:
   `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment.
   The same holds for interaction contrasts: `interaction = "revpairwise"` labels them as, for example, `diazepam - vehicle` by `second - first`; `"pairwise"` gives the same size with the labels reversed
 - Test differences, not means: for the group means use `summary(emm, infer = c(TRUE, FALSE))`, which gives confidence intervals without testing whether each mean is zero (a meaningless test for most measurements)
-- If the model has a centred continuous predictor (Section 5), estimate every group mean and difference at its centre, the point where the F-test in Section 7 compares the groups: `emmeans(model, ~ genotype, at = list(dose_centred = 0))`.
+- If the model has a continuous predictor, estimate every group mean and difference at its centre (Section 5), the point where the F-test in Section 7 compares the groups: `emmeans(model, ~ genotype, at = list(dose_centred = 0))`, or `at = list(dose = 0)` with `Centring: zero`.
   Without `at`, emmeans uses the predictor's average whatever the centre, and treats a predictor with only two distinct values as a factor, so the group results would not match the F-test.
 - Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
 - If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ.
@@ -799,7 +799,7 @@ dev.off()
 ```
 
 List in `bind_rows()` only the comparisons the script has: leave out `contrast_output` when there are no group differences (input.md asked for none and the factor has three or more levels; see Section 8), and `slope_contrasts` when there are no slope differences; with neither, skip `results_comparisons.csv`.
-Write `results_group_means.csv` only when the model has a categorical factor; with a centred continuous predictor in the model as well, the group means are at its centre (Section 8), so say at which value in `results_summary.md` (for example "at the average dose, 4.2 mg/kg" or "at 8 weeks").
+Write `results_group_means.csv` only when the model has a categorical factor; with a continuous predictor in the model as well, the group means are at its centre (Section 8), so say at which value in `results_summary.md` (for example "at the average dose, 4.2 mg/kg", "at dose 0" or "at 8 weeks").
 
 With a continuous predictor, export the slopes from Section 8 too; differences in slope are already in `results_comparisons.csv`:
 

@@ -54,7 +54,8 @@ Keep the Study Design numbers as planned; the script reports planned and actual
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
 - Centring: mean, zero or a value such as 8 weeks (for each continuous fixed
-  effect: groups are compared at that value; if you leave it out, RAMM-AI asks)
+  effect: group means, and with an interaction group comparisons, are given at
+  that value; if you leave it out, RAMM-AI asks)
 
 # Reproducible Environment (optional)
 

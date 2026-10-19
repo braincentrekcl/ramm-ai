@@ -641,3 +641,34 @@ def test_continuous_check_stops_on_an_empty_column(
     assert result.returncode != 0
     assert "The dose column has no values" in result.stderr
     assert "converted" not in result.stderr
+
+
+def test_group_difference_matches_the_f_test_without_centring(
+    skill_text: str, tmp_path: Path
+) -> None:
+    """With Centring: zero the original column is used, at its 0."""
+    skip_without(("lme4", "lmerTest", "emmeans"), tmp_path)
+    at_zero = re.search(r"`(at = list\(dose = 0\))` with `Centring: zero`", skill_text)
+    assert at_zero, "Section 8 gives no emmeans() setting for Centring: zero"
+    code = (
+        "suppressPackageStartupMessages({library(lme4); library(lmerTest); library(emmeans)})\n"
+        'options(contrasts = c("contr.sum", "contr.poly"))\n'
+        "set.seed(1)\n"
+        "ids <- data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2), offset = rnorm(24))\n"
+        "dat <- ids[rep(1:24, each = 4), ]\n"
+        'dat$genotype <- factor(dat$genotype, levels = c("WT", "het"))\n'
+        'dat$uci_g <- 50 + ifelse(dat$genotype == "WT", 2, 0.5) * dat$dose +\n'
+        "  dat$offset + rnorm(nrow(dat), sd = 0.5)\n"
+        "model <- lmer(uci_g ~ genotype * dose + (1 | subject_id), data = dat)\n"
+        'emm_options(lmer.df = "satterthwaite", lmerTest.limit = nrow(dat))\n'
+        f"emm <- emmeans(model, ~ genotype, {at_zero.group(1)})\n"
+        'd <- summary(contrast(emm, method = "revpairwise", adjust = "none"))\n'
+        'f_test <- anova(model, type = 3, ddf = "Satterthwaite")["genotype", ]\n'
+        'stopifnot(abs(d$t.ratio^2 / f_test[["F value"]] - 1) < 1e-6)\n'
+        'cat("matches f test\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "matches f test" in result.stdout

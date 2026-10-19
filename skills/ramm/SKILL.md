@@ -228,8 +228,8 @@ For each level, determine:
   If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
 - P-value adjustment: Dunnett for comparisons with a control, Tukey for all pairwise comparisons, Holm for any other, unless input.md names another method (see Section 8)
 - Centring of each continuous predictor: its mean, zero (no centring, for example when dose 0 is the vehicle), or a value in the predictor's units (for example 8 weeks, the age at baseline); see Section 5.
-  It sets the value of the predictor at which groups are compared, so it is the researcher's decision: never choose it yourself.
-  If input.md does not say, ask in the design summary: recommend the mean when the predictor interacts with a factor (groups are then compared at a typical value rather than at 0); otherwise say that centring changes no test, difference or slope, only the value at which group means are given (the average for mean or zero, or the chosen value), and recommend zero.
+  It sets the value of the predictor at which group means are given and, when the predictor interacts with a factor, at which groups are compared, so it is the researcher's decision: never choose it yourself.
+  If input.md does not say, ask in the design summary and recommend the mean, saying why: group means (and, with an interaction, group comparisons) are then at a typical value rather than at 0, which may lie outside the data (for example age 0); slopes, and without an interaction every test and difference, are the same whatever the centre.
 - Any other preferences stated
 
 #### QC rules
