@@ -453,3 +453,36 @@ def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
     )
     assert result.returncode == 0, result.stderr
     assert "plot ok" in result.stdout
+
+
+@pytest.mark.parametrize("centre", ["mean(dat$dose)", "0", "8"])
+def test_group_difference_matches_the_f_test_at_the_centre(
+    skill_text: str, tmp_path: Path, centre: str
+) -> None:
+    """A two-level difference has the F-test's p-value, whatever the centre."""
+    default = "dose_centre <- mean(dat$dose)"
+    assert default in skill_text
+    skill_text = skill_text.replace(default, f"dose_centre <- {centre}")
+    at_call = re.search(r"`(emmeans\(model, ~ genotype, at = [^`]*\))`", skill_text)
+    assert at_call, "Section 8 gives no emmeans() call at the predictor's centre"
+    export = skill_text.split("contrast_results <- as.data.frame", 1)[1].split(
+        "write.csv(contrast_results", 1
+    )[0]
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2))",
+        after=f"emm <- {at_call.group(1)}\n"
+        'contrast_output <- contrast(emm, method = "revpairwise", adjust = "none")\n'
+        "contrast_results <- as.data.frame" + export + "\n"
+        'f_test <- anova(model, type = 3, ddf = "Satterthwaite")["genotype", ]\n'
+        "# One difference: t squared is F, so the tests are the same test.\n"
+        "# (all.equal() would compare tiny p-values on an absolute scale.)\n"
+        'stopifnot(abs(contrast_results$t_value^2 / f_test[["F value"]] - 1) < 1e-6)\n'
+        'stopifnot(identical(contrast_results$p_value_adjustment, "none"))\n'
+        'cat("matches f test\\n")\n',
+    )
+    assert result.returncode == 0, result.stderr
+    assert "matches f test" in result.stdout

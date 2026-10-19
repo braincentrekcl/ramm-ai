@@ -536,6 +536,8 @@ Always:
   `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment.
   The same holds for interaction contrasts: `interaction = "revpairwise"` labels them as, for example, `diazepam - vehicle` by `second - first`; `"pairwise"` gives the same size with the labels reversed
 - Test differences, not means: for the group means use `summary(emm, infer = c(TRUE, FALSE))`, which gives confidence intervals without testing whether each mean is zero (a meaningless test for most measurements)
+- If the model has a centred continuous predictor (Section 5), estimate every group mean and difference at its centre, the point where the F-test in Section 7 compares the groups: `emmeans(model, ~ genotype, at = list(dose_centred = 0))`.
+  Without `at`, emmeans uses the predictor's average whatever the centre, and treats a predictor with only two distinct values as a factor, so the group results would not match the F-test.
 - Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
 - If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ.
   Only a test of the difference itself (an interaction) shows that.
@@ -543,7 +545,7 @@ Always:
 
 When input.md asks for no comparisons ("none"), the main effect answers the question:
 - A categorical factor with two levels: still estimate its one difference, relative to the reference level, with `adjust = "none"`.
-  It is the main effect itself, with the same p-value as its F-test in Section 7, and its size and confidence interval are what a reader needs.
+  It is the main effect itself, with the same p-value as its F-test in Section 7 (estimated at the centre of any continuous predictor, as above), and its size and confidence interval are what a reader needs.
 - A categorical factor with three or more levels: the group means (`emm`) only, with no `contrast_output`; the F-test in Section 7 answers whether the groups differ.
 - A continuous predictor: its slope (`slopes`, see below) only.
 - Add no other comparisons.
@@ -722,7 +724,11 @@ write.csv(emm_results, file.path("outputs", "results_group_means.csv"), row.name
 contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE)) |>
   dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
-                t_value = t.ratio, p_value_adjusted = p.value)
+                t_value = t.ratio, p_value = p.value)
+# Name the adjustment used for these p-values (for example dunnett, tukey,
+# or none for a single comparison), so no p-value is read as adjusted when
+# it is not.
+contrast_results$p_value_adjustment <- contrast_output@misc$adjust
 write.csv(contrast_results, file.path("outputs", "results_comparisons.csv"), row.names = FALSE)
 
 # Save plots
@@ -744,7 +750,7 @@ dev.off()
 ```
 
 Without a `contrast_output` (input.md asked for no comparisons and the factor has three or more levels; see Section 8), skip `results_comparisons.csv`.
-Write `results_group_means.csv` only when the model has a categorical factor; with a continuous predictor in the model as well, the group means are at its average value, so say so in `results_summary.md`.
+Write `results_group_means.csv` only when the model has a categorical factor; with a centred continuous predictor in the model as well, the group means are at its centre (Section 8), so say at which value in `results_summary.md` (for example "at the average dose, 4.2 mg/kg" or "at 8 weeks").
 
 With a continuous predictor, export the slopes from Section 8 too; differences in slope go to `results_comparisons.csv` as above:
 
