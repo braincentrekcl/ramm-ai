@@ -646,7 +646,7 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   plot_dat <- dplyr::left_join(dat, strip_x, by = c("drug_group", "subject_id"))
   # Violin width 0.6 spans +/- 0.3 around each group, so the strips (+/- 0.2)
   # sit inside it and the estimate at +0.4 sits clear of the last strip.
-  emm_plot <- ggplot(plot_dat, aes(y = uci_g)) +
+  estimate_plot <- ggplot(plot_dat, aes(y = uci_g)) +
     geom_violin(aes(x = as.numeric(drug_group), fill = drug_group,
                     group = drug_group), width = 0.6, alpha = 0.25, colour = NA) +
     stat_summary(aes(x = x_strip, group = subject_id, colour = drug_group),
@@ -699,7 +699,7 @@ contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE)) |>
 write.csv(contrast_results, file.path("outputs", "results_comparisons.csv"), row.names = FALSE)
 
 # Save plots
-ggsave(file.path("outputs", "plot_emmeans.png"), plot = emm_plot, width = 8, height = 6, dpi = 300)
+ggsave(file.path("outputs", "plot_estimates.png"), plot = estimate_plot, width = 8, height = 6, dpi = 300)
 # The residual panels are base-R plots, so ggsave() would save the last
 # ggplot instead: redraw them into a png device.
 png(file.path("outputs", "plot_residuals.png"), width = 10, height = 8, units = "in", res = 300)

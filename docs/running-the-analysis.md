@@ -40,7 +40,7 @@ The script writes into `outputs/`:
   contributed
 - `results_exclusions.csv`: measurements that were missing or removed by your QC
   rules
-- `plot_hierarchy.png`, `plot_emmeans.png`, `plot_residuals.png` and the other
+- `plot_hierarchy.png`, `plot_estimates.png`, `plot_residuals.png` and the other
   plots
 - the log of the run, and `provenance.csv`: a checksum of the script, every
   input and every output, with the R and package versions, so anyone can check
