@@ -255,6 +255,8 @@ When subgroup comparisons are generated, report all of them; never hide or suppr
 
 No random slope by default.
 When a factor varies within individuals and input.md implies more than one measurement per individual at each of its levels (for example several sections per region in every mouse), raise a slope in the design summary in plain words: it would let the effect of that factor differ from one individual to the next.
+Do the same when a continuous predictor varies within individuals and each individual is measured at three or more of its values (for example weekly body weights), or at two with more than one measurement at each: the slope would let each individual's trend differ.
+With only two values and one measurement at each, an individual's own slope cannot be told apart from measurement noise (lme4 refuses to fit it), so do not raise it.
 Say that leaving it out is simpler and fits more reliably, but if individuals do differ, leaving it out can make results look more certain than they are; recommend leaving it out unless individuals are expected to differ, and ask.
 Otherwise do not mention slopes.
 
