@@ -636,3 +636,13 @@ def test_every_comparison_in_the_table_exports(skill_text: str, tmp_path: Path) 
     result = run_r(code, tmp_path)
     assert result.returncode == 0, result.stderr
     assert "all exported" in result.stdout
+
+
+@pytest.mark.parametrize("dose", ["c(NA, NA, NA)", "c('', ' ', NA)"])
+def test_continuous_check_stops_on_an_empty_column(
+    skill_text: str, tmp_path: Path, dose: str
+) -> None:
+    result = run_continuous_check(skill_text, tmp_path, dose)
+    assert result.returncode != 0
+    assert "The dose column has no values" in result.stderr
+    assert "converted" not in result.stderr

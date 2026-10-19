@@ -170,6 +170,10 @@ if (length(fewer_than_planned) > 0) {
 # read as text is converted when every filled-in cell is a number (for
 # example one with stray spaces); otherwise the script stops. Units are
 # never stripped automatically: "<0.1" would silently become 0.1.
+if (all(is.na(dat$dose) | trimws(as.character(dat$dose)) == "")) {
+  stop("The dose column has no values, but inputs/input.md names it as a ",
+       "continuous fixed effect. Check the column in the data file.", call. = FALSE)
+}
 if (!is.numeric(dat$dose)) {
   dose_text <- trimws(as.character(dat$dose))
   dose_numbers <- suppressWarnings(as.numeric(dose_text))
