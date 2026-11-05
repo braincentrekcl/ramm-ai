@@ -451,6 +451,34 @@ def test_slopes_stop_when_too_few_individuals(skill_text: str, tmp_path: Path) -
 
 
 @pytest.mark.parametrize("centre", ["mean(dat$dose)", "0", "8"])
+def test_slope_plot_shows_the_fitted_line_on_the_original_doses(
+    skill_text: str, tmp_path: Path, centre: str
+) -> None:
+    """Whatever centre input.md chooses, the plot shows the doses as given."""
+    default = "dose_centre <- mean(dat$dose)"
+    assert default in skill_text
+    skill_text = skill_text.replace(default, f"dose_centre <- {centre}")
+    result = run_slopes(
+        skill_text,
+        tmp_path,
+        "data.frame(subject_id = paste0('m', 1:24),\n"
+        "  genotype = rep(c('WT', 'het'), each = 12),\n"
+        "  dose = rep(seq(0, 10, length.out = 12), 2))",
+        after="suppressPackageStartupMessages(library(ggplot2))\n"
+        + extract_r_chunk(skill_text, "slope-plot")
+        + "stopifnot(all.equal(range(line_df$dose), range(dat$dose)))\n"
+        "stopifnot(all(line_df$lower.CL < line_df$emmean),\n"
+        "          all(line_df$emmean < line_df$upper.CL))\n"
+        "stopifnot(setequal(unique(line_df$genotype), levels(dat$genotype)))\n"
+        "invisible(ggplot_build(estimate_plot))\n"
+        'cat("plot ok\\n")\n',
+        packages=(*SLOPE_PACKAGES, "ggplot2"),
+    )
+    assert result.returncode == 0, result.stderr
+    assert "plot ok" in result.stdout
+
+
+@pytest.mark.parametrize("centre", ["mean(dat$dose)", "0", "8"])
 def test_group_difference_matches_the_f_test_at_the_centre(
     skill_text: str, tmp_path: Path, centre: str
 ) -> None:
