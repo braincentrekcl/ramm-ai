@@ -1,4 +1,4 @@
-"""Every section link in the ramm skill points at a heading that exists."""
+"""Every section link in the ramm and reproduce skills points at a heading that exists."""
 
 import re
 from pathlib import Path
@@ -27,8 +27,12 @@ def broken_links(path: Path) -> list[str]:
 
 
 def test_skill_section_links_resolve(repo_root: Path) -> None:
-    skill = repo_root / "skills" / "ramm"
-    for path in (skill / "SKILL.md", skill / "references" / "script.md"):
+    skills = repo_root / "skills"
+    for path in (
+        skills / "ramm" / "SKILL.md",
+        skills / "ramm" / "references" / "script.md",
+        skills / "reproduce" / "SKILL.md",
+    ):
         assert broken_links(path) == [], f"{path.name} has broken section links"
 
 
