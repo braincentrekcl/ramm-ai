@@ -181,9 +181,13 @@ From input.md, extract the following for the design summary (see [Confirm the de
 #### Fixed effects
 
 - Column name(s)
-- Categorical or continuous
+- Categorical or continuous, from what input.md says the predictor is, not from how its values look.
+  Categorical: named levels (WT, het) and codes for occasions or conditions, even when they are numbers (session 1 and 2, batch, cage).
+  Continuous: a quantity whose in-between values mean something (dose in mg/kg, age, time).
+  A quantity can be analysed either way (three doses compared with each other, or one dose-response trend), and the choice changes the question the model answers: if input.md does not say which, ask, recommending the one that matches the study's question.
 - For categorical: list all levels
 - Reference level (if stated; default to "vehicle", "control", "WT", or alphabetically first)
+- For continuous: units
 
 #### Hierarchy and nesting
 
@@ -387,7 +391,8 @@ nesting, any known issues like non-unique IDs or missing data]
 
 # Column Mappings (required)
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread)
-- Fixed effect: `column_name` (levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (continuous, units)
 - Subject ID: `column_name` (globally unique)
 - Nesting level: `column_name` (unique or NOT unique across subjects)
 
