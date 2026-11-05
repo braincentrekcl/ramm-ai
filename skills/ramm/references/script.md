@@ -414,6 +414,22 @@ model <- lmer(
 # for the requested random effects structure. Consult the analyst.
 ```
 
+**Continuous predictors.**
+Centre each continuous predictor as the user confirmed in the design summary (see [User preferences](../SKILL.md#user-preferences)), and use the centred column in the formula: subtract its mean, or the chosen value (for example 8 for `Centring: 8 weeks`).
+Say in the comment where the groups are compared and why.
+Slopes do not change; Section 9 adds the centre back so plots show the original values.
+With `Centring: zero` nothing is centred: use the original column (`dose`) wherever the patterns below use `dose_centred`, with no centre to add back.
+If the uncorrelated random slope fallback (Option A) is used, its fit depends on the centre too: keep the confirmed centre and say so in the comment.
+
+<!-- chunk: centring -->
+```r
+# Dose is centred on its mean: with the genotype x dose interaction, the
+# genotype test in Section 7 then compares genotypes at the average dose,
+# not at dose 0. The slope of dose is the same either way.
+dose_centre <- mean(dat$dose)
+dat$dose_centred <- dat$dose - dose_centre
+```
+
 ## Section 6: Diagnostics
 
 ```r
@@ -483,6 +499,8 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 
 - `summary(model)` for full output
 - `anova(model, type = 3, ddf = "Satterthwaite")` for Type III F-tests (via lmerTest)
+- When a continuous predictor interacts with a factor, the factor's Type III test compares the groups where the centred predictor is 0, that is at the centre chosen in Section 5.
+  Say in a comment and in `results_summary.md` at which value of the predictor this test compares the groups (for example "at the average dose, 4.2 mg/kg", "at dose 0" or "at 8 weeks").
 - Do not use Wald intervals (`confint(model, method = "Wald")`); they ignore the uncertainty from having few individuals.
   Confidence intervals come from `emmeans` with Satterthwaite df in Section 8.
 - Satterthwaite df apply to `lmer()` models.
@@ -517,6 +535,8 @@ Always:
   `trt.vs.ctrl` does this already; for pairwise comparisons use `method = "revpairwise"`, never `pairs()`, which gives control minus treatment.
   The same holds for interaction contrasts: `interaction = "revpairwise"` labels them as, for example, `diazepam - vehicle` by `second - first`; `"pairwise"` gives the same size with the labels reversed
 - Test differences, not means: for the group means use `summary(emm, infer = c(TRUE, FALSE))`, which gives confidence intervals without testing whether each mean is zero (a meaningless test for most measurements)
+- If the model has a continuous predictor, estimate every group mean and difference at its centre (Section 5), the point where the F-test in Section 7 compares the groups: `emmeans(model, ~ genotype, at = list(dose_centred = 0))`, or `at = list(dose = 0)` with `Centring: zero`.
+  Without `at`, emmeans uses the predictor's average whatever the centre, and treats a predictor with only two distinct values as a factor, so the group results would not match the F-test.
 - Never phrase results, in comments or in messages to the user, as "significant in one subgroup but not another, so the subgroups differ".
 - If the user asked for comparisons within subgroups, add this plain-language comment above them: "A difference that is significant in one subgroup but not another does not show that the subgroups differ.
   Only a test of the difference itself (an interaction) shows that.
@@ -524,7 +544,7 @@ Always:
 
 When input.md asks for no comparisons ("none"), the main effect answers the question:
 - A categorical factor with two levels: still estimate its one difference, relative to the reference level, with `adjust = "none"`.
-  It is the main effect itself, with the same p-value as its F-test in Section 7, and its size and confidence interval are what a reader needs.
+  It is the main effect itself, with the same p-value as its F-test in Section 7 (estimated at the centre of any continuous predictor, as above), and its size and confidence interval are what a reader needs.
 - A categorical factor with three or more levels: the group means (`emm`) only, with no `contrast_output`; the F-test in Section 7 answers whether the groups differ.
 - Add no other comparisons.
 
@@ -669,6 +689,7 @@ dev.off()
 ```
 
 Without a `contrast_output` (input.md asked for no comparisons and the factor has three or more levels; see Section 8), skip `results_comparisons.csv`.
+Write `results_group_means.csv` only when the model has a categorical factor; with a continuous predictor in the model as well, the group means are at its centre (Section 8), so say at which value in `results_summary.md` (for example "at the average dose, 4.2 mg/kg", "at dose 0" or "at 8 weeks").
 
 For an `lm()`, export the fixed effects with `broom::tidy(model)` (add `broom` to the required packages instead of `broom.mixed`) and skip `results_random_effects.csv`; say in `results_summary.md` that the model has no random effects because each individual was measured once.
 
