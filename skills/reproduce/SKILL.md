@@ -5,9 +5,11 @@ description: "Generate a reproducible environment (a Docker/Apptainer container 
 
 # RAMM Reproduce: Environment Generation for R Analysis Scripts
 
-You are generating a reproducible computing environment for an R analysis script. The goal is to eliminate "it works on my machine" — a collaborator should be able to clone the folder, run one or two commands, and get identical results to the original analysis.
+You are generating a reproducible computing environment for an R analysis script.
+The goal is to eliminate "it works on my machine" — a collaborator should be able to clone the folder, run one or two commands, and get identical results to the original analysis.
 
-**Core principle:** pin everything that can drift. R version, package versions, system libraries, CRAN snapshot date.
+**Core principle:** pin everything that can drift.
+R version, package versions, system libraries, CRAN snapshot date.
 
 ---
 
@@ -16,22 +18,19 @@ You are generating a reproducible computing environment for an R analysis script
 ### A. (continued) Files and commands
 
 Write only in `envs/` and `code/`.
-Environment definitions (the Dockerfile, the renv lockfile) and their README go
-  in `envs/`, the environment folder of the YODA layout; scripts go in `code/`.
-Every command you give is run from the study folder (the one holding inputs/,
-  code/, outputs/ and envs/).
+Environment definitions (the Dockerfile, the renv lockfile) and their README go in `envs/`, the environment folder of the YODA layout; scripts go in `code/`.
+Every command you give is run from the study folder (the one holding inputs/, code/, outputs/ and envs/).
 You never run these commands yourself.
-Before each change to a file you have written, tell the user in plain language
-  what you will change and why: the agent may not ask them to approve it.
-If the user refuses a change, do not make it another way (for example with a
-  command): say what you wanted to change and why, and wait.
-Never present the files as ready while you know of a problem in them; say what
-  the problem is.
+Before each change to a file you have written, tell the user in plain language what you will change and why: the agent may not ask them to approve it.
+If the user refuses a change, do not make it another way (for example with a command): say what you wanted to change and why, and wait.
+Never present the files as ready while you know of a problem in them; say what the problem is.
 
 ### H. Notes on Tone
 
-- Users may not know what Docker or renv are. The README files should explain commands, not assume.
-- Don't over-promise "bit-for-bit reproducibility" — minor variation in floating-point results across architectures (e.g., ARM vs x86) can occur. State the reproducibility guarantee accurately: "identical package versions and R version; results match within numerical precision."
+- Users may not know what Docker or renv are.
+  The README files should explain commands, not assume.
+- Don't over-promise "bit-for-bit reproducibility" — minor variation in floating-point results across architectures (e.g., ARM vs x86) can occur.
+  State the reproducibility guarantee accurately: "identical package versions and R version; results match within numerical precision."
 - If the user says they hit trouble, suggest checking R version first, then package versions via `packageVersion()`, before blaming the code.
 
 ---
@@ -40,22 +39,14 @@ Never present the files as ready while you know of a problem in them; say what
 
 ### A. Input Resolution
 
-1. If the user named an R script when starting the skill (for example
-  `code/analysis.R` after the start command), use that path.
-2. Otherwise, look for `code/*_analysis.R` or `code/analysis.R` in the study
-  folder.
-  If multiple matches exist, use the most recently modified one and tell the
-  user which one you chose.
-3. If no script is found, tell the user to run RAMM-AI first, or to name a
-  path.
-  Give only the start command for the agent you are running in: `/ramm:ramm`
-  (Claude Code), `$ramm:ramm` (Codex), `/ramm` (GitHub Copilot) or `@ramm`
-  (OpenCode).
-  Never list the other agents' commands: a user can pick the wrong one.
-  If you cannot tell which agent you are running in, ask the user which one
-  they are using.
-4. Also read `inputs/input.md` to find user preferences about the
-  reproducibility mechanism.
+1. If the user named an R script when starting the skill (for example `code/analysis.R` after the start command), use that path.
+2. Otherwise, look for `code/*_analysis.R` or `code/analysis.R` in the study folder.
+   If multiple matches exist, use the most recently modified one and tell the user which one you chose.
+3. If no script is found, tell the user to run RAMM-AI first, or to name a path.
+   Give only the start command for the agent you are running in: `/ramm:ramm` (Claude Code), `$ramm:ramm` (Codex), `/ramm` (GitHub Copilot) or `@ramm` (OpenCode).
+   Never list the other agents' commands: a user can pick the wrong one.
+   If you cannot tell which agent you are running in, ask the user which one they are using.
+4. Also read `inputs/input.md` to find user preferences about the reproducibility mechanism.
 
 ### B. Parse the R Script
 
@@ -67,7 +58,8 @@ Read the R script and extract:
    - Any `requireNamespace("pkg")` calls
    - Any `pkg::function()` references that imply a package dependency
 
-2. **External file references** — look for `read.csv("...")`, `readr::read_csv("...")`, `read.xlsx("...")` etc. These need to be mounted into the Docker container.
+2. **External file references** — look for `read.csv("...")`, `readr::read_csv("...")`, `read.xlsx("...")` etc.
+   These need to be mounted into the Docker container.
 
 3. **Output file paths** — look for `write.csv(...)`, `ggsave(...)` to know what will be produced.
 
@@ -84,27 +76,24 @@ Output files: outputs/results_*.csv, outputs/plot_*.png
 
 ### C. Determine the Mechanism
 
-Read the `Reproducible environment:` preference from input.md if present. Possible values:
+Read the `Reproducible environment:` preference from input.md if present.
+Possible values:
 
-- `container` (default) — a container with a pinned R version, system
-  libraries and a dated package snapshot.
-  It is written twice from the same settings: a Dockerfile, for computers with
-  Docker, and an Apptainer definition, for HPC clusters, where Apptainer
-  (Singularity) is usually available and Docker is not.
+- `container` (default) — a container with a pinned R version, system libraries and a dated package snapshot.
+  It is written twice from the same settings: a Dockerfile, for computers with Docker, and an Apptainer definition, for HPC clusters, where Apptainer (Singularity) is usually available and Docker is not.
 - `renv` — an renv lockfile, for users who have R and do not need a container.
   It pins package versions only, not R itself or the system libraries.
 
-If input.md gives no preference (the template's unedited line, listing both, is
-  no preference), use `container`.
+If input.md gives no preference (the template's unedited line, listing both, is no preference), use `container`.
 It needs no R on the computer, and fixes every version.
-If the user has neither Docker, Apptainer nor R, say they need one of them,
-  and suggest asking their IT or HPC team which one they can use.
+If the user has neither Docker, Apptainer nor R, say they need one of them, and suggest asking their IT or HPC team which one they can use.
 
 Also read optional preferences:
 - `Snapshot date:` (default: pick the most recent Monday from the quarter before the current date, so it's stable and won't change underneath you)
 - `R version:` (see D)
 
-**Confirm with the user** before generating files. Show them:
+**Confirm with the user** before generating files.
+Show them:
 - Which mechanism will be used
 - Which R version
 - Which CRAN snapshot date
@@ -141,34 +130,28 @@ For reproducibility, use dated CRAN snapshots from Posit Package Manager:
 https://packagemanager.posit.co/cran/YYYY-MM-DD
 ```
 
-This URL freezes CRAN to the state it was in on that date. Package installs from this URL will always resolve to the same versions.
+This URL freezes CRAN to the state it was in on that date.
+Package installs from this URL will always resolve to the same versions.
 
-In the Dockerfile and the Apptainer definition, use the binary form of the same
-  snapshot, `https://packagemanager.posit.co/cran/__linux__/<codename>/YYYY-MM-DD`,
-  where `<codename>` is the Ubuntu release of the rocker/r-ver image (`noble`
-  for R 4.4.2).
-It serves the same package versions already built for that Ubuntu, so the
-  image builds in minutes instead of compiling every package.
+In the Dockerfile and the Apptainer definition, use the binary form of the same snapshot, `https://packagemanager.posit.co/cran/__linux__/<codename>/YYYY-MM-DD`, where `<codename>` is the Ubuntu release of the rocker/r-ver image (`noble` for R 4.4.2).
+It serves the same package versions already built for that Ubuntu, so the image builds in minutes instead of compiling every package.
 
 ### R version
 
-- `docker`: use `rocker/r-ver:X.Y.Z` with the newest R release from before the
-  snapshot date, so every package in the snapshot was built for it.
-  If you are not sure which release that is, ask the user to check
-  https://cran.r-project.org/ (R's release history) rather than guessing.
-- `renv`: the R the user already has; renv records its version in the
-  lockfile.
+- `docker`: use `rocker/r-ver:X.Y.Z` with the newest R release from before the snapshot date, so every package in the snapshot was built for it.
+  If you are not sure which release that is, ask the user to check https://cran.r-project.org/ (R's release history) rather than guessing.
+- `renv`: the R the user already has; renv records its version in the lockfile.
 
 ### System libraries
 
-Mixed-effects modelling packages in R have C++ dependencies. The Dockerfile must install:
+Mixed-effects modelling packages in R have C++ dependencies.
+The Dockerfile must install:
 
 - `libcurl4-openssl-dev`, `libssl-dev`, `libxml2-dev` — for package downloads and XML parsing
 - `libfontconfig1-dev`, `libharfbuzz-dev`, `libfribidi-dev`, `libfreetype6-dev` — for ggplot2/systemfonts
 - `libpng-dev`, `libtiff5-dev`, `libjpeg-dev` — for image output
 - `libgit2-dev` — for remotes
-- `cmake` — for nloptr (needed by lme4) when it is built from source, as on
-  ARM computers such as Apple Silicon Macs
+- `cmake` — for nloptr (needed by lme4) when it is built from source, as on ARM computers such as Apple Silicon Macs
 
 Include all of these unless you have a reason not to.
 
@@ -242,8 +225,7 @@ code/sessions/
 envs/*.sif
 ```
 
-Docker uses this file because it sits beside envs/Dockerfile and carries its
-  name.
+Docker uses this file because it sits beside envs/Dockerfile and carries its name.
 
 #### File: `envs/apptainer.def`
 
@@ -467,8 +449,7 @@ renv::load("envs")
 source(file.path("code", "analysis.R"))
 ```
 
-The renv project is `envs/`, so plain `Rscript code/analysis.R` would use the
-  user's own packages instead; tell the user to run the analysis this way.
+The renv project is `envs/`, so plain `Rscript code/analysis.R` would use the user's own packages instead; tell the user to run the analysis this way.
 
 #### File: `envs/README.md`
 
