@@ -162,6 +162,30 @@ if (length(fewer_than_planned) > 0) {
 }
 ```
 
+- For each fixed effect input.md calls continuous, add this check after the column check:
+
+<!-- chunk: continuous-check -->
+```r
+# Dose is continuous (inputs/input.md), so it must hold numbers. A column
+# read as text is converted when every filled-in cell is a number (for
+# example one with stray spaces); otherwise the script stops. Units are
+# never stripped automatically: "<0.1" would silently become 0.1.
+if (!is.numeric(dat$dose)) {
+  dose_text <- trimws(as.character(dat$dose))
+  dose_numbers <- suppressWarnings(as.numeric(dose_text))
+  not_numbers <- sum(!is.na(dose_text) & dose_text != "" & is.na(dose_numbers))
+  if (not_numbers > 0) {
+    stop("The dose column should hold numbers (inputs/input.md says it is ",
+         "continuous), but ", not_numbers, " filled-in rows are not numbers, ",
+         "for example 'n/a' or a unit typed next to the number. Correct them in ",
+         "the data file, and leave missing values empty.", call. = FALSE)
+  }
+  dat$dose <- dose_numbers
+  message("The dose column was read as text; every filled-in value is a ",
+          "number, so it was converted to numbers.")
+}
+```
+
 - Convert grouping variables to factors with explicit levels
 - Set reference levels (vehicle/control first)
 - Create unique IDs for nested factors where needed (see [The non-unique ID problem](../SKILL.md#the-non-unique-id-problem))

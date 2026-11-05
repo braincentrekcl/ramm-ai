@@ -360,6 +360,42 @@ def skip_without(packages: tuple[str, ...], folder: Path) -> None:
         pytest.skip(f"one of {', '.join(packages)} is not installed")
 
 
+def run_continuous_check(
+    skill_text: str, tmp_path: Path, dose: str
+) -> subprocess.CompletedProcess[str]:
+    """Run the continuous-column check on a data frame whose dose is `dose`."""
+    code = (
+        f"dat <- data.frame(subject_id = c('m1', 'm2', 'm3'), dose = {dose})\n"
+        + extract_r_chunk(skill_text, "continuous-check")
+        + 'cat("dose is", class(dat$dose), paste(dat$dose, collapse = " "), "\\n")\n'
+    )
+    return run_r(code, tmp_path)
+
+
+def test_continuous_check_keeps_numbers(skill_text: str, tmp_path: Path) -> None:
+    result = run_continuous_check(skill_text, tmp_path, "c(0, 2.5, 5)")
+    assert result.returncode == 0, result.stderr
+    assert "dose is numeric 0 2.5 5" in result.stdout
+    assert "converted" not in result.stderr
+
+
+def test_continuous_check_converts_numbers_read_as_text(
+    skill_text: str, tmp_path: Path
+) -> None:
+    result = run_continuous_check(skill_text, tmp_path, "c(' 2.5', '5 ', '')")
+    assert result.returncode == 0, result.stderr
+    assert "dose is numeric 2.5 5 NA" in result.stdout
+    assert "converted to numbers" in result.stderr
+
+
+def test_continuous_check_stops_on_text(skill_text: str, tmp_path: Path) -> None:
+    result = run_continuous_check(skill_text, tmp_path, "c('2.5', 'zz9', 'n/a')")
+    assert result.returncode != 0
+    assert "2 filled-in rows are not numbers" in result.stderr
+    # The message counts the rows; it never prints the data values.
+    assert "zz9" not in result.stderr
+
+
 def test_every_comparison_in_the_table_exports(skill_text: str, tmp_path: Path) -> None:
     """Each translation-table comparison goes through the Section 10 export."""
     skip_without(("emmeans", "dplyr"), tmp_path)
