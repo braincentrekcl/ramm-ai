@@ -71,7 +71,7 @@ def opencode_rules(repo_root: Path) -> list[dict]:
         "outputs/results_comparisons.csv",
         "outputs/results_summary.md",
         "outputs/provenance.csv",
-        "outputs/plot_emmeans.png",
+        "outputs/plot_estimates.png",
         "code/analysis.R",
         "code/run_analysis.R",
         "code/setup_environment.R",
