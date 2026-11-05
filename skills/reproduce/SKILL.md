@@ -11,11 +11,13 @@ The goal is to eliminate "it works on my machine" — a collaborator should be a
 **Core principle:** pin everything that can drift.
 R version, package versions, system libraries, CRAN snapshot date.
 
+This file has four parts: the rules that always apply, the conversation step by step, the pinning strategy, and the files for each mechanism.
+
 ---
 
 ## Rules that always apply
 
-### A. (continued) Files and commands
+### Files and commands
 
 Write only in `envs/` and `code/`.
 Environment definitions (the Dockerfile, the renv lockfile) and their README go in `envs/`, the environment folder of the YODA layout; scripts go in `code/`.
@@ -25,7 +27,7 @@ Before each change to a file you have written, tell the user in plain language w
 If the user refuses a change, do not make it another way (for example with a command): say what you wanted to change and why, and wait.
 Never present the files as ready while you know of a problem in them; say what the problem is.
 
-### H. Notes on Tone
+### Tone and communication
 
 - Users may not know what Docker or renv are.
   The README files should explain commands, not assume.
@@ -37,7 +39,7 @@ Never present the files as ready while you know of a problem in them; say what t
 
 ## The conversation, step by step
 
-### A. Input Resolution
+### Analysis script and input
 
 1. If the user named an R script when starting the skill (for example `code/analysis.R` after the start command), use that path.
 2. Otherwise, look for `code/*_analysis.R` or `code/analysis.R` in the study folder.
@@ -48,7 +50,7 @@ Never present the files as ready while you know of a problem in them; say what t
    If you cannot tell which agent you are running in, ask the user which one they are using.
 4. Also read `inputs/input.md` to find user preferences about the reproducibility mechanism.
 
-### B. Parse the R Script
+### Parse the R script
 
 Read the R script and extract:
 
@@ -74,7 +76,7 @@ Input data file(s): inputs/data.csv
 Output files: outputs/results_*.csv, outputs/plot_*.png
 ```
 
-### C. Determine the Mechanism
+### Determine the mechanism
 
 Read the `Reproducible environment:` preference from input.md if present.
 Possible values:
@@ -90,7 +92,7 @@ If the user has neither Docker, Apptainer nor R, say they need one of them, and 
 
 Also read optional preferences:
 - `Snapshot date:` (default: pick the most recent Monday from the quarter before the current date, so it's stable and won't change underneath you)
-- `R version:` (see D)
+- `R version:` (see [R version](#r-version))
 
 **Confirm with the user** before generating files.
 Show them:
@@ -101,12 +103,12 @@ Show them:
 
 Wait for their confirmation or adjustment.
 
-### E. (continued) Write the files
+### Write the files
 
-When the user confirms, write the files for the chosen mechanism as E describes, pinned as D describes.
+When the user confirms, write the files for the chosen mechanism as [Files for each mechanism](#files-for-each-mechanism) describes, pinned as [Pinning strategy](#pinning-strategy) describes.
 Before writing them, check them against every rule in this skill; if any check fails, fix the files before writing.
 
-### G. Output
+### After writing
 
 After writing the files, tell the user:
 
@@ -120,7 +122,7 @@ Suggest they commit with a message like:
 
 ---
 
-## D. Pinning Strategy
+## Pinning strategy
 
 ### Posit Package Manager (PPM) snapshots
 
@@ -157,11 +159,11 @@ Include all of these unless you have a reason not to.
 
 ---
 
-## E. Generate Files by Mechanism
+## Files for each mechanism
 
-In either mode, `envs/README.md` also gives the snapshot date and names each data file the analysis script reads (see B), saying to put it in `inputs/`; in container mode it gives the R version too.
+In either mode, `envs/README.md` also gives the snapshot date and names each data file the analysis script reads (see [Parse the R script](#parse-the-r-script)), saying to put it in `inputs/`; in container mode it gives the R version too.
 
-### E.1 Mode: `container` (default)
+### Mode: `container` (default)
 
 #### File: `envs/Dockerfile`
 
@@ -212,7 +214,7 @@ COPY code/ /analysis/code/
 CMD ["Rscript", "code/analysis.R"]
 ```
 
-Replace the package list with the actual list parsed from the analysis script, the R version and snapshot date with the ones confirmed in C (4.4.2 was released before 2025-01-15), and `code/analysis.R` in the `CMD` line with the script found in A.
+Replace the package list with the actual list parsed from the analysis script, the R version and snapshot date with the ones confirmed in [Determine the mechanism](#determine-the-mechanism) (4.4.2 was released before 2025-01-15), and `code/analysis.R` in the `CMD` line with the script found in [Analysis script and input](#analysis-script-and-input).
 
 #### File: `envs/Dockerfile.dockerignore`
 
@@ -360,7 +362,7 @@ docker run --rm -it -v "$(pwd)":/analysis myanalysis R
 - **Out of memory / slow build**: give Docker Desktop more RAM (Settings → Resources).
 ```
 
-### E.2 Mode: `renv`
+### Mode: `renv`
 
 #### File: `code/setup_environment.R`
 
