@@ -100,6 +100,40 @@ The `docker+renv` mode was dropped on 2026-10-09: Docker alone already fixes
   every version, and the mode needed R on the host with the same version as
   the image.
 
+## CI image
+
+The repository checks run on CI in the image built from
+  `.github/ci/Dockerfile`, so every R chunk test runs there.
+The CI job sets `RAMM_AI_REQUIRE_R_PACKAGES=1`, so a missing R package fails
+  a test instead of skipping it.
+The image uses the reproduce skill's R version and package snapshot:
+  `rocker/r-ver:4.4.2` (Ubuntu 24.04) with the Posit Package Manager
+  snapshot `__linux__/noble/2025-01-15`.
+On 2026-11-05 it was built locally for linux/amd64 (emulated on Apple
+  Silicon) from prebuilt packages only, and the full test suite passed in it
+  with none skipped.
+On 2026-11-12 it was built natively for linux/arm64 on Apple Silicon, where
+  the snapshot has prebuilt packages for some but not all (26 were compiled
+  from source, about 6 minutes in all); the same package versions were
+  installed and the full test suite passed with none skipped.
+
+| Software | Version |
+|---|---|
+| R | 4.4.2 |
+| lme4 | 1.1.36 |
+| lmerTest | 3.1.3 |
+| emmeans | 1.10.6 |
+| ggplot2 | 3.5.1 |
+| dplyr | 1.1.4 |
+| broom.mixed | 0.2.9.6 |
+| readr | 2.1.5 |
+| readxl | 1.4.3 |
+| car | 3.1.3 |
+| Matrix | 1.7.1 |
+| ca-certificates (Ubuntu) | 20260816ubuntu0.24.04.1 or later (the current Ubuntu bundle when the image is built) |
+| uv | 0.13.4 |
+| Python (installed by uv) | 3.13.16 |
+
 ## OpenCode template
 
 On 2026-10-09 the template's read rules were checked in OpenCode 2.0.24 with
