@@ -11,7 +11,34 @@ You are generating a reproducible computing environment for an R analysis script
 
 ---
 
-## A. Input Resolution
+## Rules that always apply
+
+### A. (continued) Files and commands
+
+Write only in `envs/` and `code/`.
+Environment definitions (the Dockerfile, the renv lockfile) and their README go
+  in `envs/`, the environment folder of the YODA layout; scripts go in `code/`.
+Every command you give is run from the study folder (the one holding inputs/,
+  code/, outputs/ and envs/).
+You never run these commands yourself.
+Before each change to a file you have written, tell the user in plain language
+  what you will change and why: the agent may not ask them to approve it.
+If the user refuses a change, do not make it another way (for example with a
+  command): say what you wanted to change and why, and wait.
+Never present the files as ready while you know of a problem in them; say what
+  the problem is.
+
+### H. Notes on Tone
+
+- Users may not know what Docker or renv are. The README files should explain commands, not assume.
+- Don't over-promise "bit-for-bit reproducibility" — minor variation in floating-point results across architectures (e.g., ARM vs x86) can occur. State the reproducibility guarantee accurately: "identical package versions and R version; results match within numerical precision."
+- If the user says they hit trouble, suggest checking R version first, then package versions via `packageVersion()`, before blaming the code.
+
+---
+
+## The conversation, step by step
+
+### A. Input Resolution
 
 1. If the user named an R script when starting the skill (for example
   `code/analysis.R` after the start command), use that path.
@@ -30,22 +57,7 @@ You are generating a reproducible computing environment for an R analysis script
 4. Also read `inputs/input.md` to find user preferences about the
   reproducibility mechanism.
 
-Write only in `envs/` and `code/`.
-Environment definitions (the Dockerfile, the renv lockfile) and their README go
-  in `envs/`, the environment folder of the YODA layout; scripts go in `code/`.
-Every command you give is run from the study folder (the one holding inputs/,
-  code/, outputs/ and envs/).
-You never run these commands yourself.
-Before each change to a file you have written, tell the user in plain language
-  what you will change and why: the agent may not ask them to approve it.
-If the user refuses a change, do not make it another way (for example with a
-  command): say what you wanted to change and why, and wait.
-Never present the files as ready while you know of a problem in them; say what
-  the problem is.
-
----
-
-## B. Parse the R Script
+### B. Parse the R Script
 
 Read the R script and extract:
 
@@ -70,9 +82,7 @@ Input data file(s): inputs/data.csv
 Output files: outputs/results_*.csv, outputs/plot_*.png
 ```
 
----
-
-## C. Determine the Mechanism
+### C. Determine the Mechanism
 
 Read the `Reproducible environment:` preference from input.md if present. Possible values:
 
@@ -101,6 +111,43 @@ Also read optional preferences:
 - Which files will be created
 
 Wait for their confirmation or adjustment.
+
+### E. (continued) Write the files
+
+When the user confirms, write the files for the chosen mechanism as E describes, pinned as D describes.
+
+### F. Final Checklist
+
+Before writing files, verify:
+
+- [ ] The package list matches what was actually detected in the analysis script (not the generic default)
+- [ ] The R version is specified (in the Dockerfile and README) and was released before the snapshot date
+- [ ] The PPM snapshot date is specified (in the Dockerfile or setup_environment.R, and README)
+- [ ] The analysis script filename is correctly referenced in the Dockerfile
+  `CMD` line
+- [ ] The WORKDIR is /analysis, the mounted study folder, so the script finds
+  inputs/ and outputs/
+- [ ] `envs/Dockerfile.dockerignore` is included (container mode) to keep the
+  build context small
+- [ ] `envs/apptainer.def` uses the same R version, snapshot date, system
+  libraries and packages as `envs/Dockerfile`
+- [ ] Definitions and the README are in `envs/`, scripts in `code/`; nothing
+  (no `.Rprofile`, `renv/` or `renv.lock`) is written beside inputs/, code/
+  and outputs/
+- [ ] `envs/README.md` has platform-specific commands (Mac/Linux AND Windows)
+- [ ] Any data files referenced in the analysis script are noted in the README with instructions on where to place them
+
+### G. Output
+
+After writing the files, tell the user:
+
+1. Which files were created
+2. What R version was pinned, what packages were pinned, what CRAN snapshot date was used
+3. The exact commands they need to run (from `envs/README.md`)
+4. A reminder to commit these files to version control alongside the analysis script
+
+Suggest they commit with a message like:
+> Add reproducible environment (container, R <version>, PPM <snapshot date>)
 
 ---
 
@@ -496,48 +543,3 @@ Results will be written to `outputs/` (CSV tables, PNG plots).
 - **Wrong R version**: check `R --version` against the version in `renv.lock`, and install that version with rig (see Prerequisites).
 - **If you hit a wall**: use the container route instead (ask the analysis author to generate it with the RAMM-AI reproduce skill and `Reproducible environment: container`).
 ```
-
----
-
-## F. Final Checklist
-
-Before writing files, verify:
-
-- [ ] The package list matches what was actually detected in the analysis script (not the generic default)
-- [ ] The R version is specified (in the Dockerfile and README) and was released before the snapshot date
-- [ ] The PPM snapshot date is specified (in the Dockerfile or setup_environment.R, and README)
-- [ ] The analysis script filename is correctly referenced in the Dockerfile
-  `CMD` line
-- [ ] The WORKDIR is /analysis, the mounted study folder, so the script finds
-  inputs/ and outputs/
-- [ ] `envs/Dockerfile.dockerignore` is included (container mode) to keep the
-  build context small
-- [ ] `envs/apptainer.def` uses the same R version, snapshot date, system
-  libraries and packages as `envs/Dockerfile`
-- [ ] Definitions and the README are in `envs/`, scripts in `code/`; nothing
-  (no `.Rprofile`, `renv/` or `renv.lock`) is written beside inputs/, code/
-  and outputs/
-- [ ] `envs/README.md` has platform-specific commands (Mac/Linux AND Windows)
-- [ ] Any data files referenced in the analysis script are noted in the README with instructions on where to place them
-
----
-
-## G. Output
-
-After writing the files, tell the user:
-
-1. Which files were created
-2. What R version was pinned, what packages were pinned, what CRAN snapshot date was used
-3. The exact commands they need to run (from `envs/README.md`)
-4. A reminder to commit these files to version control alongside the analysis script
-
-Suggest they commit with a message like:
-> Add reproducible environment (container, R <version>, PPM <snapshot date>)
-
----
-
-## H. Notes on Tone
-
-- Users may not know what Docker or renv are. The README files should explain commands, not assume.
-- Don't over-promise "bit-for-bit reproducibility" — minor variation in floating-point results across architectures (e.g., ARM vs x86) can occur. State the reproducibility guarantee accurately: "identical package versions and R version; results match within numerical precision."
-- If the user says they hit trouble, suggest checking R version first, then package versions via `packageVersion()`, before blaming the code.
