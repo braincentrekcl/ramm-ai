@@ -347,3 +347,54 @@ def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
     result = run_r(code, tmp_path)
     assert result.returncode == 0, result.stderr
     assert "rows kept" in result.stdout
+
+
+def skip_without(packages: tuple[str, ...], folder: Path) -> None:
+    """Skip the test unless every R package in `packages` is installed."""
+    missing = run_r(
+        "pkgs <- c(" + ", ".join(f'"{p}"' for p in packages) + ")\n"
+        "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
+        folder,
+    ).returncode
+    if missing:
+        pytest.skip(f"one of {', '.join(packages)} is not installed")
+
+
+def test_every_comparison_in_the_table_exports(skill_text: str, tmp_path: Path) -> None:
+    """Each translation-table comparison goes through the Section 10 export."""
+    skip_without(("emmeans", "dplyr"), tmp_path)
+    table = skill_text.split("| User says | emmeans code |", 1)[1].split("\n\n", 1)[0]
+    calls = [c.replace("\\|", "|") for c in re.findall(r"`(contrast\([^`]*)`", table)]
+    assert len(calls) == 4, calls
+    export = skill_text.split("contrast_results <- as.data.frame", 1)[1].split(
+        "write.csv(contrast_results", 1
+    )[0]
+    checks = "".join(
+        f"contrast_output <- {call}\n"
+        "contrast_results <- as.data.frame" + export + "\n"
+        "stopifnot(nrow(contrast_results) > 0,\n"
+        f"          contrast_results$p_value_adjustment[1] == {adjust!r})\n"
+        for call, adjust in (
+            (c, re.search(r'adjust = "(\w+)"', c).group(1)) for c in calls
+        )
+    )
+    code = (
+        "suppressPackageStartupMessages(library(emmeans))\n"
+        "set.seed(1)\n"
+        "n <- 240\n"
+        "dat <- data.frame(\n"
+        "  treatment = factor(sample(c('vehicle', 'a', 'b'), n, TRUE),\n"
+        "                     levels = c('vehicle', 'a', 'b')),\n"
+        "  factor = factor(sample(c('x', 'y'), n, TRUE)),\n"
+        "  A = factor(sample(c('p', 'q'), n, TRUE)),\n"
+        "  B = factor(sample(c('r', 's'), n, TRUE)),\n"
+        "  genotype = factor(sample(c('WT', 'het'), n, TRUE), levels = c('WT', 'het')),\n"
+        "  dose_centred = runif(n, -5, 5))\n"
+        "dat$y <- rnorm(n)\n"
+        "model <- lm(y ~ treatment * factor + A * B + genotype * dose_centred, data = dat)\n"
+        + checks
+        + 'cat("all exported\\n")\n'
+    )
+    result = run_r(code, tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "all exported" in result.stdout

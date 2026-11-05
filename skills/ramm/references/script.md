@@ -492,14 +492,14 @@ In 6e there is no within-individual spread: report only the SD of values per gro
 
 ## Section 8: Post-Hoc Comparisons
 
-Apply these translation rules:
+Apply these translation rules; each gives one set of comparisons, which Section 10 exports:
 
 | User says | emmeans code |
 |-----------|-------------|
-| "compare each group to vehicle/control" | `emmeans(model, trt.vs.ctrl ~ treatment, ref = "vehicle")` |
-| "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise")` |
-| "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise")` |
-| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise")` |
+| "compare each group to vehicle/control" | `contrast(emmeans(model, ~ treatment), method = "trt.vs.ctrl", ref = "vehicle", adjust = "dunnett")` |
+| "pairwise comparisons" | `contrast(emmeans(model, ~ treatment), method = "revpairwise", adjust = "tukey")` |
+| "compare within [factor]" | `contrast(emmeans(model, ~ treatment \| factor), method = "revpairwise", adjust = "tukey")` |
+| "interaction contrasts" | `contrast(emmeans(model, ~ A * B), interaction = "revpairwise", adjust = "holm")` |
 
 Default p-value adjustment depends on the comparison type:
 - **Treatment vs control** (`trt.vs.ctrl`): use `adjust = "dunnett"` — designed for many-to-one comparisons
@@ -631,10 +631,17 @@ emm_results <- as.data.frame(summary(emm, infer = c(TRUE, FALSE))) |>
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL)
 write.csv(emm_results, file.path("outputs", "results_group_means.csv"), row.names = FALSE)
 
+# Interaction contrasts name their comparisons in one column per factor
+# (for example drug_revpairwise) instead of a `contrast` column.
 contrast_results <- as.data.frame(summary(contrast_output, infer = TRUE)) |>
-  dplyr::rename(comparison = contrast, difference = estimate, standard_error = SE,
+  dplyr::rename(dplyr::any_of(c(comparison = "contrast"))) |>
+  dplyr::rename(difference = estimate, standard_error = SE,
                 degrees_of_freedom = df, ci95_lower = lower.CL, ci95_upper = upper.CL,
-                t_value = t.ratio, p_value_adjusted = p.value)
+                t_value = t.ratio, p_value = p.value)
+# Name the adjustment used for these p-values (for example dunnett, tukey,
+# or none for a single comparison), so no p-value is read as adjusted when
+# it is not.
+contrast_results$p_value_adjustment <- contrast_output@misc$adjust
 write.csv(contrast_results, file.path("outputs", "results_comparisons.csv"), row.names = FALSE)
 
 # Save plots
