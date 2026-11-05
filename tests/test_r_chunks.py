@@ -1,4 +1,4 @@
-"""Run the R chunks from the skill's script template (base R only)."""
+"""Run the R chunks from the skill's script template."""
 
 import csv
 import hashlib
