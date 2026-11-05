@@ -115,27 +115,7 @@ Wait for their confirmation or adjustment.
 ### E. (continued) Write the files
 
 When the user confirms, write the files for the chosen mechanism as E describes, pinned as D describes.
-
-### F. Final Checklist
-
-Before writing files, verify:
-
-- [ ] The package list matches what was actually detected in the analysis script (not the generic default)
-- [ ] The R version is specified (in the Dockerfile and README) and was released before the snapshot date
-- [ ] The PPM snapshot date is specified (in the Dockerfile or setup_environment.R, and README)
-- [ ] The analysis script filename is correctly referenced in the Dockerfile
-  `CMD` line
-- [ ] The WORKDIR is /analysis, the mounted study folder, so the script finds
-  inputs/ and outputs/
-- [ ] `envs/Dockerfile.dockerignore` is included (container mode) to keep the
-  build context small
-- [ ] `envs/apptainer.def` uses the same R version, snapshot date, system
-  libraries and packages as `envs/Dockerfile`
-- [ ] Definitions and the README are in `envs/`, scripts in `code/`; nothing
-  (no `.Rprofile`, `renv/` or `renv.lock`) is written beside inputs/, code/
-  and outputs/
-- [ ] `envs/README.md` has platform-specific commands (Mac/Linux AND Windows)
-- [ ] Any data files referenced in the analysis script are noted in the README with instructions on where to place them
+Before writing them, check them against every rule in this skill; if any check fails, fix the files before writing.
 
 ### G. Output
 
@@ -196,6 +176,8 @@ Include all of these unless you have a reason not to.
 
 ## E. Generate Files by Mechanism
 
+In either mode, `envs/README.md` also gives the snapshot date and names each data file the analysis script reads (see B), saying to put it in `inputs/`; in container mode it gives the R version too.
+
 ### E.1 Mode: `container` (default)
 
 #### File: `envs/Dockerfile`
@@ -247,7 +229,7 @@ COPY code/ /analysis/code/
 CMD ["Rscript", "code/analysis.R"]
 ```
 
-Replace the package list with the actual list parsed from the analysis script, and the R version and snapshot date with the ones confirmed in C (4.4.2 was released before 2025-01-15).
+Replace the package list with the actual list parsed from the analysis script, the R version and snapshot date with the ones confirmed in C (4.4.2 was released before 2025-01-15), and `code/analysis.R` in the `CMD` line with the script found in A.
 
 #### File: `envs/Dockerfile.dockerignore`
 
@@ -265,7 +247,7 @@ Docker uses this file because it sits beside envs/Dockerfile and carries its
 
 #### File: `envs/apptainer.def`
 
-Use the same R version, snapshot date and package list as the Dockerfile.
+Use the same R version, snapshot date, system libraries and package list as the Dockerfile.
 
 ```
 # ============================================================
