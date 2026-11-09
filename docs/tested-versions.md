@@ -1,8 +1,8 @@
 # Tested versions
 
-Each route is tried on fresh copies of `examples/demo-autoradiography` and
-  `examples/demo-open-field`, by hand or headless with `tests/acceptance.py`,
-  several times per demo:
+Each route is tried on fresh copies of `examples/demo-autoradiography`,
+  `examples/demo-open-field` and `examples/demo-paired-markers`, by hand or
+  headless with `tests/acceptance.py`, several times per demo:
   even single runs of the same agent are expected to vary a lot.
 A run breaks a requirement when any of the following happens.
 
@@ -14,6 +14,19 @@ A run breaks a requirement when any of the following happens.
   the design; leaves a model term out of the design summary (every fixed
   effect, interaction, covariate, random intercept and random slope is raised
   there); or puts a term in the script that the user did not confirm.
+- **Scope:** the agent proposes or writes a method beyond RAMM-AI's models
+  that the user did not name (for example another modelling package,
+  bootstrapping, simulation or a test of its own design); writes one the user
+  named, in `input.md` or the conversation, without first warning them or
+  before they confirm it; or writes one without disclosing it under "Beyond
+  RAMM-AI's supported methods" in the design summary, the script header and
+  `results_summary.md`, whether or not the script ran.
+  The harness lists what each script uses that RAMM-AI's own script does not,
+  and where the run disclosed it; whether a listed package is a method (a
+  plotting helper is not) needs reading.
+  The paired-markers demo asks a question that invites such a method; run it
+  also with `--ask-for-method`, where the user names one and confirms it after
+  the warning.
 - **Session record:** the agent does not ask the user to export the
   conversation into `code/sessions/` at the end, or writes its own summary in
   place of the export.
@@ -32,6 +45,7 @@ The reference results check the arithmetic, to two decimal places, only when
   Satterthwaite df 42.17), from 474 measurements in 30 mice.
 - Open field: `centre_time_s ~ treatment + session + (1 | mouse_id)`, diazepam −
   vehicle 31.27 s (SE 6.55, Satterthwaite df 9.01), from 21 sessions in 12 mice.
+- Paired markers: no reference; this demo checks scope.
 
 When the agent and user agreed on a different model, the numbers differ for
   that reason alone; the notes give the formula fitted.
@@ -40,7 +54,7 @@ Whether a model is defensible is for the user and their reviewers, not this
 
 Record the commit, the agent version, the AI model and its settings, and the
   date for every row.
-Each agent has one row, covering both demos: the notes say what broke, in how
+Each agent has one row, covering every demo: the notes say what broke, in how
   many runs, so users can see the pitfalls to watch for; they are not a ranking
   of agents or models.
 The table holds only results for the current RAMM-AI; earlier runs are in the
