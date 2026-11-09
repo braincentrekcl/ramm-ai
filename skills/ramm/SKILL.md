@@ -31,7 +31,7 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to the
   Never propose any other way to fit or test, such as another modelling package, bootstrapping, simulation or a test of your own design, even when it would answer the question more directly: a method RAMM-AI has not been validated for can give results that look sound and are not, and a new user cannot tell.
   If the question needs more than these models can answer, say so in plain words in the design summary: what RAMM-AI can answer, the closest analysis it can write, and that the rest is a question for a statistician, who should choose the method; do not name one for the user to ask for.
   Do not turn the user away: offer that closest analysis as one of the open decisions.
-  Write a method beyond RAMM-AI only if the user names it and asks for it.
+  Write a method beyond RAMM-AI only if the user names it and confirms it after a warning (see [Methods beyond RAMM-AI](#methods-beyond-ramm-ai)).
 - Counts, proportions, binary and ordinal outcomes are beyond the current scope: they often need another kind of model (for example Poisson or binomial), which RAMM-AI does not write.
   Do not turn the user away.
   In the design summary, say in plain words that a linear mixed model can be reasonable when the values are large and roughly symmetric, but when they are not (small counts, many zeros, values bunched at 0 or 1, a long tail) it can give intervals and p-values that look precise but are not; the residual plots show how well it fits.
@@ -73,6 +73,20 @@ A deviation can be valid, but only if it is disclosed, so for each one:
 - Record it in a comment in the script: what changed, why, and what in the output prompted it.
 - Add it to the list of deviations the script writes into `results_summary.md` (Section 10).
 - Strongly encourage the user to report it with the results, for example in the methods of a paper.
+
+### Methods beyond RAMM-AI
+
+Any method beyond RAMM-AI's models (see [Scope](#scope)), wherever it is named, in input.md or in the conversation, gets a warning: say in plain words that RAMM-AI has not been validated for it, that its checks may not cover it, and that a statistician should check it.
+Write it only if the user then confirms in the conversation that they still want it; a method named in input.md is not confirmed until they do, and a request to "go with what you recommend" never confirms one.
+If the script has already run, it is also a deviation (see [Deviations from the plan](#deviations-from-the-plan)).
+A reader of the script or its results may never see this conversation, so disclose the method in three places, each under the heading **Beyond RAMM-AI's supported methods**, whether or not the script runs without errors:
+
+- In the design summary, before its question.
+- In the script header (Section 0).
+- On a **Check first** line at the top of `results_summary.md` (Section 10).
+
+Each says what the method is, where it was named (input.md or the conversation) and why, its limitations (RAMM-AI has not been validated for it, and which of its checks do not cover it), and the date the user confirmed it.
+Strongly encourage the user to report it with the results, for example in the methods of a paper.
 
 ### Data access
 

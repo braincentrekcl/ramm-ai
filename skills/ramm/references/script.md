@@ -35,6 +35,8 @@ Before writing the script to disk, check it against every rule in this skill; if
 # ============================================================
 ```
 
+If the user asked for a method beyond RAMM-AI's models, add a block after the post-hoc comparisons line headed `Beyond RAMM-AI's supported methods`, saying what [Methods beyond RAMM-AI](../SKILL.md#methods-beyond-ramm-ai) lists.
+
 ## Section 1: Environment and Reproducibility
 
 <!-- chunk: setup -->
@@ -822,6 +824,7 @@ Rename columns in every other exported table the same way (for example the ANOVA
 
 Finally, the script writes `outputs/results_summary.md`, the file a user opens first.
 Build it from the fitted results, never from hard-coded numbers, in plain language:
+- If the user asked for a method beyond RAMM-AI's models, start the file with a **Check first** line headed **Beyond RAMM-AI's supported methods**, saying what [Methods beyond RAMM-AI](../SKILL.md#methods-beyond-ramm-ai) lists; write it even when the method gave no results.
 - If the outcome is beyond the current scope (counts, proportions, binary, ordinal; see [Scope](../SKILL.md#scope)) and the user chose to continue, start the file with a **Check first** line saying a linear mixed model may give misleading results for this outcome and pointing to the residual plots.
 - If any group has fewer individuals than planned (`fewer_than_planned` from Section 2a), start the file with a **Check first** line giving the planned and actual numbers per group, and pointing to 'Exclusions and Attrition' in inputs/input.md for who was lost and why.
 - One line on the question and the data analysed (individuals per group as planned and as analysed, measurements kept, anything excluded or missing).
