@@ -1,6 +1,7 @@
 """Checks for the helpers in the headless acceptance harness."""
 
 import json
+import re
 from pathlib import Path
 
 import acceptance
@@ -266,3 +267,91 @@ def test_reuse_plugin_refuses_a_copy_of_another_commit(
         (plugin / acceptance.PLUGIN_STAMP).write_text(stamp)
     with pytest.raises(SystemExit, match="use a new --out folder"):
         acceptance.reuse_plugin(plugin, "abc1234")
+
+
+RAMM_SCRIPT = """# ============================================================
+# Mixed-Effects Model Analysis
+# ============================================================
+required_packages <- c("readr", "lme4", "lmerTest", "emmeans", "ggplot2",
+                        "broom.mixed", "dplyr", "tidyr")
+dat <- readr::read_csv(file.path("inputs", "data.csv"))
+# all_fits <- allFit(model)
+# boot_fits <- bootMer(model, FUN = fixef, nsim = 1000)
+model <- lmer(log(y) ~ age * marker + (1 | mouse_id), data = dat)
+"""
+
+
+def test_beyond_ramm_is_empty_for_ramm_script() -> None:
+    assert acceptance.beyond_ramm(RAMM_SCRIPT) == []
+
+
+def test_beyond_ramm_finds_other_packages_and_calls() -> None:
+    script = RAMM_SCRIPT + (
+        'library(nlme)\nlibrary("boot")\nfit <- optim(start, negloglik)\n'
+        "ci <- lme4::bootMer(model, FUN = fixef, nsim = 1000)\n"
+    )
+    assert acceptance.beyond_ramm(script) == [
+        "boot",
+        "nlme",
+        "bootMer()",
+        "optim()",
+    ]
+
+
+def test_beyond_ramm_is_empty_for_the_template(repo_root: Path) -> None:
+    script = (repo_root / "skills" / "ramm" / "references" / "script.md").read_text(
+        encoding="utf-8"
+    )
+    code = "\n".join(re.findall(r"```r\n(.*?)```", script, flags=re.DOTALL))
+    assert acceptance.beyond_ramm(code) == []
+
+
+def test_beyond_ramm_still_finds_a_package_loaded_by_name() -> None:
+    script = RAMM_SCRIPT + 'library("nlme", character.only = TRUE)\n'
+    assert acceptance.beyond_ramm(script) == ["nlme"]
+
+
+def test_beyond_ramm_finds_packages_in_the_required_list() -> None:
+    script = RAMM_SCRIPT.replace('"tidyr")', '"tidyr", "glmmTMB")')
+    assert acceptance.beyond_ramm(script) == ["glmmTMB"]
+
+
+def test_header_discloses_a_method_in_the_opening_comments() -> None:
+    script = (
+        "# Beyond RAMM-AI’s supported methods: parametric bootstrap\n" + RAMM_SCRIPT
+    )
+    assert acceptance.header_discloses(script)
+
+
+def test_header_discloses_ignores_the_heading_after_the_header() -> None:
+    script = RAMM_SCRIPT + "# Beyond RAMM-AI's supported methods\n"
+    assert not acceptance.header_discloses(script)
+    assert not acceptance.header_discloses(RAMM_SCRIPT)
+
+
+def test_uncommented_drops_whole_line_and_trailing_comments() -> None:
+    script = "# header\nx <- 1  # bootMer(m) later\n\ny <- 2\n"
+    assert acceptance.uncommented(script) == "x <- 1  \ny <- 2"
+
+
+def test_uncommented_keeps_a_hash_inside_a_string() -> None:
+    script = "label <- \"group # 1\" # note\nq <- 'it\\'s # here'\n"
+    assert acceptance.uncommented(script) == (
+        "label <- \"group # 1\" \nq <- 'it\\'s # here'"
+    )
+
+
+def test_beyond_ramm_ignores_a_call_in_a_trailing_comment() -> None:
+    script = RAMM_SCRIPT + "fit <- model  # bootMer(model) would be slower\n"
+    assert acceptance.beyond_ramm(script) == []
+
+
+def test_ramm_packages_come_from_the_skill() -> None:
+    packages = acceptance.ramm_packages()
+    assert {"lme4", "lmerTest", "emmeans", "readxl", "broom", "car"} <= packages
+    assert "nlme" not in packages
+
+
+def test_beyond_ramm_allows_grid_but_not_splines() -> None:
+    script = RAMM_SCRIPT + "gap <- grid::unit(2, 'mm')\nbasis <- splines::ns(age, 3)\n"
+    assert acceptance.beyond_ramm(script) == ["splines"]

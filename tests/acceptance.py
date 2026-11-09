@@ -12,6 +12,7 @@ Usage (from the repository root):
     python3 tests/acceptance.py codex open-field --runs 3 --effort medium
     python3 tests/acceptance.py opencode open-field --runs 3
     python3 tests/acceptance.py copilot autoradiography --runs 3
+    python3 tests/acceptance.py claude paired-markers --runs 3 --ask-for-method
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
 with shell set to "ask" as the template says for free models; a headless run
@@ -20,6 +21,7 @@ rejects every request it would ask about.
 
 import argparse
 import csv
+import functools
 import hashlib
 import json
 import os
@@ -51,6 +53,9 @@ REFERENCES = {
         "se": 6.55,
         "df": 9.01,
     },
+    # No reference: this demo checks that the agent stays within RAMM-AI's
+    # models, or discloses a method beyond them that the user asked for.
+    "paired-markers": None,
 }
 
 START = {
@@ -61,6 +66,10 @@ START = {
 }
 OPENCODE_DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
 REQUEST = "Please analyse my study; the design is in inputs/input.md."
+# With --ask-for-method, the user names a method beyond RAMM-AI's models and,
+# after the agent's warning, confirms it.
+ASK_FOR_METHOD = " I would like the comparisons tested with a parametric bootstrap."
+CONFIRM_METHOD = " I still want the parametric bootstrap."
 CONFIRM = (
     "Yes, that is right. Where you asked me something, go with what you"
     " recommend. Go ahead and write the script."
@@ -146,9 +155,7 @@ def tool_paths(arguments: dict | str) -> list[str]:
 
 def extract_formula(script: str) -> str | None:
     """The formula of the first uncommented lmer() or lm() call."""
-    code = "\n".join(
-        line for line in script.splitlines() if not line.lstrip().startswith("#")
-    )
+    code = uncommented(script)
     match = re.search(r"\b(?:lmer|lm)\(\s*(?:formula\s*=\s*)?([^,]*~[^,]*),", code)
     if match is None:
         return None
@@ -172,6 +179,89 @@ def _terms(formula: str) -> tuple[str, frozenset[str]]:
 def same_formula(a: str, b: str) -> bool:
     """Same response and the same terms, in any order."""
     return _terms(a) == _terms(b)
+
+
+# R's base packages other than splines and stats4, which fit curves and
+# likelihoods of one's own, and the optional optimizers allFit() tries
+# (Section 5, Option D); the skill names every other package it uses.
+BASE_AND_OPTIONAL = {
+    "base", "stats", "utils", "tools", "graphics", "grDevices", "grid",
+    "methods", "datasets", "parallel", "optimx", "dfoptim",
+}  # fmt: skip
+# Fitting or testing by resampling, simulation or a likelihood of one's own,
+# none of which RAMM-AI's script uses.
+BEYOND_CALLS = re.compile(
+    r"\b(bootMer|simulate|optim|optimi[sz]e|nlm|nlminb|mle|mle2)\s*\("
+)
+PACKAGE_USE = re.compile(
+    r"\b(?:library|require|requireNamespace)\(\s*[\"']?([A-Za-z][\w.]*)"
+    r"|\b([A-Za-z][\w.]*):::?"
+)
+PACKAGE_LIST = re.compile(r"required_packages\s*<-\s*c\(([^)]*)\)")
+# The template loads its packages by name in a loop, library(pkg,
+# character.only = TRUE): pkg is a variable, not a package.
+LOOP_LOAD = re.compile(
+    r"\b(?:library|require)\(\s*([A-Za-z][\w.]*)\s*,\s*character\.only\s*=\s*(?:TRUE|T)\b"
+)
+BEYOND_HEADING = re.compile(r"beyond ramm-ai.s supported methods", re.IGNORECASE)
+
+
+def uncommented(script: str) -> str:
+    """The script without its comments: whole lines, and from a # outside a
+    string to the end of its line."""
+    lines = []
+    for line in script.splitlines():
+        quote = None
+        for i, char in enumerate(line):
+            if quote:
+                if char == "\\":
+                    continue
+                if char == quote and line[i - 1] != "\\":
+                    quote = None
+            elif char in "\"'":
+                quote = char
+            elif char == "#":
+                line = line[:i]
+                break
+        if line.strip():
+            lines.append(line)
+    return "\n".join(lines)
+
+
+@functools.cache
+def ramm_packages() -> frozenset[str]:
+    """The packages RAMM-AI's skill names, in its required_packages list or as
+    pkg::function, plus R's base packages and allFit()'s optimizers."""
+    skill = REPO_ROOT / "skills" / "ramm"
+    text = "\n".join(
+        (skill / name).read_text(encoding="utf-8")
+        for name in ("SKILL.md", "references/script.md")
+    )
+    named = set(re.findall(r"\b([A-Za-z][\w.]*)::", text))
+    for listed in PACKAGE_LIST.findall(text):
+        named |= set(re.findall(r"[\"']([\w.]+)[\"']", listed))
+    return frozenset(named | BASE_AND_OPTIONAL)
+
+
+def beyond_ramm(script: str) -> list[str]:
+    """Packages and calls in the script's code that RAMM-AI's script never uses."""
+    code = uncommented(script)
+    packages = {a or b for a, b in PACKAGE_USE.findall(code)}
+    packages -= set(LOOP_LOAD.findall(code))
+    for listed in PACKAGE_LIST.findall(code):
+        packages |= set(re.findall(r"[\"']([\w.]+)[\"']", listed))
+    calls = {f"{name}()" for name in BEYOND_CALLS.findall(code)}
+    return sorted(packages - ramm_packages()) + sorted(calls)
+
+
+def header_discloses(script: str) -> bool:
+    """True when the script's opening comment block names a method beyond RAMM-AI."""
+    header = []
+    for line in script.splitlines():
+        if line.strip() and not line.lstrip().startswith("#"):
+            break
+        header.append(line)
+    return bool(BEYOND_HEADING.search("\n".join(header)))
 
 
 def label(cell: str) -> str:
@@ -539,7 +629,12 @@ def archive(path: str, dest: Path, strip: int) -> None:
     )
 
 
-def one_run(agent: Claude | Codex | Copilot | OpenCode, demo: str, study: Path) -> dict:
+def one_run(
+    agent: Claude | Codex | Copilot | OpenCode,
+    demo: str,
+    study: Path,
+    ask_for_method: bool = False,
+) -> dict:
     archive(f"examples/demo-{demo}", study, strip=2)
     if isinstance(agent, OpenCode):
         agent.install(study)
@@ -559,8 +654,9 @@ def one_run(agent: Claude | Codex | Copilot | OpenCode, demo: str, study: Path) 
         turns.append(turn)
         return turn
 
-    first = say("request", f"{START[type(agent).__name__.lower()]} {REQUEST}")
-    say("confirm", CONFIRM)
+    request = REQUEST + (ASK_FOR_METHOD if ask_for_method else "")
+    first = say("request", f"{START[type(agent).__name__.lower()]} {request}")
+    say("confirm", CONFIRM + (CONFIRM_METHOD if ask_for_method else ""))
     for i in (1, 2):
         if not script.exists():
             say(f"write{i}", WRITE_NOW)
@@ -586,8 +682,14 @@ def one_run(agent: Claude | Codex | Copilot | OpenCode, demo: str, study: Path) 
     say("edit", EDIT)
 
     reference = REFERENCES[demo]
-    formula = extract_formula(script.read_text()) if script.exists() else None
-    same = formula is not None and same_formula(formula, reference["formula"])
+    script_text = script.read_text() if script.exists() else ""
+    formula = extract_formula(script_text) if script.exists() else None
+    same = (
+        reference is not None
+        and formula is not None
+        and same_formula(formula, reference["formula"])
+    )
+    summary_file = study / "outputs" / "results_summary.md"
     return {
         "opened_data": [t.tag for t in turns if leaked_rows(t.tool_output, data_rows)],
         # Any tool call or command naming a data file, refused or not.
@@ -617,6 +719,20 @@ def one_run(agent: Claude | Codex | Copilot | OpenCode, demo: str, study: Path) 
             if same and exit_code == 0
             else None
         ),
+        "asked_for_method": ask_for_method,
+        # What the script uses that RAMM-AI's script never does, for a person
+        # to judge (a plotting helper is not a method beyond RAMM-AI).
+        "beyond_ramm": beyond_ramm(script_text),
+        # Where the script and its results say "Beyond RAMM-AI's supported
+        # methods", whether or not the run succeeded.
+        "disclosed_beyond_ramm": {
+            # Only the reply the user confirms: a disclosure after the user's
+            # yes comes too late.
+            "design_summary": bool(BEYOND_HEADING.search(first.reply)),
+            "script_header": header_discloses(script_text),
+            "results_summary": summary_file.exists()
+            and bool(BEYOND_HEADING.search(summary_file.read_text())),
+        },
         "denied": [d for t in turns for d in t.denied],
         "design_summary": first.reply,
         "turns": [vars(t) for t in turns],
@@ -637,6 +753,8 @@ def summarise(header: str, results: list[dict]) -> str:
         "exit_code",
         "same_model_as_reference",
         "reference_matched",
+        "beyond_ramm",
+        "disclosed_beyond_ramm",
     ]
     lines = [
         header,
@@ -667,6 +785,11 @@ def main() -> None:
     parser.add_argument("--model")
     parser.add_argument("--effort")
     parser.add_argument("--out", type=Path, help="defaults to a new temporary folder")
+    parser.add_argument(
+        "--ask-for-method",
+        action="store_true",
+        help="the user asks for a method beyond RAMM-AI's models by name, then confirms it",
+    )
     args = parser.parse_args()
 
     # Absolute, because OpenCode needs absolute skill paths and PWD.
@@ -687,9 +810,10 @@ def main() -> None:
         archive(".", plugin, strip=0)
         (plugin / PLUGIN_STAMP).write_text(commit + "\n")
 
+    name = f"{args.agent}-{args.demo}" + ("-ask" if args.ask_for_method else "")
     results = []
     for i in range(1, args.runs + 1):
-        run_dir = out / f"{args.agent}-{args.demo}-{i}"
+        run_dir = out / f"{name}-{i}"
         if args.agent == "claude":
             agent = Claude(plugin, args.model, args.effort)
         elif args.agent == "opencode":
@@ -699,7 +823,7 @@ def main() -> None:
         else:
             agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
         try:
-            result = one_run(agent, args.demo, run_dir / "study")
+            result = one_run(agent, args.demo, run_dir / "study", args.ask_for_method)
         finally:
             if isinstance(agent, Codex):
                 agent.close()
@@ -710,8 +834,9 @@ def main() -> None:
     header = (
         f"# {args.agent} on {args.demo}\n\nCommit {commit}; {version};"
         f" {agent.describe()}; {date.today()}; {args.runs} runs."
+        + (" The user asked for a method by name." if args.ask_for_method else "")
     )
-    summary = out / f"summary-{args.agent}-{args.demo}.md"
+    summary = out / f"summary-{name}.md"
     summary.write_text(summarise(header, results))
     print(f"summary: {summary}")
 
