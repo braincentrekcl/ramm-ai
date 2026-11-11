@@ -11,6 +11,10 @@ RAMM-AI writes a self-contained R script with the appropriate linear
   mixed-effects model, estimated marginal means, diagnostics and QC checks.
 You run the script yourself, and the assistant can help you run it and
   explain its output.
+RAMM-AI writes only linear mixed-effects models (or a standard linear model
+  when each individual was measured once): if your question needs another
+  method, it says so, offers the closest analysis it can write, and suggests
+  asking a statistician.
 Count, proportion and binary outcomes are beyond RAMM-AI's current scope: it
   flags them and fits a linear mixed model only if you choose to continue.
 Contributions that add properly validated support are welcome.
@@ -72,6 +76,10 @@ For app installs and OpenCode notes, see [docs/install.md](docs/install.md).
   three genotypes, three regions, slides and sections, uneven tissue loss
 - **`examples/demo-open-field/`**: simulated open-field crossover (vehicle vs
   diazepam) with missing sessions
+- **`examples/demo-paired-markers/`**: simulated development of two synaptic
+  markers across seven ages, with a transient dip, each compared with its own
+  adult level; the question invites methods beyond RAMM-AI, so it shows how
+  RAMM-AI answers within its models
 - **`examples/input-*.md`**: further example `input.md` files
 
 Each demo is a study folder: copy it somewhere new, open your agent in it and

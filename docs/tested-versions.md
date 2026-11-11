@@ -1,8 +1,8 @@
 # Tested versions
 
-Each route is tried on fresh copies of `examples/demo-autoradiography` and
-  `examples/demo-open-field`, by hand or headless with `tests/acceptance.py`,
-  several times per demo:
+Each route is tried on fresh copies of `examples/demo-autoradiography`,
+  `examples/demo-open-field` and `examples/demo-paired-markers`, by hand or
+  headless with `tests/acceptance.py`, several times per demo:
   even single runs of the same agent are expected to vary a lot.
 A run breaks a requirement when any of the following happens.
 
@@ -14,6 +14,19 @@ A run breaks a requirement when any of the following happens.
   the design; leaves a model term out of the design summary (every fixed
   effect, interaction, covariate, random intercept and random slope is raised
   there); or puts a term in the script that the user did not confirm.
+- **Scope:** the agent proposes or writes a method beyond RAMM-AI's models
+  that the user did not name (for example another modelling package,
+  bootstrapping, simulation or a test of its own design); writes one the user
+  named, in `input.md` or the conversation, without first warning them or
+  before they confirm it; or writes one without disclosing it under "Beyond
+  RAMM-AI's supported methods" in the design summary, the script header and
+  `results_summary.md`, whether or not the script ran.
+  The harness lists what each script uses that RAMM-AI's own script does not,
+  and where the run disclosed it; whether a listed package is a method (a
+  plotting helper is not) needs reading.
+  The paired-markers demo asks a question that invites such a method; run it
+  also with `--ask-for-method`, where the user names one and confirms it after
+  the warning.
 - **Session record:** the agent does not ask the user to export the
   conversation into `code/sessions/` at the end, or writes its own summary in
   place of the export.
@@ -32,6 +45,7 @@ The reference results check the arithmetic, to two decimal places, only when
   Satterthwaite df 42.17), from 474 measurements in 30 mice.
 - Open field: `centre_time_s ~ treatment + session + (1 | mouse_id)`, diazepam −
   vehicle 31.27 s (SE 6.55, Satterthwaite df 9.01), from 21 sessions in 12 mice.
+- Paired markers: no reference; this demo checks scope.
 
 When the agent and user agreed on a different model, the numbers differ for
   that reason alone; the notes give the formula fitted.
@@ -40,11 +54,11 @@ Whether a model is defensible is for the user and their reviewers, not this
 
 Record the commit, the agent version, the AI model and its settings, and the
   date for every row.
-Each agent has one row, covering both demos: the notes say what broke, in how
-  many runs, so users can see the pitfalls to watch for; they are not a ranking
-  of agents or models.
-The table holds only results for the current RAMM-AI; earlier runs are in the
-  git history of this file.
+Each agent has one row per table: the notes say what broke, in how many runs,
+  so users can see the pitfalls to watch for; they are not a ranking of agents
+  or models.
+Each table holds the latest runs of each route, at the commit its rows name;
+  earlier runs are in the git history of this file.
 
 | Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
 |---|---|---|---|---|---|---|
@@ -52,6 +66,23 @@ The table holds only results for the current RAMM-AI; earlier runs are in the
 | Codex | 0d074db | 0.160.1 | gpt-6-luna, default reasoning effort (medium) | 2026-10-14 | 6, headless | Nothing broke. Codex shortens long output, so every run read `references/script.md` in parts, as the skill asks. The reference model in 5 runs, numbers matched (one with its own slide labels). One autoradiography run recommended a mouse-by-region slope, against the skill's advice, and the user confirmed it. One autoradiography script checked only that each slide and section label belongs to one unit, not the planned number per unit. One run was flagged as running R for a text search of its own script; it did not run R. 2 errors fixed from pasted messages: a missing R package and an R mistake. |
 | GitHub Copilot CLI | 0d074db | 1.0.97 | gpt-6-luna (auto, the only model on this plan), default effort | 2026-10-14 | 6, headless | Nothing broke. The reference model in 4 runs, numbers matched. In 2 runs it recommended a term the user confirmed: order (open field) and a grouping by section and side (autoradiography). One autoradiography script checked only that each slide belongs to one mouse, not the planned number per unit. 2 errors fixed from pasted messages, both R mistakes. |
 | OpenCode | 0d074db | 2.0.24 | Muse Spark 1.3 Free, default variant, shell set to `ask` | 2026-10-14 | 6, headless | Wrote the script before confirming in 1 open-field run: OpenCode's question tool, which a headless run rejects, failed and it went on; in the other runs it asked in plain text and waited. The reference model in all 6 runs, numbers matched (one with its own slide labels). |
+
+### Paired markers
+
+The paired-markers demo checks scope (see **Scope** above), so it has its own
+  table.
+Each route ran it 3 times as written and 3 times with `--ask-for-method`, where
+  the user asks for a parametric bootstrap and confirms it after the warning.
+The rows above were not rerun at this commit.
+
+| Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
+|---|---|---|---|---|---|---|
+| Claude Code | 6eb2acd | 2.1.304 | Sonnet 5.5, default effort (medium) | 2026-11-11 | 6, headless | Nothing broke. As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction, and no model of the dip's shape (runs said categorical age already captures it); every script ran first time. Asked for a bootstrap, every run warned first, then wrote it and disclosed it under "Beyond RAMM-AI's supported methods" in the design summary, script header and `results_summary.md`. 1 error fixed from a pasted message, an R mistake. |
+| Codex | 6eb2acd | 0.163.0 | gpt-6-luna, default reasoning effort (medium) | 2026-11-11 | 6, headless | Broke **Scope** in 1 run asked for a bootstrap: its design summary gave the warning without the heading "Beyond RAMM-AI's supported methods" (it said "outside RAMM's supported methods"). As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction; one also used a plotting helper (`scales`). Asked for a bootstrap, every run warned first, then wrote it and disclosed it in the script header and `results_summary.md`. Every script ran first time. |
+
+GitHub Copilot CLI and OpenCode were not run: the models in their rows above
+  are no longer available
+  ([#8](https://github.com/braincentrekcl/ramm-ai/issues/8)).
 
 ## Reproduce
 
