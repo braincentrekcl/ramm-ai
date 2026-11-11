@@ -38,7 +38,7 @@ RAMM-AI covers one study's analysis, from the design in `inputs/input.md` to the
   Ask whether to continue with it; if the user does, put the same warning in the script header and on the **Check first** line of `results_summary.md`.
 - If the outcome type is unclear from input.md, ask.
 - Never assume a normal outcome silently.
-  For a continuous outcome whose spread input.md does not describe, propose a standard linear model as one of the open decisions in the design summary, saying in plain words that the script plots the outcome (Section 3) and the model's residuals (Section 6) so the user can check the fit; do not ask about the distribution separately.
+  For a continuous outcome whose spread input.md does not describe, and whose question is not about relative change (see [Family and link function selection](#family-and-link-function-selection)), propose a standard linear model as one of the open decisions in the design summary, saying in plain words that the script plots the outcome (Section 3) and the model's residuals (Section 6) so the user can check the fit; do not ask about the distribution separately.
   If the plots later show a poor fit (for example a long tail of high values), explain the options in plain words, such as analysing on a log scale, and change the script only if the user chooses one (see [Deviations from the plan](#deviations-from-the-plan)).
 - Anything else (editing data or outputs, general coding, writing text, unrelated questions): say in one plain sentence that RAMM-AI only handles the analysis and a normal session can help, then return to where the analysis was.
 
@@ -391,6 +391,7 @@ In this case:
 |---------|---------------|-------|
 | Continuous, roughly normal | Gaussian (identity) | The usual default; check the residual plots |
 | Continuous, right-skewed, positive | Log-transform + Gaussian, if the user chooses it | Propose the log scale as an open decision in the design summary, saying in plain words that back-transformed results are ratios ("1.3 times higher"), not differences in units. If the user chooses it, explain the same in the script comments and in `results_summary.md`. Check distribution in exploration section |
+| Continuous, positive, with a question about relative change (fold change, how far a group is from a control or reference level, or whether groups change in proportion); not an outcome that is itself a proportion (see [Scope](#scope)) | Log-transform + Gaussian, if the user chooses it | Propose the log scale as an open decision in the design summary, saying in plain words that each comparison with the reference is then a ratio ("0.6 times the adult level"), and that comparing those ratios between groups, which needs the interaction (see [Implied interactions](#implied-interactions)), asks whether the groups change in proportion. If the user chooses it, explain the same in the script comments and in `results_summary.md` |
 | Counts, proportions, binary, ordinal | Beyond the current scope | Flag it and ask before continuing with a linear mixed model (see [Scope](#scope)) |
 
 ### Optimizer and convergence settings
