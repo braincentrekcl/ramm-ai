@@ -106,6 +106,7 @@ Wait for their confirmation or adjustment.
 ### Write the files
 
 When the user confirms, write the files for the chosen mechanism as [Files for each mechanism](#files-for-each-mechanism) describes, pinned as [Pinning strategy](#pinning-strategy) describes.
+In either mode, `envs/README.md` also gives the snapshot date and names each data file the analysis script reads (see [Parse the R script](#parse-the-r-script)), saying to put it in `inputs/`; in container mode it gives the R version too.
 Before writing them, check them against every rule in this skill; if any check fails, fix the files before writing.
 
 ### After writing
@@ -160,8 +161,6 @@ Include all of these unless you have a reason not to.
 ---
 
 ## Files for each mechanism
-
-In either mode, `envs/README.md` also gives the snapshot date and names each data file the analysis script reads (see [Parse the R script](#parse-the-r-script)), saying to put it in `inputs/`; in container mode it gives the R version too.
 
 ### Mode: `container` (default)
 
