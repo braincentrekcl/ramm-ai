@@ -140,7 +140,7 @@ It serves the same package versions already built for that Ubuntu, so the image 
 
 ### R version
 
-- `docker`: use `rocker/r-ver:X.Y.Z` with the newest R release from before the snapshot date, so every package in the snapshot was built for it.
+- `container`: use `rocker/r-ver:X.Y.Z` with the newest R release from before the snapshot date, so every package in the snapshot was built for it.
   If you are not sure which release that is, ask the user to check https://cran.r-project.org/ (R's release history) rather than guessing.
 - `renv`: the R the user already has; renv records its version in the lockfile.
 
