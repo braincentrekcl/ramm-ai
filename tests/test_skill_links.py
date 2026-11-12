@@ -32,6 +32,8 @@ def test_skill_section_links_resolve(repo_root: Path) -> None:
         skills / "ramm" / "SKILL.md",
         skills / "ramm" / "references" / "script.md",
         skills / "reproduce" / "SKILL.md",
+        skills / "reproduce" / "references" / "container.md",
+        skills / "reproduce" / "references" / "renv.md",
     ):
         assert broken_links(path) == [], f"{path.name} has broken section links"
 
