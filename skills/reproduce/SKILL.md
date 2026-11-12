@@ -268,7 +268,7 @@ From: rocker/r-ver:4.4.2
 
 #### File: `envs/README.md`
 
-```markdown
+````markdown
 # Reproducible environment (container)
 
 This folder holds the definition of a pinned environment for the analysis: a
@@ -360,7 +360,7 @@ docker run --rm -it -v "$(pwd)":/analysis myanalysis R
   in the analysis script matches.
 - **Build fails on package install**: this usually means the PPM snapshot is unavailable. Check https://packagemanager.posit.co/ — or update the date in the Dockerfile.
 - **Out of memory / slow build**: give Docker Desktop more RAM (Settings → Resources).
-```
+````
 
 ### Mode: `renv`
 
@@ -455,7 +455,7 @@ The renv project is `envs/`, so plain `Rscript code/analysis.R` would use the us
 
 #### File: `envs/README.md`
 
-```markdown
+````markdown
 # Reproducible environment (renv)
 
 This folder holds `renv.lock`, which records the exact package versions the
@@ -507,4 +507,4 @@ Results will be written to `outputs/` (CSV tables, PNG plots).
 - **Package installation fails with a system library error**: you may be missing compilers or C libraries. On Ubuntu, install `build-essential`, `libcurl4-openssl-dev`, `libssl-dev`. On Mac, install Xcode command-line tools with `xcode-select --install`.
 - **Wrong R version**: check `R --version` against the version in `renv.lock`, and install that version with rig (see Prerequisites).
 - **If you hit a wall**: use the container route instead (ask the analysis author to generate it with the RAMM-AI reproduce skill and `Reproducible environment: container`).
-```
+````
