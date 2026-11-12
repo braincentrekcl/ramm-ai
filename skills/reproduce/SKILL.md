@@ -5,47 +5,53 @@ description: "Generate a reproducible environment (a Docker/Apptainer container 
 
 # RAMM Reproduce: Environment Generation for R Analysis Scripts
 
-You are generating a reproducible computing environment for an R analysis script. The goal is to eliminate "it works on my machine" — a collaborator should be able to clone the folder, run one or two commands, and get identical results to the original analysis.
+You are generating a reproducible computing environment for an R analysis script.
+The goal is to eliminate "it works on my machine" — a collaborator should be able to clone the folder, run one or two commands, and get identical results to the original analysis.
 
-**Core principle:** pin everything that can drift. R version, package versions, system libraries, CRAN snapshot date.
+**Core principle:** pin everything that can drift.
+R version, package versions, system libraries, CRAN snapshot date.
+
+This file has three parts: the rules that always apply, the conversation step by step, and the pinning strategy.
+The files for each mechanism are in `references/container.md` and `references/renv.md`, next to this file.
 
 ---
 
-## A. Input Resolution
+## Rules that always apply
 
-1. If the user named an R script when starting the skill (for example
-  `code/analysis.R` after the start command), use that path.
-2. Otherwise, look for `code/*_analysis.R` or `code/analysis.R` in the study
-  folder.
-  If multiple matches exist, use the most recently modified one and tell the
-  user which one you chose.
-3. If no script is found, tell the user to run RAMM-AI first, or to name a
-  path.
-  Give only the start command for the agent you are running in: `/ramm:ramm`
-  (Claude Code), `$ramm:ramm` (Codex), `/ramm` (GitHub Copilot) or `@ramm`
-  (OpenCode).
-  Never list the other agents' commands: a user can pick the wrong one.
-  If you cannot tell which agent you are running in, ask the user which one
-  they are using.
-4. Also read `inputs/input.md` to find user preferences about the
-  reproducibility mechanism.
+### Files and commands
 
 Write only in `envs/` and `code/`.
-Environment definitions (the Dockerfile, the renv lockfile) and their README go
-  in `envs/`, the environment folder of the YODA layout; scripts go in `code/`.
-Every command you give is run from the study folder (the one holding inputs/,
-  code/, outputs/ and envs/).
+Environment definitions (the Dockerfile, the renv lockfile) and their README go in `envs/`, the environment folder of the YODA layout; scripts go in `code/`.
+Every command you give is run from the study folder (the one holding inputs/, code/, outputs/ and envs/).
 You never run these commands yourself.
-Before each change to a file you have written, tell the user in plain language
-  what you will change and why: the agent may not ask them to approve it.
-If the user refuses a change, do not make it another way (for example with a
-  command): say what you wanted to change and why, and wait.
-Never present the files as ready while you know of a problem in them; say what
-  the problem is.
+Before each change to a file you have written, tell the user in plain language what you will change and why: the agent may not ask them to approve it.
+If the user refuses a change, do not make it another way (for example with a command): say what you wanted to change and why, and wait.
+Never present the files as ready while you know of a problem in them; say what the problem is.
+
+### Tone and communication
+
+- Users may not know what Docker or renv are.
+  The README files should explain commands, not assume.
+- Don't over-promise "bit-for-bit reproducibility" — minor variation in floating-point results across architectures (e.g., ARM vs x86) can occur.
+  State the reproducibility guarantee accurately: "identical package versions and R version; results match within numerical precision."
+- If the user says they hit trouble, suggest checking R version first, then package versions via `packageVersion()`, before blaming the code.
 
 ---
 
-## B. Parse the R Script
+## The conversation, step by step
+
+### Analysis script and input
+
+1. If the user named an R script when starting the skill (for example `code/analysis.R` after the start command), use that path.
+2. Otherwise, look for `code/*_analysis.R` or `code/analysis.R` in the study folder.
+   If multiple matches exist, use the most recently modified one and tell the user which one you chose.
+3. If no script is found, tell the user to run RAMM-AI first, or to name a path.
+   Give only the start command for the agent you are running in: `/ramm:ramm` (Claude Code), `$ramm:ramm` (Codex), `/ramm` (GitHub Copilot) or `@ramm` (OpenCode).
+   Never list the other agents' commands: a user can pick the wrong one.
+   If you cannot tell which agent you are running in, ask the user which one they are using.
+4. Also read `inputs/input.md` to find user preferences about the reproducibility mechanism.
+
+### Parse the R script
 
 Read the R script and extract:
 
@@ -55,7 +61,8 @@ Read the R script and extract:
    - Any `requireNamespace("pkg")` calls
    - Any `pkg::function()` references that imply a package dependency
 
-2. **External file references** — look for `read.csv("...")`, `readr::read_csv("...")`, `read.xlsx("...")` etc. These need to be mounted into the Docker container.
+2. **External file references** — look for `read.csv("...")`, `readr::read_csv("...")`, `read.xlsx("...")` etc.
+   These need to be mounted into the Docker container.
 
 3. **Output file paths** — look for `write.csv(...)`, `ggsave(...)` to know what will be produced.
 
@@ -70,31 +77,28 @@ Input data file(s): inputs/data.csv
 Output files: outputs/results_*.csv, outputs/plot_*.png
 ```
 
----
+### Determine the mechanism
 
-## C. Determine the Mechanism
+Read the `Reproducible environment:` preference from input.md if present.
+Possible values:
 
-Read the `Reproducible environment:` preference from input.md if present. Possible values:
-
-- `container` (default) — a container with a pinned R version, system
-  libraries and a dated package snapshot.
-  It is written twice from the same settings: a Dockerfile, for computers with
-  Docker, and an Apptainer definition, for HPC clusters, where Apptainer
-  (Singularity) is usually available and Docker is not.
+- `container` (default) — a container with a pinned R version, system libraries and a dated package snapshot.
+  It is written twice from the same settings: a Dockerfile, for computers with Docker, and an Apptainer definition, for HPC clusters, where Apptainer (Singularity) is usually available and Docker is not.
+  Its files are `envs/Dockerfile`, `envs/Dockerfile.dockerignore`, `envs/apptainer.def` and `envs/README.md`.
 - `renv` — an renv lockfile, for users who have R and do not need a container.
   It pins package versions only, not R itself or the system libraries.
+  Its files are `code/setup_environment.R`, `code/run_analysis.R` and `envs/README.md`.
 
-If input.md gives no preference (the template's unedited line, listing both, is
-  no preference), use `container`.
+If input.md gives no preference (the template's unedited line, listing both, is no preference), use `container`.
 It needs no R on the computer, and fixes every version.
-If the user has neither Docker, Apptainer nor R, say they need one of them,
-  and suggest asking their IT or HPC team which one they can use.
+If the user has neither Docker, Apptainer nor R, say they need one of them, and suggest asking their IT or HPC team which one they can use.
 
 Also read optional preferences:
 - `Snapshot date:` (default: pick the most recent Monday from the quarter before the current date, so it's stable and won't change underneath you)
-- `R version:` (see D)
+- `R version:` (see [R version](#r-version))
 
-**Confirm with the user** before generating files. Show them:
+**Confirm with the user** before generating files.
+Show them:
 - Which mechanism will be used
 - Which R version
 - Which CRAN snapshot date
@@ -102,427 +106,14 @@ Also read optional preferences:
 
 Wait for their confirmation or adjustment.
 
----
+### Write the files
 
-## D. Pinning Strategy
+When the user confirms, read the file for the chosen mechanism, next to this file: `references/container.md` or `references/renv.md`, and only that one.
+Write the files it describes, pinned as [Pinning strategy](#pinning-strategy) describes.
+In either mode, `envs/README.md` also gives the snapshot date and names each data file the analysis script reads (see [Parse the R script](#parse-the-r-script)), saying to put it in `inputs/`; in container mode it gives the R version too.
+Before writing them, check them against every rule in this skill; if any check fails, fix the files before writing.
 
-### Posit Package Manager (PPM) snapshots
-
-For reproducibility, use dated CRAN snapshots from Posit Package Manager:
-
-```
-https://packagemanager.posit.co/cran/YYYY-MM-DD
-```
-
-This URL freezes CRAN to the state it was in on that date. Package installs from this URL will always resolve to the same versions.
-
-In the Dockerfile and the Apptainer definition, use the binary form of the same
-  snapshot, `https://packagemanager.posit.co/cran/__linux__/<codename>/YYYY-MM-DD`,
-  where `<codename>` is the Ubuntu release of the rocker/r-ver image (`noble`
-  for R 4.4.2).
-It serves the same package versions already built for that Ubuntu, so the
-  image builds in minutes instead of compiling every package.
-
-### R version
-
-- `docker`: use `rocker/r-ver:X.Y.Z` with the newest R release from before the
-  snapshot date, so every package in the snapshot was built for it.
-  If you are not sure which release that is, ask the user to check
-  https://cran.r-project.org/ (R's release history) rather than guessing.
-- `renv`: the R the user already has; renv records its version in the
-  lockfile.
-
-### System libraries
-
-Mixed-effects modelling packages in R have C++ dependencies. The Dockerfile must install:
-
-- `libcurl4-openssl-dev`, `libssl-dev`, `libxml2-dev` — for package downloads and XML parsing
-- `libfontconfig1-dev`, `libharfbuzz-dev`, `libfribidi-dev`, `libfreetype6-dev` — for ggplot2/systemfonts
-- `libpng-dev`, `libtiff5-dev`, `libjpeg-dev` — for image output
-- `libgit2-dev` — for remotes
-- `cmake` — for nloptr (needed by lme4) when it is built from source, as on
-  ARM computers such as Apple Silicon Macs
-
-Include all of these unless you have a reason not to.
-
----
-
-## E. Generate Files by Mechanism
-
-### E.1 Mode: `container` (default)
-
-#### File: `envs/Dockerfile`
-
-```dockerfile
-# ============================================================
-# Reproducible environment for mixed-effects analysis
-# Generated by the RAMM-AI reproduce skill
-# ============================================================
-
-FROM rocker/r-ver:4.4.2
-
-# System libraries for R packages with C/C++ dependencies
-# (lme4, ggplot2, systemfonts, curl, xml2, etc.)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxml2-dev \
-    libfontconfig1-dev \
-    libharfbuzz-dev \
-    libfribidi-dev \
-    libfreetype6-dev \
-    libpng-dev \
-    libtiff5-dev \
-    libjpeg-dev \
-    libgit2-dev \
-    cmake \
-    && rm -rf /var/lib/apt/lists/*
-
-# Pin CRAN to a dated Posit Package Manager snapshot for full reproducibility.
-# Change this date only if you intend to update package versions.
-RUN echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/noble/2025-01-15"))' \
-    >> /usr/local/lib/R/etc/Rprofile.site
-
-# Install the R packages the analysis script needs. install.packages() only
-# warns when a package fails, so check they all load and stop the build if not.
-RUN R -e "pkgs <- c('readr', 'lme4', 'lmerTest', 'emmeans', 'ggplot2', \
-    'broom.mixed', 'dplyr', 'tidyr'); \
-    install.packages(pkgs); \
-    missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]; \
-    if (length(missing) > 0) stop('Packages failed to install: ', paste(missing, collapse = ', '))"
-
-WORKDIR /analysis
-
-# Copy the analysis script into the image
-COPY code/ /analysis/code/
-
-# By default, run the analysis. Users can override with `docker run ... bash` to enter interactively.
-CMD ["Rscript", "code/analysis.R"]
-```
-
-Replace the package list with the actual list parsed from the analysis script, and the R version and snapshot date with the ones confirmed in C (4.4.2 was released before 2025-01-15).
-
-#### File: `envs/Dockerfile.dockerignore`
-
-```
-# The image holds the software and the script, not your data or results:
-# the study folder is mounted when the analysis runs.
-inputs/
-outputs/
-code/sessions/
-envs/*.sif
-```
-
-Docker uses this file because it sits beside envs/Dockerfile and carries its
-  name.
-
-#### File: `envs/apptainer.def`
-
-Use the same R version, snapshot date and package list as the Dockerfile.
-
-```
-# ============================================================
-# Reproducible environment for mixed-effects analysis (Apptainer)
-# Generated by the RAMM-AI reproduce skill
-# Same R version, snapshot date and packages as envs/Dockerfile.
-# ============================================================
-Bootstrap: docker
-From: rocker/r-ver:4.4.2
-
-%post
-    # System libraries for R packages with C/C++ dependencies
-    apt-get update && apt-get install -y --no-install-recommends \
-        libcurl4-openssl-dev libssl-dev libxml2-dev libfontconfig1-dev \
-        libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev \
-        libtiff5-dev libjpeg-dev libgit2-dev cmake \
-        && rm -rf /var/lib/apt/lists/*
-
-    # Pin CRAN to a dated Posit Package Manager snapshot.
-    echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/noble/2025-01-15"))' \
-        >> /usr/local/lib/R/etc/Rprofile.site
-
-    # Install the packages; stop the build if any fails to load.
-    R -e "pkgs <- c('readr', 'lme4', 'lmerTest', 'emmeans', 'ggplot2', \
-        'broom.mixed', 'dplyr', 'tidyr'); \
-        install.packages(pkgs); \
-        missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]; \
-        if (length(missing) > 0) stop('Packages failed to install: ', paste(missing, collapse = ', '))"
-
-%runscript
-    # Run from your study folder, which Apptainer makes available inside.
-    exec Rscript code/analysis.R "$@"
-```
-
-#### File: `envs/README.md`
-
-```markdown
-# Reproducible environment (container)
-
-This folder holds the definition of a pinned environment for the analysis: a
-  fixed R version, system libraries and package versions from a dated
-  snapshot, written twice from the same settings.
-Use `Dockerfile` on a computer with Docker, or `apptainer.def` on an HPC
-  cluster with Apptainer (Singularity).
-You do not need R on your computer.
-
-The container holds the software and the script, not your data or results.
-Share those with the study folder as your data policy allows, for example
-  results with the study's repository and data in a data repository.
-
-## Prerequisites
-
-- Docker Desktop — https://www.docker.com/products/docker-desktop/
-  - On Windows/Mac: install and launch Docker Desktop
-  - On Linux: install Docker Engine
-- Or, on an HPC cluster: Apptainer (or Singularity), usually provided by the
-  cluster.
-
-## Build the image (one-time, ~5-15 minutes)
-
-From your study folder:
-
-```bash
-docker build -f envs/Dockerfile -t myanalysis .
-```
-
-This downloads R 4.4.2 and installs all required packages at their pinned versions. The image is cached — you only rebuild it if you change the Dockerfile.
-
-## Run the analysis
-
-### Mac / Linux
-
-```bash
-docker run --rm -v "$(pwd)":/analysis myanalysis
-```
-
-### Windows (PowerShell)
-
-```powershell
-docker run --rm -v "${PWD}:/analysis" myanalysis
-```
-
-### Windows (Command Prompt)
-
-```cmd
-docker run --rm -v "%cd%":/analysis myanalysis
-```
-
-The `-v` flag mounts the current folder into the container, so:
-- The container reads your data from `inputs/` in your study folder
-- Results (CSVs, PNGs) are written back into `outputs/`
-
-## On an HPC cluster (Apptainer)
-
-From your study folder, build the image once:
-
-```bash
-apptainer build envs/analysis.sif envs/apptainer.def
-```
-
-If the cluster does not let you build as yourself, add `--fakeroot`, or ask
-  your HPC team where images can be built.
-Then run the analysis from your study folder:
-
-```bash
-apptainer run envs/analysis.sif
-```
-
-Apptainer makes your study folder available inside the container, so it reads
-  `inputs/` and writes `outputs/` as usual.
-`envs/analysis.sif` is large; do not commit it, as `apptainer.def` rebuilds it.
-
-## Interactive use
-
-To open an R session inside the container (for debugging or exploration):
-
-```bash
-docker run --rm -it -v "$(pwd)":/analysis myanalysis R
-```
-
-## If something goes wrong
-
-- **"Cannot connect to Docker daemon"**: Docker Desktop is not running. Start it.
-- **"No such file or directory: data.csv"**: make sure your data file is in
-  inputs/ and you ran docker run from your study folder, and that the filename
-  in the analysis script matches.
-- **Build fails on package install**: this usually means the PPM snapshot is unavailable. Check https://packagemanager.posit.co/ — or update the date in the Dockerfile.
-- **Out of memory / slow build**: give Docker Desktop more RAM (Settings → Resources).
-```
-
-### E.2 Mode: `renv`
-
-#### File: `code/setup_environment.R`
-
-```r
-# ============================================================
-# Environment setup for reproducible analysis
-# Generated by the RAMM-AI reproduce skill
-# ============================================================
-# Run this ONCE from your study folder, before running the analysis:
-#   Rscript code/setup_environment.R
-# If envs/renv.lock exists, it installs exactly the versions recorded there,
-# and never changes the file. If code/analysis.R needs a package the lockfile
-# lacks, it stops; the analysis author adds it on purpose with:
-#   Rscript code/setup_environment.R --add-missing
-# If not, it installs the packages from a dated snapshot into envs/renv/ and
-# writes envs/renv.lock, which records exactly what is installed.
-# ============================================================
-
-# Every install comes from this dated Posit Package Manager snapshot, renv
-# included. Change the date only if you want to update packages on purpose
-# (and then commit the new envs/renv.lock).
-snapshot_repo <- c(CRAN = "https://packagemanager.posit.co/cran/2025-01-15")
-options(repos = snapshot_repo)
-
-# 1. Bootstrap renv itself
-if (!requireNamespace("renv", quietly = TRUE)) {
-  install.packages("renv")
-}
-
-# The packages code/analysis.R needs.
-required_packages <- c(
-  # fill in from the analysis script's required_packages vector
-  "readr", "lme4", "lmerTest", "emmeans", "ggplot2",
-  "broom.mixed", "dplyr", "tidyr"
-)
-
-# 2. envs/ is the renv project, not the study folder, so nothing is written
-# beside inputs/, code/ and outputs/.
-if (file.exists(file.path("envs", "renv.lock"))) {
-  # Someone already pinned this environment: install exactly those versions.
-  # Load the project first, so renv installs every package into envs/renv/
-  # instead of counting packages you already have elsewhere.
-  renv::load("envs")
-  renv::restore(project = "envs", prompt = FALSE)
-  # The script may have gained packages since the lockfile was written.
-  # Reproducing someone else's analysis must not change their environment, so
-  # adding them is the author's deliberate step (--add-missing), from the same
-  # snapshot date, keeping every version already pinned.
-  missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
-                                                logical(1), quietly = TRUE)]
-  if (length(missing_packages) > 0 &&
-      !"--add-missing" %in% commandArgs(trailingOnly = TRUE)) {
-    stop("envs/renv.lock does not include ", paste(missing_packages, collapse = ", "),
-         ", which code/analysis.R needs. If you wrote this analysis and added ",
-         "the package on purpose, run: Rscript code/setup_environment.R --add-missing ",
-         "and commit envs/renv.lock. Otherwise ask the analysis author to update it.",
-         call. = FALSE)
-  }
-  if (length(missing_packages) > 0) {
-    options(repos = snapshot_repo)
-    renv::install(missing_packages, project = "envs", prompt = FALSE)
-    renv::snapshot(project = "envs", packages = required_packages, prompt = FALSE)
-    message("Added ", paste(missing_packages, collapse = ", "),
-            " to envs/renv.lock. Commit the updated file.")
-  }
-} else {
-  renv::init(project = "envs", bare = TRUE, restart = FALSE, load = FALSE)
-  renv::load("envs")
-  options(repos = snapshot_repo)
-  renv::install(required_packages, project = "envs", prompt = FALSE)
-  renv::snapshot(project = "envs", packages = required_packages, prompt = FALSE)
-}
-
-message("Done. The environment is recorded in envs/renv.lock.")
-message("Run the analysis with: Rscript code/run_analysis.R")
-```
-
-Replace the `required_packages` vector with the actual list parsed from the analysis script.
-
-#### File: `code/run_analysis.R`
-
-```r
-# Run the analysis inside the pinned environment, from your study folder:
-#   Rscript code/run_analysis.R
-renv::load("envs")
-source(file.path("code", "analysis.R"))
-```
-
-The renv project is `envs/`, so plain `Rscript code/analysis.R` would use the
-  user's own packages instead; tell the user to run the analysis this way.
-
-#### File: `envs/README.md`
-
-```markdown
-# Reproducible environment (renv)
-
-This folder holds `renv.lock`, which records the exact package versions the
-  analysis uses and the R version it was made with.
-renv installs those package versions; it does not install R itself or the
-  system libraries some packages need, so results can differ slightly on
-  another R version or computer.
-For a fully pinned environment, use the container route instead.
-
-## Prerequisites
-
-- R, at the version recorded near the top of `renv.lock`.
-  To install that exact version alongside any other, use rig
-  (https://github.com/r-lib/rig), for example `rig add 4.5.1`.
-
-## One-time setup
-
-From your study folder, run:
-
-```bash
-Rscript code/setup_environment.R
-```
-
-If `envs/renv.lock` already exists (you received this study from someone
-  else, or you are setting up again), this installs exactly the versions it
-  records.
-It never changes `envs/renv.lock`: if the analysis script needs a package the
-  lockfile lacks, it stops and says so.
-If you wrote the analysis and added that package on purpose, run
-  `Rscript code/setup_environment.R --add-missing`: it adds the package from
-  the same snapshot date, keeping every other version, and updates
-  `envs/renv.lock`; commit the updated file.
-If not, it installs the packages from a dated snapshot and writes
-  `envs/renv.lock`; commit that file.
-Expect this to take 5-15 minutes the first time depending on your machine and connection.
-
-## Running the analysis
-
-Once setup is complete, from your study folder:
-
-```bash
-Rscript code/run_analysis.R
-```
-
-Results will be written to `outputs/` (CSV tables, PNG plots).
-
-## If something goes wrong
-
-- **Package installation fails with a system library error**: you may be missing compilers or C libraries. On Ubuntu, install `build-essential`, `libcurl4-openssl-dev`, `libssl-dev`. On Mac, install Xcode command-line tools with `xcode-select --install`.
-- **Wrong R version**: check `R --version` against the version in `renv.lock`, and install that version with rig (see Prerequisites).
-- **If you hit a wall**: use the container route instead (ask the analysis author to generate it with the RAMM-AI reproduce skill and `Reproducible environment: container`).
-```
-
----
-
-## F. Final Checklist
-
-Before writing files, verify:
-
-- [ ] The package list matches what was actually detected in the analysis script (not the generic default)
-- [ ] The R version is specified (in the Dockerfile and README) and was released before the snapshot date
-- [ ] The PPM snapshot date is specified (in the Dockerfile or setup_environment.R, and README)
-- [ ] The analysis script filename is correctly referenced in the Dockerfile
-  `CMD` line
-- [ ] The WORKDIR is /analysis, the mounted study folder, so the script finds
-  inputs/ and outputs/
-- [ ] `envs/Dockerfile.dockerignore` is included (container mode) to keep the
-  build context small
-- [ ] `envs/apptainer.def` uses the same R version, snapshot date, system
-  libraries and packages as `envs/Dockerfile`
-- [ ] Definitions and the README are in `envs/`, scripts in `code/`; nothing
-  (no `.Rprofile`, `renv/` or `renv.lock`) is written beside inputs/, code/
-  and outputs/
-- [ ] `envs/README.md` has platform-specific commands (Mac/Linux AND Windows)
-- [ ] Any data files referenced in the analysis script are noted in the README with instructions on where to place them
-
----
-
-## G. Output
+### After writing
 
 After writing the files, tell the user:
 
@@ -536,8 +127,21 @@ Suggest they commit with a message like:
 
 ---
 
-## H. Notes on Tone
+## Pinning strategy
 
-- Users may not know what Docker or renv are. The README files should explain commands, not assume.
-- Don't over-promise "bit-for-bit reproducibility" — minor variation in floating-point results across architectures (e.g., ARM vs x86) can occur. State the reproducibility guarantee accurately: "identical package versions and R version; results match within numerical precision."
-- If the user says they hit trouble, suggest checking R version first, then package versions via `packageVersion()`, before blaming the code.
+### Posit Package Manager (PPM) snapshots
+
+For reproducibility, use dated CRAN snapshots from Posit Package Manager:
+
+```
+https://packagemanager.posit.co/cran/YYYY-MM-DD
+```
+
+This URL freezes CRAN to the state it was in on that date.
+Package installs from this URL will always resolve to the same versions.
+
+### R version
+
+- `container`: use `rocker/r-ver:X.Y.Z` with the newest R release from before the snapshot date, so every package in the snapshot was built for it.
+  If you are not sure which release that is, ask the user to check https://cran.r-project.org/ (R's release history) rather than guessing.
+- `renv`: the R the user already has; renv records its version in the lockfile.
