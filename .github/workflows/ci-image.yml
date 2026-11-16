@@ -1,0 +1,43 @@
+name: ci-image
+
+# Builds the image in .github/ci/ and publishes it to ghcr.io, for checks.yml to
+# run the repository checks in. The tag is a hash of the Dockerfile, so the
+# image is built only when no image for this Dockerfile has been published yet.
+# The calling job grants contents: read and packages: write; pull requests from
+# forks get read-only tokens, so they can use a published image but not build
+# one.
+on:
+  workflow_call:
+    outputs:
+      image:
+        description: The image reference, tagged with the Dockerfile's hash
+        value: ${{ jobs.image.outputs.image }}
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.tag.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Tag the image with the Dockerfile's hash
+        id: tag
+        run: echo "image=ghcr.io/braincentrekcl/ramm-ai/ci:${{ hashFiles('.github/ci/Dockerfile') }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check whether this image is already published
+        id: published
+        run: |
+          if docker manifest inspect "${{ steps.tag.outputs.image }}" > /dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build and publish the image
+        if: steps.published.outputs.found != 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .github/ci
+          push: true
+          tags: ${{ steps.tag.outputs.image }}

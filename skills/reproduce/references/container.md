@@ -21,6 +21,9 @@ The Dockerfile must install:
 
 Include all of these unless you have a reason not to.
 
+Also install `ca-certificates`, so the image takes Ubuntu's current root certificates instead of the base image's 2024 set, which still trusts a root Ubuntu distrusted in October 2026 (LP: #2171507).
+R downloads the packages over HTTPS and trusts whatever that set trusts.
+
 ## File: `envs/Dockerfile`
 
 ```dockerfile
@@ -32,8 +35,10 @@ Include all of these unless you have a reason not to.
 FROM rocker/r-ver:4.4.2
 
 # System libraries for R packages with C/C++ dependencies
-# (lme4, ggplot2, systemfonts, curl, xml2, etc.)
+# (lme4, ggplot2, systemfonts, curl, xml2, etc.), and current root
+# certificates for downloading the packages.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
@@ -99,8 +104,10 @@ Bootstrap: docker
 From: rocker/r-ver:4.4.2
 
 %post
-    # System libraries for R packages with C/C++ dependencies
+    # System libraries for R packages with C/C++ dependencies, and current
+    # root certificates for downloading the packages
     apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
         libcurl4-openssl-dev libssl-dev libxml2-dev libfontconfig1-dev \
         libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev \
         libtiff5-dev libjpeg-dev libgit2-dev cmake \

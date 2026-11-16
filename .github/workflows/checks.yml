@@ -7,6 +7,12 @@ on:
     branches: [main]
 
 jobs:
+  image:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/ci-image.yml
+
   checks:
     runs-on: ubuntu-latest
     steps:
@@ -14,16 +20,6 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
-      - name: Install car for the lm() test
-        uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          packages: any::car
-      - name: Check car is installed, so the lm() test is not skipped
-        run: Rscript -e "stopifnot(requireNamespace('car', quietly = TRUE))"
-      - uses: astral-sh/setup-uv@v10.2.0
       - name: Install Claude Code, Codex, GitHub Copilot CLI and OpenCode
         run: npm install -g @anthropic-ai/claude-code@2.1.277 @openai/codex@0.160.1 @github/copilot@1.0.93 @opencode/cli@2.0.24
       - name: Validate the Claude Code plugin
@@ -34,5 +30,24 @@ jobs:
         run: bash tests/copilot_probe.sh
       - name: Check OpenCode loads every template rule and both skills
         run: bash tests/opencode_probe.sh
+
+  # The repository checks run in the image from ci-image.yml, which has R and
+  # every package the R chunk tests load, so a missing package fails a test
+  # instead of skipping it.
+  tests:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ${{ needs.image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      RAMM_AI_REQUIRE_R_PACKAGES: "1"
+    steps:
+      - uses: actions/checkout@v7
       - name: Repository checks
         run: uv run --with pytest pytest tests -v

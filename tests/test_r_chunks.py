@@ -1,4 +1,4 @@
-"""Run the R chunks from the skill's script template (base R only)."""
+"""Run the R chunks from the skill's script template."""
 
 import csv
 import hashlib
@@ -290,10 +290,7 @@ def test_provenance_stops_when_script_file_missing(
 
 def test_lm_anova_is_type_three(skill_text: str, tmp_path: Path) -> None:
     """lm() gets Type III tests like lmer(), checked against the definition."""
-    if run_r(
-        'quit(status = !requireNamespace("car", quietly = TRUE))', tmp_path
-    ).returncode:
-        pytest.skip("the car package is not installed")
+    skip_without(("car",), tmp_path)
     section_7 = skill_text.split("## Section 7: Model Summary", 1)[1].split(
         "## Section 8", 1
     )[0]
@@ -328,10 +325,7 @@ def test_strip_plot_keeps_rows_when_individuals_get_every_condition(
     skill_text: str, tmp_path: Path
 ) -> None:
     """In a crossover each individual is in every condition; no row is copied."""
-    if run_r(
-        'quit(status = !requireNamespace("dplyr", quietly = TRUE))', tmp_path
-    ).returncode:
-        pytest.skip("the dplyr package is not installed")
+    skip_without(("dplyr",), tmp_path)
     strip_code = skill_text.split("# One strip per individual,", 1)[1].split(
         "# Violin width", 1
     )[0]
@@ -353,14 +347,30 @@ SLOPE_PACKAGES = ("lme4", "lmerTest", "emmeans", "dplyr")
 
 
 def skip_without(packages: tuple[str, ...], folder: Path) -> None:
-    """Skip the test unless every R package in `packages` is installed."""
+    """Skip the test unless every R package in `packages` is installed.
+
+    With RAMM_AI_REQUIRE_R_PACKAGES=1, as on CI, a missing package fails the
+    test instead, so a broken CI image cannot hide tests by skipping them.
+    """
     missing = run_r(
         "pkgs <- c(" + ", ".join(f'"{p}"' for p in packages) + ")\n"
         "quit(status = !all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)))",
         folder,
     ).returncode
     if missing:
-        pytest.skip(f"one of {', '.join(packages)} is not installed")
+        message = f"one of {', '.join(packages)} is not installed"
+        if os.environ.get("RAMM_AI_REQUIRE_R_PACKAGES") == "1":
+            pytest.fail(message + " (RAMM_AI_REQUIRE_R_PACKAGES=1)")
+        pytest.skip(message)
+
+
+def test_missing_r_package_fails_when_required(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If this broke, CI would skip R tests again without anyone noticing."""
+    monkeypatch.setenv("RAMM_AI_REQUIRE_R_PACKAGES", "1")
+    with pytest.raises(pytest.fail.Exception, match="notARealPackage"):
+        skip_without(("notARealPackage",), tmp_path)
 
 
 def run_slopes(
