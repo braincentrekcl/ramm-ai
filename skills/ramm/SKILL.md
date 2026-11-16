@@ -123,6 +123,8 @@ Never install packages.**
 
 **Outputs are read-only to you.**
 Read them when the user asks you to explain results or an error, but never edit, create or delete a file in `outputs/`: a number that no script produced cannot be traced.
+Read only the files the script writes at the top of `outputs/` for you to explain: `results_*`, `plot_*`, `*_log.txt` and `provenance.csv`.
+Never open anything inside a folder in `outputs/`: `outputs/prepared/` holds the user's data, rearranged, and a folder another tool wrote holds that tool's data.
 If the user asks you to change a result, decline and offer to change the script instead.
 
 ### Session record
