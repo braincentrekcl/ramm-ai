@@ -6,15 +6,23 @@ Copy `template/my-study` and rename it for your study:
 
 ```
 my-study/
-├── inputs/    input.md (your study design), your data, and an optional toy file
-├── code/      the analysis script RAMM-AI writes, and sessions/ for the conversation record
-├── outputs/   everything the script writes
+├── inputs/    input.md (your study design), your raw data files, and an optional toy file
+├── code/      prepare.R and analysis.R, the scripts RAMM-AI writes, and sessions/ for the conversation record
+├── outputs/   everything the scripts write, with your data rearranged into one table in prepared/
 └── envs/      the reproducible environment, if you use the reproduce skill
 ```
 
 This is the [YODA layout](https://handbook.datalad.org/en/latest/basics/101-127-yoda.html):
   inputs, code, outputs and the computing environment kept apart, so anyone
   can see what produced each result.
+Your data files go in `inputs/` as your software exported them; `prepare.R`
+  turns them into the one table the model needs, and never changes a measured
+  value.
+If RAMM-AI should analyse another tool's output (for example quality metrics
+  from MRIQC), that output is an input: put it in `inputs/`, as a copy or as a
+  DataLad subdataset.
+Folders other tools write in `outputs/` are left alone: RAMM-AI never reads
+  them, and its provenance record never lists them.
 
 1. Fill in `inputs/input.md`.
   It is required: it records your questions before any results exist.

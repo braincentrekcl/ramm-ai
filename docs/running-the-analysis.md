@@ -5,8 +5,9 @@
 1. RAMM-AI reads `inputs/input.md` and summarises the design back to you in
   plain language.
   It waits for your answer before writing anything.
-2. It writes `code/analysis.R` and gives you the command to run.
-3. You put your data file in `inputs/` and run, from the study folder:
+2. It writes `code/prepare.R`, which turns your data files into one table,
+  and `code/analysis.R`, which runs it, and gives you the command to run.
+3. You put your data files in `inputs/` and run, from the study folder:
 
 ```
 Rscript code/analysis.R
@@ -42,7 +43,9 @@ The script writes into `outputs/`:
   rules
 - `plot_hierarchy.png`, `plot_estimates.png`, `plot_residuals.png` and the other
   plots
-- the log of the run, and `provenance.csv`: a checksum of the script, every
+- `prepared/data.csv`: your data files rearranged into the one table the model
+  used, for you to check; the log lists each step with its counts
+- the log of the run, and `provenance.csv`: a checksum of both scripts, every
   input and every output, with the R and package versions, so anyone can check
   the results came from this script and these inputs
 
