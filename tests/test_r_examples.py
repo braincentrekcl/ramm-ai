@@ -14,7 +14,7 @@ def ramm_skill_raw(repo_root: Path) -> str:
     skill = repo_root / "skills" / "ramm"
     return "\n".join(
         (skill / name).read_text(encoding="utf-8")
-        for name in ("SKILL.md", "references/script.md")
+        for name in ("SKILL.md", "references/script.md", "references/prepare.md")
     )
 
 

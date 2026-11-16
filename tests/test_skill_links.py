@@ -31,6 +31,7 @@ def test_skill_section_links_resolve(repo_root: Path) -> None:
     for path in (
         skills / "ramm" / "SKILL.md",
         skills / "ramm" / "references" / "script.md",
+        skills / "ramm" / "references" / "prepare.md",
         skills / "reproduce" / "SKILL.md",
         skills / "reproduce" / "references" / "container.md",
         skills / "reproduce" / "references" / "renv.md",
