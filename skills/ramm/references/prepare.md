@@ -20,8 +20,7 @@ Prep may only take these steps, each followed by its check from [The checks](#th
 
 Nothing else belongs in prep:
 
-- A value calculated from the measurements (an index, a ratio, a normalisation, a z-score, a composite score) is part of the analysis script, under the ramm skill's rules.
-- Averaging replicates is never part of prep.
+- A value calculated from the measurements, including an average of replicates, is part of the analysis script (see [Calculated values](../SKILL.md#calculated-values)).
 - Removing rows for quality reasons is a QC rule, in the analysis script.
 - Any other ID fix (a typo, one ID renamed to another) is for the user to make in their own files.
 

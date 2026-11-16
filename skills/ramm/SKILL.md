@@ -263,6 +263,14 @@ For each level, determine:
 - If input.md has an `Exclusions and Attrition` heading, list those individuals in the design summary.
   Keep the planned numbers from Study Design for the script's design check (Section 2a); never change them to match the losses.
 
+#### Calculated values
+
+- A value calculated from the measurements (for example an index, a ratio, a normalisation, a z-score or a composite score) is calculated only when input.md names it.
+  Never suggest one.
+- Put each one in the design summary in plain words, with its formula, and calculate it in Section 2 of the analysis script, never in `prepare.R`.
+- Never raise averaging replicates.
+  If the user asks to average them, recommend not averaging: the model already accounts for replicates within each individual, and averaging first throws away what it uses to separate differences between individuals from differences within them.
+
 #### Implied interactions
 
 Interactions follow the study design.
