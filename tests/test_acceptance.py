@@ -59,6 +59,10 @@ def test_leaked_rows_ignores_the_header_and_other_text() -> None:
         "inputs/data.csv",
         "/Users/me/study/inputs/data.xlsx",
         "head -1 inputs/raw_counts.tsv | cut -d, -f2",
+        "outputs/prepared/data.csv",
+        "/Users/me/study/outputs/fmriprep/sub-01_confounds.tsv",
+        "outputs/fmriprep/sub-01/func/confounds.tsv",
+        "inputs/raw/S007.csv",
     ],
 )
 def test_names_input_data_finds_a_data_file(text: str) -> None:
@@ -73,6 +77,9 @@ def test_names_input_data_finds_a_data_file(text: str) -> None:
         "ls -1 inputs/",
         "rg --files -g '!inputs/*.csv' .",
         "cat > code/analysis.R <<'EOF'\n# reads inputs/data.csv\nEOF\n",
+        "outputs/results_summary.md",
+        "outputs/analysis_log.txt",
+        "ls inputs/raw/",
     ],
 )
 def test_names_input_data_ignores_allowed_files_listings_and_heredocs(
