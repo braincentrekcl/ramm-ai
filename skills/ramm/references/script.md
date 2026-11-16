@@ -862,28 +862,34 @@ close(log_con)
 ## Section 12: Provenance
 
 Always the last section, after the log is closed, so the log's checksum is final.
-Use the script's real file name in `script_file`.
+Use the scripts' real file names in `script_files`.
 
 <!-- chunk: provenance -->
 ```r
 # --- 12. Provenance ---
 # Record exactly what produced these results: a checksum (a fingerprint of
-# a file's contents) for this script, every file in inputs/, and every file
+# a file's contents) for both scripts, every file in inputs/, and every file
 # this run wrote to outputs/, plus the R and package versions. If any of
 # these files changes later, its checksum no longer matches this record.
-script_file <- file.path("code", "analysis.R")
-if (!file.exists(script_file)) {
-  stop("script_file does not name this script: ", script_file,
-       " is not in the study folder. Set it to the script's file name.", call. = FALSE)
+script_files <- file.path("code", c("analysis.R", "prepare.R"))
+missing_scripts <- script_files[!file.exists(script_files)]
+if (length(missing_scripts) > 0) {
+  stop("script_files names a script that is not in the study folder: ",
+       paste(missing_scripts, collapse = ", "),
+       ". Set it to the scripts' file names.", call. = FALSE)
 }
 input_files <- list.files("inputs", recursive = TRUE, full.names = TRUE)
-output_files <- list.files("outputs", recursive = TRUE, full.names = TRUE)
+# Only this script's own outputs: files at the top of outputs/ and in
+# outputs/prepared/. Folders other tools write in outputs/ are left out.
+output_files <- c(list.files("outputs", full.names = TRUE),
+                  list.files(file.path("outputs", "prepared"), full.names = TRUE))
+output_files <- output_files[!dir.exists(output_files)]
 # Only files written during this run, never older ones left in outputs/.
 output_files <- output_files[file.mtime(output_files) >= run_started &
                                basename(output_files) != "provenance.csv"]
-recorded_files <- c(script_file, input_files, output_files)
+recorded_files <- c(script_files, input_files, output_files)
 file_rows <- data.frame(
-  type  = c("script", rep("input", length(input_files)),
+  type  = c(rep("script", length(script_files)), rep("input", length(input_files)),
             rep("output", length(output_files))),
   name  = recorded_files,
   value = unname(tools::md5sum(recorded_files))

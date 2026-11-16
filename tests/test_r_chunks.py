@@ -197,8 +197,11 @@ def md5(path: Path) -> str:
     return hashlib.md5(path.read_bytes()).hexdigest()
 
 
-def run_provenance(skill_text: str, study: Path) -> list[dict[str, str]]:
+def run_provenance(
+    skill_text: str, study: Path, extra: str = ""
+) -> list[dict[str, str]]:
     (study / "code" / "analysis.R").write_text("# script\n", encoding="utf-8")
+    (study / "code" / "prepare.R").write_text("# prep\n", encoding="utf-8")
     (study / "inputs" / "data.csv").write_text("a\n1\n", encoding="utf-8")
     (study / "outputs").mkdir()
     old = study / "outputs" / "results_old.csv"
@@ -209,6 +212,7 @@ def run_provenance(skill_text: str, study: Path) -> list[dict[str, str]]:
         'run_started <- as.POSIXct(floor(as.numeric(Sys.time())), origin = "1970-01-01")\n'
         "required_packages <- character(0)\n"
         'writeLines("new", file.path("outputs", "results_new.csv"))\n'
+        + extra
         + extract_r_chunk(skill_text, "provenance")
     )
     result = run_r(code, study)
@@ -237,6 +241,43 @@ def test_provenance_records_script_inputs_outputs(
     assert len({r["recorded_at"] for r in rows}) == 1
 
 
+def test_provenance_records_both_scripts(skill_text: str, tmp_path: Path) -> None:
+    study = make_study(tmp_path)
+    rows = run_provenance(skill_text, study)
+    files = {(r["type"], r["name"]): r["value"] for r in rows}
+    assert files[("script", "code/prepare.R")] == md5(study / "code" / "prepare.R")
+
+
+def test_provenance_records_the_prepared_table(skill_text: str, tmp_path: Path) -> None:
+    study = make_study(tmp_path)
+    extra = (
+        'dir.create(file.path("outputs", "prepared"))\n'
+        'writeLines("x", file.path("outputs", "prepared", "data.csv"))\n'
+    )
+    rows = run_provenance(skill_text, study, extra)
+    files = {(r["type"], r["name"]): r["value"] for r in rows}
+    assert files[("output", "outputs/prepared/data.csv")] == md5(
+        study / "outputs" / "prepared" / "data.csv"
+    )
+
+
+def test_provenance_ignores_other_tools_folders(
+    skill_text: str, tmp_path: Path
+) -> None:
+    extra = (
+        'dir.create(file.path("outputs", "fmriprep"))\n'
+        'writeLines("x", file.path("outputs", "fmriprep", "a.tsv"))\n'
+    )
+    rows = run_provenance(skill_text, make_study(tmp_path), extra)
+    assert not any(r["name"].startswith("outputs/fmriprep/") for r in rows)
+
+
+def test_provenance_without_prepared_folder(skill_text: str, tmp_path: Path) -> None:
+    study = make_study(tmp_path)
+    run_provenance(skill_text, study)
+    assert not (study / "outputs" / "prepared").exists()
+
+
 def test_provenance_skips_outputs_from_earlier_runs(
     skill_text: str, tmp_path: Path
 ) -> None:
@@ -262,6 +303,7 @@ def test_messages_after_log_closed_do_not_break_provenance(
 ) -> None:
     study = make_study(tmp_path)
     (study / "code" / "analysis.R").write_text("# script\n", encoding="utf-8")
+    (study / "code" / "prepare.R").write_text("# prep\n", encoding="utf-8")
     code = (
         extract_r_chunk(skill_text, "setup")
         + "old_contrasts <- options()\nrequired_packages <- character(0)\n"
