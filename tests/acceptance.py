@@ -235,7 +235,7 @@ def ramm_packages() -> frozenset[str]:
     skill = REPO_ROOT / "skills" / "ramm"
     text = "\n".join(
         (skill / name).read_text(encoding="utf-8")
-        for name in ("SKILL.md", "references/script.md")
+        for name in ("SKILL.md", "references/script.md", "references/prepare.md")
     )
     named = set(re.findall(r"\b([A-Za-z][\w.]*)::", text))
     for listed in PACKAGE_LIST.findall(text):
