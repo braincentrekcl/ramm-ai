@@ -436,7 +436,7 @@ nesting, any known issues like non-unique IDs or missing data]
 - Exclude rows where `qc_flag` is "torn" (torn sections)
 
 # Exclusions and Attrition (optional)
-- mouse_07: died before the second session (recorded 2026-03-02)
+- individual_07: withdrew before the second session (recorded 2026-03-02)
 
 # Preferences (optional)
 - P-value adjustment: Holm, Tukey, Bonferroni, none

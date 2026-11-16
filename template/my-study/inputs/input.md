@@ -12,9 +12,10 @@ Kept under version control, with a dated commit before you run the analysis,
 
 In plain English: how many individuals (mice, participants, donors…) are in
   each group, what was measured, and how the measurements are organised (for
-  example mouse, then slide, then section, then region).
-Mention anything unusual, such as slide numbers that restart for every individual,
-  or measurements you know are missing.
+  example individual, then a measurement within it, then a repeat of that
+  measurement).
+Mention anything unusual, such as IDs that restart for every individual, or
+  measurements you know are missing.
 
 # Column Mappings (required)
 
@@ -48,7 +49,7 @@ Individuals lost or excluded after you wrote the Study Design: who, why, and
 Keep the Study Design numbers as planned; the script reports planned and actual
   numbers side by side.
 
-- For example: mouse_07 died before the second session (recorded 2026-03-02)
+- For example: individual_07 withdrew before the second session (recorded 2026-03-02)
 
 # Preferences (optional)
 
