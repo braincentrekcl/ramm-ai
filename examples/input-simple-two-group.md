@@ -12,6 +12,8 @@ A simple two-group comparison. 20 mice were randomly assigned to either a treatm
 
 - Compare treated to vehicle
 
-# Data File
+# Data
 
-- File: `data.csv`
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `animal_id`; missing
+  values are empty cells.

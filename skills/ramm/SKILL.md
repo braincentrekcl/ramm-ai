@@ -441,8 +441,9 @@ nesting, any known issues like non-unique IDs or missing data]
 - Pairwise comparisons within genotype
 - Or: none (the main effect answers the question, for example a factor with two levels)
 
-# Data File (required)
-- File: `data.csv` (read from inputs/)
+# Data (required)
+[The user's answers, in their own words, to the template's questions about
+each data file; references/prepare.md lists what they must cover]
 
 # QC Rules (optional)
 - Exclude rows where `qc_flag` is "torn" (torn sections)
@@ -459,6 +460,6 @@ nesting, any known issues like non-unique IDs or missing data]
 - Reproducible environment: container or renv
 
 # Toy Data (optional)
-- File: `toy_data.csv` (name starts with toy_; sent to the AI provider)
+- File: `toy_data.csv` (same columns as one of the data files; name starts with toy_; sent to the AI provider)
 ```
 

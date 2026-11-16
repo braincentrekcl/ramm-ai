@@ -33,10 +33,28 @@ Mention anything unusual, such as IDs that restart for every individual, or
 - Or write none, if the main effect answers your question (for example a factor
   with only two levels)
 
-# Data File (required)
+# Data (required)
 
-- File: `data.csv` (the exact name of the data file the script will read; put
-  it in this inputs folder when you are ready to run the script)
+For each data file, say in your own words:
+- its name (and the sheet, for a spreadsheet); if the data is split into
+  several files of the same kind (for example one per individual), how the
+  files are named
+- whether it has column names, and on which row; anything above or below the
+  table that is not data (settings, a summary row)
+- what one row is (one individual, or one of several measurements of an
+  individual?)
+- where each ID is written (the individual's, and each sub-measurement's, if
+  it has one)
+- which columns you need and what each one is
+- if one kind of measurement is spread over several columns (for example one
+  column per condition or time point), which columns, and what to call them
+  together
+- how a missing value is written (empty, NA, -, -999…)
+- if you have more than one file, how they connect (for example "the ID
+  column in the second file is the individual's ID"), and any difference in
+  how IDs are written (upper or lower case, zero padding, a prefix)
+
+Put the files in this inputs folder when you are ready to run the script.
 
 # QC Rules (optional)
 
@@ -65,6 +83,6 @@ Keep the Study Design numbers as planned; the script reports planned and actual
 
 # Toy Data (optional)
 
-- File: `toy_data.csv` (a few made-up rows with the same columns as your data;
-  the name must start with toy_, and everything in it is sent to the AI
-  provider)
+- File: `toy_data.csv` (a few made-up rows with the same columns as one of
+  your data files; the name must start with toy_, and everything in it is
+  sent to the AI provider)
