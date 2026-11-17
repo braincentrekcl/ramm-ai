@@ -127,15 +127,20 @@ def leaked_rows(text: str, data_rows: list[str]) -> bool:
     return any(row in text for row in data_rows)
 
 
-# A file in inputs/ other than input.md or a toy_ file; wildcards, as in a
-# search that excludes *.csv, are not a file name.
-INPUT_DATA = re.compile(r"inputs/(?!input\.md\b|toy_)[\w.-]+\.\w+")
+# A file in inputs/, at any depth, other than input.md or a toy_ file, or any
+# file inside a folder in outputs/ (outputs/prepared/ holds the data,
+# rearranged; other tools' folders hold theirs); wildcards, as in a search
+# that excludes *.csv, are not a file name.
+INPUT_DATA = re.compile(
+    r"inputs/(?!input\.md\b|toy_)(?:[\w.-]+/)*[\w.-]+\.\w+"
+    r"|outputs/(?:[\w.-]+/)+[\w.-]+\.\w+"
+)
 PATH_KEYS = ("file_path", "filePath", "notebook_path", "path", "paths")
 
 
 def names_input_data(text: str) -> bool:
-    """True when a path or command names a data file in inputs/; heredoc text a
-    command writes is ignored."""
+    """True when a path or command names a data file in inputs/ or a file inside
+    a folder in outputs/; heredoc text a command writes is ignored."""
     return INPUT_DATA.search(HEREDOC.sub("", text)) is not None
 
 
@@ -235,7 +240,7 @@ def ramm_packages() -> frozenset[str]:
     skill = REPO_ROOT / "skills" / "ramm"
     text = "\n".join(
         (skill / name).read_text(encoding="utf-8")
-        for name in ("SKILL.md", "references/script.md")
+        for name in ("SKILL.md", "references/script.md", "references/prepare.md")
     )
     named = set(re.findall(r"\b([A-Za-z][\w.]*)::", text))
     for listed in PACKAGE_LIST.findall(text):

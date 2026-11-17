@@ -19,9 +19,11 @@ Most subjects have all the regions but not all regions are on all slides or sect
 
 - Compare each drug group (drugA, drugB, drugC) to vehicle
 
-# Data File
+# Data
 
-- File: `data.csv`
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `subject_id`; missing
+  values are empty cells.
 
 # Preferences
 

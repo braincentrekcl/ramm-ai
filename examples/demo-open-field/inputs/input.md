@@ -24,9 +24,11 @@ Three videos were corrupted and could not be scored, so three mice have a result
 
 - Keep every mouse, including those with only one condition; do not exclude mice for a missing session.
 
-# Data File
+# Data
 
-- File: `data.csv`
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `mouse_id`; missing
+  values are empty cells.
 
 # Preferences
 

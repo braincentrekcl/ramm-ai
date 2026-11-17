@@ -218,9 +218,9 @@ docker run --rm -it -v "$(pwd)":/analysis myanalysis R
 ## If something goes wrong
 
 - **"Cannot connect to Docker daemon"**: Docker Desktop is not running. Start it.
-- **"No such file or directory: data.csv"**: make sure your data file is in
-  inputs/ and you ran docker run from your study folder, and that the filename
-  in the analysis script matches.
+- **"No such file or directory: data.csv"**: make sure your data files are in
+  inputs/ and you ran docker run from your study folder, and that the file
+  names in code/prepare.R match.
 - **Build fails on package install**: this usually means the PPM snapshot is unavailable. Check https://packagemanager.posit.co/ — or update the date in the Dockerfile.
 - **Out of memory / slow build**: give Docker Desktop more RAM (Settings → Resources).
 ````

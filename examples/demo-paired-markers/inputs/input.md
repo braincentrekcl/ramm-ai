@@ -34,6 +34,8 @@ Age is treated as a categorical factor (seven discrete age groups), not as a con
 - For each marker, compare every age with adult.
 - Test whether the two markers differ in how far each age is from adult, relative to each marker's own adult level (proportional divergence).
 
-# Data File
+# Data
 
-- File: `data.csv`
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `mouse_id`; missing
+  values are empty cells.

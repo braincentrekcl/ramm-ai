@@ -14,9 +14,11 @@ A longitudinal study with 30 rats across 3 treatment groups (vehicle, low dose, 
 - Compare low dose and high dose to vehicle at each timepoint
 - Test the group-by-time interaction
 
-# Data File
+# Data
 
-- File: `data.csv`
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `rat_id`; missing
+  values are empty cells.
 
 # Preferences
 

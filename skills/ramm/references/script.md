@@ -5,7 +5,7 @@ Section 0 to Section 12 are the script's sections below; links point to sections
 
 Generate the R script with these sections in this exact order.
 Each section must have a clear comment header.
-The script runs from the study folder with `Rscript code/analysis.R`, reads only from `inputs/` and writes only to `outputs/`.
+The script runs from the study folder with `Rscript code/analysis.R`, reads only from `inputs/` and from the prepared table its own `prepare.R` writes, and writes only to `outputs/`.
 Before writing the script to disk, check it against every rule in this skill; if any check fails, fix the script before writing.
 
 ## Section 0: Header
@@ -28,11 +28,11 @@ Before writing the script to disk, check it against every rule in this skill; if
 # Post-hoc comparisons: {what was requested, or "none (main effect only)"}
 #
 # Run from your study folder (the one holding inputs/, code/ and outputs/),
-# once your data file is in inputs/:
+# once your data files are in inputs/:
 #   Rscript code/analysis.R
 #
 # IMPORTANT: Review this script before running. Check that:
-#   1. Column names match your actual data file
+#   1. Column names match your actual data files
 #   2. The random effects structure matches your understanding
 #   3. The post-hoc comparisons are what you intended
 #
@@ -99,14 +99,19 @@ for (pkg in required_packages) library(pkg, character.only = TRUE)
 Name the log after the script (`analysis.R` writes `outputs/analysis_log.txt`; `brain_regions_analysis.R` writes `outputs/brain_regions_analysis_log.txt`).
 
 Adjust the package list based on the model requirements.
+Add every package `prepare.R` uses (for example `readxl` for a spreadsheet): `prepare.R` runs inside this script, so this list covers it too.
 Choose tidyverse packages over base R, when available, but don't require all of tidyverse.
 Add packages as needed.
 
 ## Section 2: Data Loading and Preparation
 
-- Read the data file named under `Data File` in input.md from `inputs/` (`readr::read_csv(file.path("inputs", "data.csv"))`; see [Data access](../SKILL.md#data-access) for .tsv and spreadsheets).
-  If the file is missing, stop with a plain message saying to put it in `inputs/`.
-- **Check the data against the design** straight after reading, using this pattern with the column names, unique IDs, groups and individuals per group from input.md.
+- First run `prepare.R`, which reads the raw data files and writes the prepared table (see `references/prepare.md`): `source(file.path("code", "prepare.R"))`.
+- Then read the prepared table back, so the table the model uses is exactly the file the user can open, with every ID and group column from Column Mappings read as text, so an ID such as `007` stays `007`:
+  `dat <- readr::read_csv(file.path("outputs", "prepared", "data.csv"), na = "", col_types = readr::cols(subject_id = "c", drug_group = "c"))`.
+  `na = ""` matches how `prepare.R` writes missing values, so a value written as the text "NA" stays as it is.
+- Then calculate any value input.md names (see [Calculated values](../SKILL.md#calculated-values)), with its formula in a comment.
+  Before calculating, run the continuous check below on each column the formula uses, so text in one of them stops with a plain message instead of an R error; the calculated value then exists when the design checks look for it.
+- **Check the data against the design** straight after any calculated values, using this pattern with the column names, unique IDs, groups and individuals per group from input.md.
   Run the one-group-per-individual check only for between-individual factors; leave it out for within-individual factors (see [Hierarchy and nesting](../SKILL.md#hierarchy-and-nesting)), where every individual has several levels by design:
 
 <!-- chunk: data-checks -->
@@ -837,6 +842,8 @@ Build it from the fitted results, never from hard-coded numbers, in plain langua
 - Each slope as a sentence, with its units per unit of the predictor (for example "binding in WT mice rose by 2.1 µCi/g per mg/kg of dose (95% CI 1.9 to 2.3; adjusted p < 0.001)"), and each difference in slope the same way.
 - If input.md asked for no comparisons, say so ("No comparisons between groups were requested: the main effect answers the question") and give each fixed effect's F-test as a sentence, with its two degrees of freedom and p-value; for a two-level factor, follow it with the difference as above, with an unadjusted p-value.
 - The subgroup disclaimer from Section 8, if subgroups were compared.
+- A **How the data were prepared** list: the steps `prepare.R` recorded in `preparation_steps`, one per line.
+- Each value calculated from the measurements (see [Calculated values](../SKILL.md#calculated-values)), with its formula, so a reader sees how it was made without the script.
 - A **Deviations from the confirmed design** list: each change made to the analysis after the script first ran, with what prompted it (see [Deviations from the plan](../SKILL.md#deviations-from-the-plan)), or "None" when the script still follows the design confirmed in the design summary.
 - Any warnings raised (singular fit, convergence, unequal variability, small groups).
 - A list of the other output files and what each contains, including the log in `outputs/`, the full record of the run.
@@ -862,28 +869,34 @@ close(log_con)
 ## Section 12: Provenance
 
 Always the last section, after the log is closed, so the log's checksum is final.
-Use the script's real file name in `script_file`.
+Use the scripts' real file names in `script_files`.
 
 <!-- chunk: provenance -->
 ```r
 # --- 12. Provenance ---
 # Record exactly what produced these results: a checksum (a fingerprint of
-# a file's contents) for this script, every file in inputs/, and every file
+# a file's contents) for both scripts, every file in inputs/, and every file
 # this run wrote to outputs/, plus the R and package versions. If any of
 # these files changes later, its checksum no longer matches this record.
-script_file <- file.path("code", "analysis.R")
-if (!file.exists(script_file)) {
-  stop("script_file does not name this script: ", script_file,
-       " is not in the study folder. Set it to the script's file name.", call. = FALSE)
+script_files <- file.path("code", c("analysis.R", "prepare.R"))
+missing_scripts <- script_files[!file.exists(script_files)]
+if (length(missing_scripts) > 0) {
+  stop("script_files names a script that is not in the study folder: ",
+       paste(missing_scripts, collapse = ", "),
+       ". Set it to the scripts' file names.", call. = FALSE)
 }
 input_files <- list.files("inputs", recursive = TRUE, full.names = TRUE)
-output_files <- list.files("outputs", recursive = TRUE, full.names = TRUE)
+# Only this script's own outputs: files at the top of outputs/ and in
+# outputs/prepared/. Folders other tools write in outputs/ are left out.
+output_files <- c(list.files("outputs", full.names = TRUE),
+                  list.files(file.path("outputs", "prepared"), full.names = TRUE))
+output_files <- output_files[!dir.exists(output_files)]
 # Only files written during this run, never older ones left in outputs/.
 output_files <- output_files[file.mtime(output_files) >= run_started &
                                basename(output_files) != "provenance.csv"]
-recorded_files <- c(script_file, input_files, output_files)
+recorded_files <- c(script_files, input_files, output_files)
 file_rows <- data.frame(
-  type  = c("script", rep("input", length(input_files)),
+  type  = c(rep("script", length(script_files)), rep("input", length(input_files)),
             rep("output", length(output_files))),
   name  = recorded_files,
   value = unname(tools::md5sum(recorded_files))

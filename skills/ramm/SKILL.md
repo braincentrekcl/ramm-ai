@@ -95,23 +95,24 @@ Never open the user's data: this keeps unpublished data away from the AI provide
 - Read only `inputs/input.md` and, if input.md names one under `Toy Data`, a file in `inputs/` whose name starts with `toy_`.
   If the named toy file is elsewhere or named otherwise, do not open it; ask the user to move or rename it.
 - Open no other data file (.csv, .tsv, .xlsx, .xls), wherever it is, even if the user asks, and never search inside one: offer to write a check into the script instead.
-  The checks you would have made by reading the data go into Section 2a of the script.
+  The checks you would have made by reading the data go into the scripts: on the raw files into `code/prepare.R`, and on the design into Section 2a of `code/analysis.R`.
 - A toy file shows column names and types only; never rely on it: the script must work from input.md alone.
-- The real data may not be in the folder when you write the script; that is expected.
-  Take the file name from `Data File` in input.md.
-  Read a .tsv with `readr::read_tsv()` instead of `readr::read_csv()`, and a spreadsheet with `readxl::read_excel()`, adding `readxl` to the packages in Section 1 of the script.
+- The real data may not be in the folder when you write the scripts; that is expected.
+  Take the data files from `Data` in input.md.
 
 ### Writing and running the script
 
-Write the script to `code/analysis.R` unless the user asks for another name; never stop to ask for one.
+Write the scripts to `code/prepare.R` and `code/analysis.R` unless the user asks for other names; never stop to ask for one.
+Every study has both: `analysis.R` runs `prepare.R`, which turns the raw data files into the one table the model reads.
 Write nothing outside `code/`.
 Before writing or changing a script, read `references/script.md`, next to this file: it gives the script's sections and the patterns to follow, and "Section 1" to "Section 12" in this skill mean those sections.
-Read all of it; if your tool shortens long output, read it in parts (for example 200 lines at a time) until you have seen every section.
+Before writing or changing `prepare.R`, read `references/prepare.md`, next to this file.
+Read all of each; if your tool shortens long output, read it in parts (for example 200 lines at a time) until you have seen every section.
 
 **You never run the script, or R in any form, not even a syntax check: the user runs it.
 Never install packages.**
 
-- Give the user the single command to run from their study folder once their data file is in `inputs/`, `Rscript code/analysis.R`, and list the files it will write in `outputs/`, including the log and `provenance.csv`.
+- Give the user the single command to run from their study folder once their data files are in `inputs/`, `Rscript code/analysis.R`, and list the files it will write in `outputs/`, including the prepared table in `outputs/prepared/`, the log and `provenance.csv`.
   If the study has a pinned environment from the reproduce skill, give its run command from `envs/README.md` instead (`Rscript code/run_analysis.R` for renv, `docker run` or `apptainer run` for a container).
 - If the user needs R or the packages installed, point them to the reproduce skill (see [Reproducible environment](#reproducible-environment)).
 - If the script fails, help from the error the user pastes or the log in `outputs/`; fix problems by changing the script, and the user reruns it.
@@ -123,6 +124,8 @@ Never install packages.**
 
 **Outputs are read-only to you.**
 Read them when the user asks you to explain results or an error, but never edit, create or delete a file in `outputs/`: a number that no script produced cannot be traced.
+Read only the files the script writes at the top of `outputs/` for you to explain: `results_*`, `plot_*`, `*_log.txt` and `provenance.csv`.
+Never open anything inside a folder in `outputs/`: `outputs/prepared/` holds the user's data, rearranged, and a folder another tool wrote holds that tool's data.
 If the user asks you to change a result, decline and offer to change the script instead.
 
 ### Session record
@@ -168,9 +171,9 @@ The user starts you in their study folder:
 
 ```
 my-study/
-├── inputs/   input.md (the study design), the data, and an optional toy file
-├── code/     the analysis script you write, and sessions/ for the conversation record
-├── outputs/  everything the script writes
+├── inputs/   input.md (the study design), the raw data files, and an optional toy file
+├── code/     prepare.R and analysis.R, the scripts you write, and sessions/ for the conversation record
+├── outputs/  everything the scripts write, with the prepared data in prepared/
 └── envs/     the reproducible environment, if the user runs the reproduce skill
 ```
 
@@ -260,6 +263,14 @@ For each level, determine:
 - If input.md has an `Exclusions and Attrition` heading, list those individuals in the design summary.
   Keep the planned numbers from Study Design for the script's design check (Section 2a); never change them to match the losses.
 
+#### Calculated values
+
+- A value calculated from the measurements (for example an index, a ratio, a normalisation, a z-score or a composite score) is calculated only when input.md names it.
+  Never suggest one.
+- Put each one in the design summary in plain words, with its formula, and calculate it in Section 2 of the analysis script, never in `prepare.R`.
+- Never raise averaging replicates.
+  If the user asks to average them, recommend not averaging: the model already accounts for replicates within each individual, and averaging first throws away what it uses to separate differences between individuals from differences within them.
+
 #### Implied interactions
 
 Interactions follow the study design.
@@ -282,11 +293,12 @@ With only two values and one measurement at each, an individual's own slope cann
 Say that leaving it out is simpler and fits more reliably, but if individuals do differ, leaving it out can make results look more certain than they are; recommend leaving it out unless individuals are expected to differ, and ask.
 Otherwise do not mention slopes.
 
-#### Data file
+#### Data
 
-- The file name under `Data File` in input.md (for example `data.csv`); the script reads it from `inputs/`.
-- If input.md does not name one, ask.
-  Never look for it by opening files.
+- Read `references/prepare.md`, next to this file, before extracting this.
+- From `Data` in input.md, check that every data file is described as [What input.md must say](references/prepare.md#what-inputmd-must-say) lists; for anything missing, ask, and suggest text for the user to add.
+  Never look in a file to find out.
+- Put the preparation steps in the design summary, as [Reading back the steps](references/prepare.md#reading-back-the-steps) says.
 
 ### Write the script
 
@@ -296,7 +308,7 @@ When the user confirms the design summary, write the script as [Writing and runn
 
 After writing, tell the user, in plain language (see [Tone and communication](#tone-and-communication)):
 
-- What file was created, and that `outputs/results_summary.md` is the place to start once it has run
+- What files were created, and that `outputs/results_summary.md` is the place to start once it has run
 - What R packages need to be installed
 - Remind them to review the script before trusting it, especially that the hierarchy picture matches how their samples or individuals were handled
 - If the script compares subgroups, repeat the subgroup disclaimer from Section 8 in plain language
@@ -429,14 +441,15 @@ nesting, any known issues like non-unique IDs or missing data]
 - Pairwise comparisons within genotype
 - Or: none (the main effect answers the question, for example a factor with two levels)
 
-# Data File (required)
-- File: `data.csv` (read from inputs/)
+# Data (required)
+[The user's answers, in their own words, to the template's questions about
+each data file; references/prepare.md lists what they must cover]
 
 # QC Rules (optional)
 - Exclude rows where `qc_flag` is "torn" (torn sections)
 
 # Exclusions and Attrition (optional)
-- mouse_07: died before the second session (recorded 2026-03-02)
+- individual_07: withdrew before the second session (recorded 2026-03-02)
 
 # Preferences (optional)
 - P-value adjustment: Holm, Tukey, Bonferroni, none
@@ -447,6 +460,6 @@ nesting, any known issues like non-unique IDs or missing data]
 - Reproducible environment: container or renv
 
 # Toy Data (optional)
-- File: `toy_data.csv` (name starts with toy_; sent to the AI provider)
+- File: `toy_data.csv` (same columns as one of the data files; name starts with toy_; sent to the AI provider)
 ```
 

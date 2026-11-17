@@ -12,6 +12,9 @@ Anything the assistant opens is sent to your AI provider.
   the replicate audit list your individuals' IDs.
   If those IDs could identify someone (for example participant codes linked to
   names), use coded IDs in your data.
+- It is told never to open anything inside a folder in `outputs/`: once the
+  script has run, `outputs/prepared/` holds your data, rearranged into one
+  table, and a folder another tool wrote holds that tool's data.
 - Only OpenCode with the template config enforces these limits.
   On Claude Code, Codex and Copilot they are instructions the agent follows,
   not a lock: keeping the real data out of the folder until you run the script

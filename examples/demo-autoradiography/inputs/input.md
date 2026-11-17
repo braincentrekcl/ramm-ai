@@ -29,9 +29,11 @@ We want to know whether binding differs between genotypes, and whether the genot
 
 - Keep every mouse and every usable measurement; do not exclude mice for having few measurements.
 
-# Data File
+# Data
 
-- File: `data.csv`
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `mouse_id`; missing
+  values are empty cells.
 
 # Preferences
 
