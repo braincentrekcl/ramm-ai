@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install Claude Code, Codex, GitHub Copilot CLI and OpenCode
-        run: npm install -g @anthropic-ai/claude-code@2.1.277 @openai/codex@0.160.1 @github/copilot@1.0.93 @opencode/cli@2.0.24
+        run: npm install -g @anthropic-ai/claude-code@2.1.304 @openai/codex@0.163.0 @github/copilot@1.0.112 @opencode/cli@2.1.2
       - name: Validate the Claude Code plugin
         run: claude plugin validate --strict .
       - name: Check Codex sees both skills
