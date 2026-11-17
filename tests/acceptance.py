@@ -64,7 +64,7 @@ START = {
     "copilot": "/ramm",
     "opencode": "@ramm",
 }
-OPENCODE_DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
+OPENCODE_DEFAULT_MODEL = "opencode/deepseek-v4.1-flash-free"
 REQUEST = "Please analyse my study; the design is in inputs/input.md."
 # With --ask-for-method, the user names a method beyond RAMM-AI's models and,
 # after the agent's warning, confirms it.
