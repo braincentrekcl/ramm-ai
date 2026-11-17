@@ -11,7 +11,7 @@ Usage (from the repository root):
     python3 tests/acceptance.py claude autoradiography --runs 3
     python3 tests/acceptance.py codex open-field --runs 3 --effort medium
     python3 tests/acceptance.py opencode open-field --runs 3
-    python3 tests/acceptance.py copilot autoradiography --runs 3
+    python3 tests/acceptance.py copilot open-field --model auto --auto-tier balance
     python3 tests/acceptance.py claude paired-markers --runs 3 --ask-for-method
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
@@ -492,8 +492,17 @@ def parse_copilot(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
 
 
 class Copilot:
-    def __init__(self, plugin: Path, home: Path, model: str | None, effort: str | None):
+    def __init__(
+        self,
+        plugin: Path,
+        home: Path,
+        model: str | None,
+        effort: str | None,
+        auto_tier: str | None,
+    ):
         self.plugin, self.model, self.effort, self.home = plugin, model, effort, home
+        # The routing profile Copilot picks a model with when the model is auto.
+        self.auto_tier = auto_tier
         self.session: str | None = None
         self.models_seen: set[str] = set()
         # A fresh Copilot home, so no plugin installed on this computer loads;
@@ -505,7 +514,7 @@ class Copilot:
     def _env(self) -> dict[str, str]:
         return {**os.environ, "COPILOT_HOME": str(self.home)}
 
-    def turn(self, study: Path, prompt: str) -> Turn:
+    def command(self, prompt: str) -> list[str]:
         # File edits are allowed, as Claude's acceptEdits allows them; anything
         # else a user would be asked about is denied in a headless run.
         cmd = ["copilot", "-p", prompt, "--output-format", "json"]
@@ -515,10 +524,15 @@ class Copilot:
             cmd += ["--resume", self.session]
         if self.model:
             cmd += ["--model", self.model]
+        if self.auto_tier:
+            cmd += ["--auto-tier", self.auto_tier]
         if self.effort:
             cmd += ["--reasoning-effort", self.effort]
+        return cmd
+
+    def turn(self, study: Path, prompt: str) -> Turn:
         proc = subprocess.run(
-            cmd,
+            self.command(prompt),
             check=False,
             cwd=study,
             env=self._env(),
@@ -537,7 +551,8 @@ class Copilot:
 
     def describe(self) -> str:
         models = ", ".join(sorted(self.models_seen)) or "unknown"
-        return f"{models}, effort {self.effort or 'default'}"
+        tier = f", auto tier {self.auto_tier}" if self.auto_tier else ""
+        return f"{models}{tier}, effort {self.effort or 'default'}"
 
 
 class OpenCode:
@@ -789,6 +804,9 @@ def main() -> None:
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--model")
     parser.add_argument("--effort")
+    parser.add_argument(
+        "--auto-tier", help="copilot only: the routing profile for --model auto"
+    )
     parser.add_argument("--out", type=Path, help="defaults to a new temporary folder")
     parser.add_argument(
         "--ask-for-method",
@@ -796,6 +814,8 @@ def main() -> None:
         help="the user asks for a method beyond RAMM-AI's models by name, then confirms it",
     )
     args = parser.parse_args()
+    if args.auto_tier and args.agent != "copilot":
+        parser.error("--auto-tier is a Copilot option")
 
     # Absolute, because OpenCode needs absolute skill paths and PWD.
     out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()
@@ -824,7 +844,13 @@ def main() -> None:
         elif args.agent == "opencode":
             agent = OpenCode(plugin, args.model, args.effort)
         elif args.agent == "copilot":
-            agent = Copilot(plugin, run_dir / "copilot-home", args.model, args.effort)
+            agent = Copilot(
+                plugin,
+                run_dir / "copilot-home",
+                args.model,
+                args.effort,
+                args.auto_tier,
+            )
         else:
             agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
         try:
