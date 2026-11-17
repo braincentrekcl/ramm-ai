@@ -274,3 +274,40 @@ def test_dates_stop_when_a_filled_cell_is_not_a_date(
     assert "d.xlsx" in result.stderr
     assert "row 5" in result.stderr
     assert "unknown" not in result.stderr
+
+
+def read_and_check(
+    prepare_text: str, folder: Path, lines: str, skip: int = 0
+) -> subprocess.CompletedProcess[str]:
+    (folder / "S01.csv").write_text(lines, encoding="utf-8")
+    return run_checks(
+        prepare_text,
+        folder,
+        f'table <- readr::read_csv("S01.csv", skip = {skip}, na = "",\n'
+        '  col_types = readr::cols(.default = "c"))\n'
+        f'check_read(table, "S01.csv", skipped_lines = {skip})\n',
+    )
+
+
+def test_read_stops_on_a_row_with_too_few_fields(
+    prepare_text: str, tmp_path: Path
+) -> None:
+    result = read_and_check(prepare_text, tmp_path, "subject_id,score\nS01\nS02,4\n")
+    assert result.returncode != 0
+    assert "Line 2 of S01.csv" in result.stderr
+
+
+def test_read_stops_on_a_row_with_too_many_fields(
+    prepare_text: str, tmp_path: Path
+) -> None:
+    result = read_and_check(
+        prepare_text, tmp_path, "export\nrun 3\nsubject_id,score\nS01,3,9\n", skip=2
+    )
+    assert result.returncode != 0
+    assert "Line 4 of S01.csv" in result.stderr
+    assert "3,9" not in result.stderr
+
+
+def test_read_passes_an_empty_field(prepare_text: str, tmp_path: Path) -> None:
+    result = read_and_check(prepare_text, tmp_path, "subject_id,score\nS01,\nS02,4\n")
+    assert result.returncode == 0, result.stderr

@@ -50,6 +50,7 @@ Write `code/prepare.R`, then `code/analysis.R`, which runs it (Section 2 of `ref
 `prepare.R` starts with a header comment saying that `code/analysis.R` runs it and that it follows `Data` in inputs/input.md, then the checks from [The checks](#the-checks), unchanged.
 Then one block per step: a comment saying in plain words what input.md asked for, the step, its check, and a `record_step()` line with its counts.
 Read a .tsv with `readr::read_tsv()` instead of `readr::read_csv()`, with the same arguments.
+Call `check_read()` straight after reading each .csv or .tsv file, giving it the same `skip`.
 Read a file without column names with `col_names = FALSE`, as the pattern shows, so its first row stays data.
 Read a spreadsheet column that input.md says holds dates as dates, as the pattern shows; dates in a CSV file stay as written.
 Build each file pattern from how input.md says the files are named, as the pattern shows.
@@ -79,6 +80,7 @@ check_files_found(raw_files, "every .csv in inputs/raw/")
 per_file <- lapply(raw_files, function(f) {
   table <- readr::read_csv(f, skip = 2, na = c("", "-"),
                            col_types = readr::cols(.default = "c"))
+  check_read(table, basename(f), skipped_lines = 2)
   check_columns(table, c("condition", "score"), basename(f))
   log_missing(table, basename(f))
   table$subject_id <- tools::file_path_sans_ext(basename(f))
@@ -132,6 +134,7 @@ record_step(paste0("Joined individuals.xlsx on the individual's ID: ",
 # read with col_names = FALSE, so its first row stays data, then named:
 # table <- readr::read_csv(f, col_names = FALSE, na = c("", "-"),
 #                          col_types = readr::cols(.default = "c"))
+# check_read(table, basename(f))
 # check_column_count(table, 3, basename(f))
 # names(table) <- c("subject_id", "condition", "score")
 
@@ -194,6 +197,21 @@ check_column_count <- function(table, expected, file) {
     stop(file, " has ", ncol(table), " columns; inputs/input.md describes ",
          expected, ". Check the columns listed under 'Data' in inputs/input.md.",
          call. = FALSE)
+  }
+}
+
+# A line of a .csv or .tsv file has more or fewer fields than the file has
+# columns. readr would fill the gap with a missing value, or join the extra
+# fields into the last column, so stop instead. skipped_lines is the skip
+# used to read the file, so the message names the lines of the file itself.
+check_read <- function(table, file, skipped_lines = 0) {
+  lines <- unique(readr::problems(table)$row) + skipped_lines
+  if (length(lines) > 0) {
+    stop(if (length(lines) == 1) "Line " else "Lines ",
+         paste(lines, collapse = ", "), " of ", file,
+         if (length(lines) == 1) " does" else " do", " not have ", ncol(table),
+         " fields like the rest of the file, so its values cannot be matched ",
+         "to columns. Correct the file.", call. = FALSE)
   }
 }
 
