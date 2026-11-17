@@ -389,3 +389,29 @@ def test_auto_tier_is_refused_for_other_agents(repo_root: Path) -> None:
     )
     assert proc.returncode == 2
     assert "--auto-tier is a Copilot option" in proc.stderr
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "",
+        '[error: {"name": "ModelUnavailable", "data": {"tags": ["free"]}}]',
+        f"[no reply in {acceptance.TURN_TIMEOUT_S} s]",
+    ],
+)
+def test_turn_failed_when_the_agent_did_nothing(reply: str) -> None:
+    assert acceptance.turn_failed(acceptance.Turn(tag="", prompt="p", reply=reply))
+
+
+@pytest.mark.parametrize(
+    "done",
+    [
+        {"reply": "Here is the design summary."},
+        {"reply": "[error: {}]\n\nI could not read that file."},
+        {"commands": ["ls"]},
+        {"paths": ["inputs/input.md"]},
+        {"changed": ["code/analysis.R"]},
+    ],
+)
+def test_turn_failed_is_false_when_the_agent_did_something(done: dict) -> None:
+    assert not acceptance.turn_failed(acceptance.Turn(tag="", prompt="p", **done))

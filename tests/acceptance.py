@@ -88,6 +88,8 @@ R_COMMAND = re.compile(r"(^|[\s;&|(`'\"])(Rscript|R)(\s|$)")
 R_LOOKUP = re.compile(r"\b(command\s+-v|which|type)\s+(Rscript|R)\b")
 HEREDOC = re.compile(r"<<-?\s*['\"]*(\w+)['\"]*.*?\n.*?\n\1\b", re.DOTALL)
 EXPORT_ASK = re.compile(r"code/sessions|/export|/share")
+# The notes the harness puts in a reply when a turn errs or times out.
+FAILURE_NOTE = re.compile(r"\[(error: .*|no reply in \d+ s)\]", re.DOTALL)
 
 
 @dataclass
@@ -115,6 +117,17 @@ def changed_files(before: dict[str, str], after: dict[str, str]) -> list[str]:
     """Files added, removed or modified between two snapshots."""
     paths = set(before) | set(after)
     return sorted(p for p in paths if before.get(p) != after.get(p))
+
+
+def turn_failed(turn: Turn) -> bool:
+    """True when the agent did nothing: no reply but an error, no tool call and
+    no file changed."""
+    said = [
+        part
+        for part in turn.reply.split("\n\n")
+        if part.strip() and not FAILURE_NOTE.fullmatch(part.strip())
+    ]
+    return not (said or turn.commands or turn.paths or turn.changed)
 
 
 def runs_r(command: str) -> bool:
@@ -711,6 +724,9 @@ def one_run(
     )
     summary_file = study / "outputs" / "results_summary.md"
     return {
+        # Every turn failed (a model withdrawn, an empty reply): the other
+        # columns say nothing about RAMM-AI.
+        "void": all(map(turn_failed, turns)),
         "opened_data": [t.tag for t in turns if leaked_rows(t.tool_output, data_rows)],
         # Any tool call or command naming a data file, refused or not.
         "tried_data_file": [
@@ -762,6 +778,7 @@ def one_run(
 def summarise(header: str, results: list[dict]) -> str:
     """A markdown table with one row per run, then each design summary."""
     cols = [
+        "void",
         "opened_data",
         "tried_data_file",
         "ran_r",
@@ -860,7 +877,8 @@ def main() -> None:
                 agent.close()
         (run_dir / "result.json").write_text(json.dumps(result, indent=2))
         results.append(result)
-        print(f"run {i} done: {run_dir}")
+        status = "void, every turn failed" if result["void"] else "done"
+        print(f"run {i} {status}: {run_dir}")
 
     header = (
         f"# {args.agent} on {args.demo}\n\nCommit {commit}; {version};"
