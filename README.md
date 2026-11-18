@@ -106,6 +106,11 @@ Each demo is a study folder: copy it somewhere new, open your agent in it and
 - **FAIR:** a structured study design in `input.md`, reusable scripts,
   machine-readable CSV outputs and a provenance record of every run.
 
+## Contributing
+
+Open pull requests against the `develop` branch, not `main`.
+`main` changes only at a release, so every install gets a tested version.
+
 ## Licence
 
 MIT
