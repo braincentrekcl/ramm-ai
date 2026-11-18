@@ -136,6 +136,7 @@ def test_opencode_edit_rules(
         "subagent",
         "webfetch",
         "websearch",
+        "browser",
         "external_directory",
     ],
 )

@@ -50,6 +50,9 @@
     { "action": "execute", "resource": "*", "effect": "deny" },
     { "action": "subagent", "resource": "*", "effect": "deny" },
     { "action": "webfetch", "resource": "*", "effect": "deny" },
-    { "action": "websearch", "resource": "*", "effect": "deny" }
+    { "action": "websearch", "resource": "*", "effect": "deny" },
+    // No browser in OpenCode Desktop: its file upload reads files without
+    // checking the read rules above.
+    { "action": "browser", "resource": "*", "effect": "deny" }
   ]
 }
