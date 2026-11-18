@@ -19,7 +19,7 @@ Count, proportion and binary outcomes are beyond RAMM-AI's current scope: it
   flags them and fits a linear mixed model only if you choose to continue.
 Contributions that add properly validated support are welcome.
 
-RAMM-AI works with four coding agents: Claude Code, Codex, GitHub Copilot and
+RAMM-AI works with four coding agents: Claude Code, OpenAI Codex, GitHub Copilot and
   OpenCode.
 The agent and model versions we tested are listed in
   [Tested versions](docs/tested-versions.md).
@@ -30,7 +30,8 @@ Use whichever your AI provider offers; OpenCode works with almost any provider,
 
 Install these first:
 
-1. **An AI coding agent:** Claude Code, Codex, GitHub Copilot or OpenCode.
+1. **An AI coding agent:** Claude Code, OpenAI Codex, GitHub Copilot or
+   OpenCode.
    Use its desktop app or its terminal version.
    Its website will not work, because it cannot open files on your computer.
    [Installing RAMM-AI](docs/install.md) has links to each one.
@@ -66,7 +67,7 @@ Follow [Installing RAMM-AI](docs/install.md): it has the commands for each
    | Agent | Start RAMM-AI | Start reproduce |
    |---|---|---|
    | Claude Code | `/ramm:ramm` | `/ramm:reproduce` |
-   | Codex | `$ramm:ramm` | `$ramm:reproduce` |
+   | OpenAI Codex | `$ramm:ramm` | `$ramm:reproduce` |
    | GitHub Copilot | `/ramm` | `/reproduce` |
    | OpenCode v2 | `@ramm` | `@reproduce` |
 

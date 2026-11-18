@@ -9,7 +9,7 @@ If you have never used a terminal, use the desktop app.
 | Agent | Desktop app | Terminal |
 |---|---|---|
 | Claude Code | [Claude desktop app](https://code.claude.com/docs/en/desktop) (Code tab) | [Quickstart](https://code.claude.com/docs/en/quickstart) |
-| Codex | [Codex app](https://learn.chatgpt.com/docs/app) | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) |
+| OpenAI Codex | [ChatGPT desktop app](https://learn.chatgpt.com/docs/app) (Codex) | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) |
 | GitHub Copilot | [GitHub Copilot app](https://docs.github.com/en/copilot/get-started/quickstart-copilot-app) | [Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli) |
 | OpenCode v2 | [OpenCode Desktop](https://opencode.ai/v2/docs/#desktop) | [OpenCode](https://opencode.ai/v2/docs/) |
 
@@ -20,7 +20,7 @@ Then install RAMM-AI into it, from the terminal or from the app, as below.
 | Agent | Install | Start RAMM-AI | Start reproduce |
 |---|---|---|---|
 | Claude Code | `claude plugin marketplace add braincentrekcl/ramm-ai`, then `claude plugin install ramm@ramm-ai` | `/ramm:ramm` | `/ramm:reproduce` |
-| Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` | `$ramm:ramm` | `$ramm:reproduce` |
+| OpenAI Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` | `$ramm:ramm` | `$ramm:reproduce` |
 | GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` | `/ramm` | `/reproduce` |
 | OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it (three places) | `@ramm` | `@reproduce` |
 
@@ -36,7 +36,7 @@ Then install the plugin called `ramm` from it.
 | Claude desktop app (Code tab) and Claude Code in VS Code | [Install and manage plugins](https://code.claude.com/docs/en/plugins/install): "Add a marketplace", then "Install a plugin" |
 | GitHub Copilot app | [Customizing the GitHub Copilot app](https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app): add the marketplace from the Plugins view, then install |
 | GitHub Copilot in VS Code | [Agent plugins in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-plugins): add the marketplace to `chat.plugins.marketplaces`, or run **Chat: Install Plugin From Source** with the GitHub address |
-| Codex app | [Plugins](https://learn.chatgpt.com/docs/plugins): the app installs from OpenAI's and your workspace's plugin lists, so ask your workspace admin to import the marketplace, or use the command line above once |
+| ChatGPT desktop app (Codex) | [Plugins](https://learn.chatgpt.com/docs/plugins): the app installs from OpenAI's and your workspace's plugin lists, so ask your workspace admin to import the marketplace, or use the command line above once |
 
 ## Claude Code notes
 
