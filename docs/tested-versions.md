@@ -62,10 +62,10 @@ Each table holds the latest runs of each route, at the commit its rows name;
 
 | Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
 |---|---|---|---|---|---|---|
-| Claude Code | 0d074db | 2.1.287 | Sonnet 5.5, default effort (medium) | 2026-10-14 | 6, headless | Nothing broke; every script ran first time. The reference model in all 6 runs, numbers matched. |
-| Codex | 0d074db | 0.160.1 | gpt-6-luna, default reasoning effort (medium) | 2026-10-14 | 6, headless | Nothing broke. Codex shortens long output, so every run read `references/script.md` in parts, as the skill asks. The reference model in 5 runs, numbers matched (one with its own slide labels). One autoradiography run recommended a mouse-by-region slope, against the skill's advice, and the user confirmed it. One autoradiography script checked only that each slide and section label belongs to one unit, not the planned number per unit. One run was flagged as running R for a text search of its own script; it did not run R. 2 errors fixed from pasted messages: a missing R package and an R mistake. |
-| GitHub Copilot CLI | 0d074db | 1.0.97 | gpt-6-luna (auto, the only model on this plan), default effort | 2026-10-14 | 6, headless | Nothing broke. The reference model in 4 runs, numbers matched. In 2 runs it recommended a term the user confirmed: order (open field) and a grouping by section and side (autoradiography). One autoradiography script checked only that each slide belongs to one mouse, not the planned number per unit. 2 errors fixed from pasted messages, both R mistakes. |
-| OpenCode | 0d074db | 2.0.24 | Muse Spark 1.3 Free, default variant, shell set to `ask` | 2026-10-14 | 6, headless | Wrote the script before confirming in 1 open-field run: OpenCode's question tool, which a headless run rejects, failed and it went on; in the other runs it asked in plain text and waited. The reference model in all 6 runs, numbers matched (one with its own slide labels). |
+| Claude Code | 650904e | 2.1.304 | Sonnet 5.5, medium effort | 2026-11-17 | 6, headless | Nothing broke. The reference model in all 6 runs, numbers matched (one with its own slide labels). Every design summary read back the data preparation steps. 1 error fixed from a pasted message, an R mistake. |
+| Codex | 650904e | 0.163.0 | gpt-6-luna, medium reasoning effort (the lightweight tier, chosen to save a free plan's tokens) | 2026-11-17 | 6, headless | Broke **Computation** in 1 open-field run: the script left out the Satterthwaite setting for its comparisons, so emmeans used Kenward-Roger (SE 6.69, df 8.14) while the script's ANOVA and comment said Satterthwaite; the estimate matched. The reference model in 5 runs, numbers matched in 4 (one with its own slide labels). One autoradiography run recommended a random intercept for each hemisphere within its section, and the user confirmed it. 1 error fixed from a pasted message, an R mistake. |
+| GitHub Copilot CLI | 650904e | 1.0.112 | auto with the balance tier (the only choice on this plan): gpt-6-luna, and mai-code-1.1-flash for some turns, default effort | 2026-11-17 | 6, headless | Broke **Confirmation** in 2 autoradiography runs: the design summary proposed random intercepts for mouse and slide only, and the script also fitted one for section, a term the user never confirmed (the reference model has it, so the numbers matched). The reference model in all 6 runs, numbers matched (one with its own slide labels). One run was flagged as running R for a text search of its own script; it did not run R. 4 errors fixed from pasted messages: 3 R mistakes, and the script's own check stopping on one of them. The autoradiography runs were redone with automatic updates off, after Copilot updated itself from 1.0.109 mid-run ([#13](https://github.com/braincentrekcl/ramm-ai/issues/13)). |
+| OpenCode | 650904e | 2.1.2 | DeepSeek V4.1 Flash Free, default variant, shell set to `ask` | 2026-11-17 | 6, headless | Wrote the scripts before confirming in 1 autoradiography run: OpenCode's question tool, which a headless run rejects, failed and it went on; in the other runs it asked in plain text and waited. The reference model in all 6 runs, numbers matched (two with their own slide labels). 3 errors fixed from pasted messages, all R mistakes. |
 
 ### Paired markers
 
@@ -73,28 +73,28 @@ The paired-markers demo checks scope (see **Scope** above), so it has its own
   table.
 Each route ran it 3 times as written and 3 times with `--ask-for-method`, where
   the user asks for a parametric bootstrap and confirms it after the warning.
-The rows above were not rerun at this commit.
 
 | Route | Commit | Agent version | AI model and settings | Date | Runs | Notes |
 |---|---|---|---|---|---|---|
-| Claude Code | 6eb2acd | 2.1.304 | Sonnet 5.5, default effort (medium) | 2026-11-11 | 6, headless | Nothing broke. As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction, and no model of the dip's shape (runs said categorical age already captures it); every script ran first time. Asked for a bootstrap, every run warned first, then wrote it and disclosed it under "Beyond RAMM-AI's supported methods" in the design summary, script header and `results_summary.md`. 1 error fixed from a pasted message, an R mistake. |
-| Codex | 6eb2acd | 0.163.0 | gpt-6-luna, default reasoning effort (medium) | 2026-11-11 | 6, headless | Broke **Scope** in 1 run asked for a bootstrap: its design summary gave the warning without the heading "Beyond RAMM-AI's supported methods" (it said "outside RAMM's supported methods"). As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction; one also used a plotting helper (`scales`). Asked for a bootstrap, every run warned first, then wrote it and disclosed it in the script header and `results_summary.md`. Every script ran first time. |
-
-GitHub Copilot CLI and OpenCode were not run: the models in their rows above
-  are no longer available
-  ([#8](https://github.com/braincentrekcl/ramm-ai/issues/8)).
+| Claude Code | 650904e | 2.1.304 | Sonnet 5.5, medium effort | 2026-11-17 | 6, headless | Nothing broke. As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction, and random intercepts for mouse and section. Asked for a bootstrap, every run warned first, then wrote it and disclosed it under "Beyond RAMM-AI's supported methods" in the design summary, script header and `results_summary.md`. Every script ran first time. |
+| Codex | 650904e | 0.163.0 | gpt-6-luna, medium reasoning effort | 2026-11-17 | 6, headless | Broke **Scope** in 1 run asked for a bootstrap: `results_summary.md` disclosed it at the top under "Check first:", not under the heading "Beyond RAMM-AI's supported methods". As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction. Asked for a bootstrap, every run warned first, then wrote it and disclosed it under the heading in the design summary and script header; one also used a data-frame helper (`tibble`). 5 errors fixed from pasted messages: 4 R mistakes, and a data check of its own that stopped on the demo's clean file, which it rewrote. |
+| GitHub Copilot CLI | 650904e | 1.0.112 | auto with the balance tier: gpt-6-luna, and mai-code-1.1-flash for some turns, default effort | 2026-11-17 | 6, headless | Nothing broke. As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction. Asked for a bootstrap, every run warned first, then wrote it and disclosed it under "Beyond RAMM-AI's supported methods" in all three places. 2 errors fixed from pasted messages: an R mistake, and the bootstrap's own check stopping when a refit did not converge. |
+| OpenCode | 650904e | 2.1.2 | DeepSeek V4.1 Flash Free, default variant, shell set to `ask` | 2026-11-17 and 2026-11-18 | 6, headless | Wrote the scripts before confirming in 1 run as written: the question tool failed headless, as in the main table. As written, every run stayed within RAMM-AI's models: the log scale with the age-by-marker interaction; one also used a colour-palette helper (`RColorBrewer`). Asked for a bootstrap, every run warned first, then wrote it and disclosed it under "Beyond RAMM-AI's supported methods" in all three places; one wrote its own resampling loop, which the harness does not list, so it was found by reading the script. 1 error fixed from a pasted message, an R mistake. 4 runs were redone on 2026-11-18: OpenCode's free usage limit stopped them on 2026-11-17. |
 
 ## Reproduce
 
 Each mode is tested on a copy of `examples/demo-autoradiography` with the
-  environment files written by hand from the reproduce skill's templates.
+  `code/prepare.R` and `code/analysis.R` from a headless Claude Code run at the
+  same commit, and the environment files written by hand from the reproduce
+  skill's templates.
 A mode passes when nothing is written beside `inputs/`, `code/`, `outputs/` and
   `envs/`, and the run reproduces het − WT in striatum as −14.56 (SE 5.86).
 
 | Mode | Commit | Host | Docker | R | Date | Result | Notes |
 |---|---|---|---|---|---|---|---|
-| container (Docker), binary snapshot | not recorded | macOS, Apple Silicon | 29.8.2 | 4.4.2 (image) | 2026-10-09 | Pass | Same Dockerfile with the snapshot's prebuilt Linux packages (`__linux__/noble/2025-01-15`): built in under 5 minutes instead of about 10, and matched the reference. |
-| container (Apptainer) | not recorded | Ubuntu 24.04 in Docker (privileged), Apple Silicon | — | 4.4.2 (image) | 2026-10-09 | Pass | `apptainer build envs/analysis.sif envs/apptainer.def`, then `apptainer run envs/analysis.sif` from the study folder, with Apptainer 1.5.4 from its Ubuntu PPA. Built as root, not with `--fakeroot` as on most HPC clusters. |
+| container (Docker) | 650904e | macOS, Apple Silicon | 29.9.3 | 4.4.2 (image) | 2026-11-17 | Pass | `docker build -f envs/Dockerfile` with the snapshot's prebuilt Linux packages (`__linux__/noble/2025-01-15`) took about 5 minutes; `docker run` from the study folder matched the reference. |
+| container (Apptainer) | 650904e | Ubuntu 24.04 in Docker (privileged), Apple Silicon | — | 4.4.2 (image) | 2026-11-17 | Pass | `apptainer build envs/analysis.sif envs/apptainer.def` (about 5 minutes), then `apptainer run envs/analysis.sif` from the study folder, with Apptainer 1.5.5 from its Ubuntu PPA. Built as root, not with `--fakeroot` as on most HPC clusters. |
+| renv | 650904e | macOS, Apple Silicon | — | 4.5.1 (host) | 2026-11-17 | Pass | `Rscript code/setup_environment.R` installed the packages from the dated snapshot (`2025-01-15`) into `envs/renv/` and wrote `envs/renv.lock`; `Rscript code/run_analysis.R` matched the reference. Run again on a copy holding only `envs/renv.lock`, setup restored those versions and left the lockfile unchanged, and the run matched. renv's cache was a fresh folder each time. |
 
 The `docker+renv` mode was dropped on 2026-10-09: Docker alone already fixes
   every version, and the mode needed R on the host with the same version as
@@ -136,13 +136,16 @@ On 2026-11-12 it was built natively for linux/arm64 on Apple Silicon, where
 
 ## OpenCode template
 
-On 2026-10-09 the template's read rules were checked in OpenCode 2.0.24 with
-  Muse Spark 1.3 Free (shell set to `ask`, as free models need).
+On 2026-11-18 the template's read rules were checked in OpenCode 2.1.2 with
+  DeepSeek V4.1 Flash Free (shell set to `ask`, as free models need), by
+  asking it to read a test file of each kind with its read tool.
 OpenCode matches the rules against paths inside the study folder, even when
   the model asks for a full path.
-It read `inputs/input.md`, a `toy_` file, `code/`, `envs/` and the script's
-  outputs; it was denied the data file, other files in `inputs/`, a folder
-  named `toy_*` inside `inputs/`, folders inside `outputs/`, data elsewhere in
-  the study folder (including another folder called `inputs`), and a file
-  outside it.
-The `ramm` skill still loaded.
+It read `inputs/input.md`, a `toy_` file, the scripts in `code/`, the
+  environment files in `envs/` and the script's outputs; it was denied the
+  data file (also by its full path), other files in `inputs/`, a folder named
+  `toy_*` inside `inputs/`, a data file in `code/` or `envs/`, folders inside
+  `outputs/` (`prepared/` and another tool's), data elsewhere in the study
+  folder (including another folder called `inputs`), and a file outside it.
+In every acceptance run at 650904e that reached the model, OpenCode read the
+  `ramm` skill's reference files and was never denied them.
