@@ -11,7 +11,7 @@ Usage (from the repository root):
     python3 tests/acceptance.py claude autoradiography --runs 3
     python3 tests/acceptance.py codex open-field --runs 3 --effort medium
     python3 tests/acceptance.py opencode open-field --runs 3
-    python3 tests/acceptance.py copilot open-field --model auto --auto-tier balance
+    python3 tests/acceptance.py copilot autoradiography --runs 3 --model auto --auto-tier balance
     python3 tests/acceptance.py claude paired-markers --runs 3 --ask-for-method
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
