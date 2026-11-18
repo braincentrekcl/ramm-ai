@@ -55,7 +55,8 @@ Follow [Installing RAMM-AI](docs/install.md): it has the commands for each
 
 ## Quick start
 
-1. Copy `template/my-study` and rename it for your study.
+1. Download the [study folder template](https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip), unzip it where you keep
+   your studies, and rename the `my-study` folder for your study.
 2. Fill in `inputs/input.md`.
 3. Keep your real data out of the study folder until you run the script.
   This is for privacy: anything the assistant opens is sent to your AI

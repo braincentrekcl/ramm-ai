@@ -2,7 +2,8 @@
 
 ## Set up your study folder
 
-Copy `template/my-study` and rename it for your study:
+Download the [study folder template](https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip), unzip it where you keep your
+  studies, and rename the `my-study` folder for your study:
 
 ```
 my-study/
