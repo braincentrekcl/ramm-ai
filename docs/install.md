@@ -13,9 +13,12 @@ If you have never used a terminal, use the desktop app.
 | GitHub Copilot | [GitHub Copilot app](https://docs.github.com/en/copilot/get-started/quickstart-copilot-app) | [Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli) |
 | OpenCode v2 | [OpenCode Desktop](https://opencode.ai/v2/docs/#desktop) | [OpenCode](https://opencode.ai/v2/docs/) |
 
-Then install RAMM-AI into it, from the terminal or from the app, as below.
+## Second, install RAMM-AI in your agent
 
-## From the command line
+Follow the steps for how you use your agent: in a terminal, or in its desktop
+  app.
+
+### From the command line
 
 | Agent | Install |
 |---|---|
@@ -24,7 +27,7 @@ Then install RAMM-AI into it, from the terminal or from the app, as below.
 | GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` |
 | OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it (three places) |
 
-## From an app, without the command line
+### From an app, without the command line
 
 Each app has its own steps for plugins; follow its documentation below.
 When it asks for a marketplace, add RAMM-AI's: `braincentrekcl/ramm-ai` (some
@@ -38,7 +41,9 @@ Then install the plugin called `ramm` from it.
 | GitHub Copilot in VS Code | [Agent plugins in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-plugins): add the marketplace to `chat.plugins.marketplaces`, or run **Chat: Install Plugin From Source** with the GitHub address |
 | ChatGPT desktop app (Codex) | [Plugins](https://learn.chatgpt.com/docs/plugins): in **Customize**, open **Plugins**, then the **Personal** tab, and add a plugin marketplace with RAMM-AI's address as the source (leave the other fields empty) |
 
-## Claude Code notes
+## Agent-specific notes
+
+### Claude Code
 
 RAMM-AI reads some of its own files in the installed plugin:
 
@@ -51,7 +56,7 @@ These files are RAMM-AI's own instructions, and they hold none of your data.
 Without them, RAMM-AI writes the scripts without its tested patterns, and reproduce writes the environment files without its templates.
 RAMM-AI never needs to read any other file outside your study folder, so you can refuse any other request.
 
-## OpenCode notes
+### OpenCode
 
 - **Use OpenCode version 2.**
   Version 1 reads permissions in a different format, so the template would not
