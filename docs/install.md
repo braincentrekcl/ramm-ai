@@ -36,7 +36,7 @@ Then install the plugin called `ramm` from it.
 | Claude desktop app (Code tab) and Claude Code in VS Code | [Install and manage plugins](https://code.claude.com/docs/en/plugins/install): "Add a marketplace", then "Install a plugin" |
 | GitHub Copilot app | [Customizing the GitHub Copilot app](https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app): add the marketplace from the Plugins view, then install |
 | GitHub Copilot in VS Code | [Agent plugins in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-plugins): add the marketplace to `chat.plugins.marketplaces`, or run **Chat: Install Plugin From Source** with the GitHub address |
-| ChatGPT desktop app (Codex) | [Plugins](https://learn.chatgpt.com/docs/plugins): the app installs from OpenAI's and your workspace's plugin lists, so ask your workspace admin to import the marketplace, or use the command line above once |
+| ChatGPT desktop app (Codex) | [Plugins](https://learn.chatgpt.com/docs/plugins): in **Customize**, open **Plugins**, then the **Personal** tab, and add a plugin marketplace with RAMM-AI's address as the source (leave the other fields empty) |
 
 ## Claude Code notes
 
