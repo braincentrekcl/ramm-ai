@@ -1,12 +1,15 @@
 # Running the analysis
 
-## What happens
+## Step by step: what you do and what RAMM-AI does
 
-1. RAMM-AI reads `inputs/input.md` and summarises the design back to you in
-  plain language.
-  It waits for your answer before writing anything.
-2. It writes `code/prepare.R`, which turns your data files into one table,
-  and `code/analysis.R`, which runs it, and gives you the command to run.
+1. You start RAMM-AI in your study folder.
+  It reads `inputs/input.md` and summarises your design back to you in plain
+  language.
+  You check the summary and answer its questions: it writes nothing until you
+  confirm.
+2. RAMM-AI writes `code/prepare.R`, which turns your data files into one
+  table, and `code/analysis.R`, which runs it, and gives you the command to
+  run.
 3. You put your data files in `inputs/` and run, from the study folder:
 
 ```
@@ -16,14 +19,15 @@ Rscript code/analysis.R
 If you set up a [reproducible environment](reproducible-environment.md), use
   its run command from `envs/README.md` instead.
 
-4. Start with `outputs/results_summary.md`.
-  If something fails or you want a result explained, show RAMM-AI the error or
-  the outputs.
-  It never changes your data or your results: every change goes through the
-  script, and you rerun it.
-5. At the end, RAMM-AI asks you to save the conversation into `code/sessions/`
-  with your agent's export command, so the record of what was asked and done
-  stays with your study.
+4. You read `outputs/results_summary.md` first.
+  If something fails or you want a result explained, you show RAMM-AI the
+  error or the outputs.
+  It never changes your data or your results: changes are made to the script,
+  which you must rerun.
+5. At the end, you save the conversation into `code/sessions/` with your
+  agent's export command, so the record of what was asked and done stays with
+  your study.
+  RAMM-AI tells you how for your AI agent.
 
 The script writes into `outputs/`:
 
