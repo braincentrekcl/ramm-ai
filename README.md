@@ -28,17 +28,25 @@ Use whichever your AI provider offers; OpenCode works with almost any provider,
 
 ## Before you start
 
-- An AI coding agent: Claude Code, Codex, GitHub Copilot or OpenCode.
-- R to run the script, or a container instead of installing R: Docker, or
-  Apptainer on an HPC cluster (see
-  [Reproducible environment](docs/reproducible-environment.md)).
-- Git is optional.
-  Without it, download this repository as a ZIP from GitHub, unzip it, and use
-  the path of that folder wherever the commands below say
-  `braincentrekcl/ramm-ai` or a GitHub URL.
-  To update, download the ZIP again.
-  Version control is good practice for your study when you are ready for it,
-  but you do not need to learn git to use RAMM-AI.
+Install these first:
+
+1. **An AI coding agent:** Claude Code, Codex, GitHub Copilot or OpenCode.
+   Use its desktop app or its terminal version.
+   Its website will not work, because it cannot open files on your computer.
+   [Installing RAMM-AI](docs/install.md) has links to each one.
+2. **[R](https://cran.r-project.org/) or
+   [Docker](https://www.docker.com/products/docker-desktop/)**, to run the
+   script on your computer.
+   If you can use an HPC cluster with Apptainer (or Singularity), you do not
+   need R or Docker: see
+   [Reproducible environment](docs/reproducible-environment.md).
+3. **Git is optional.**
+   Without it, download this repository as a ZIP from GitHub, unzip it, and use
+   the path of that folder wherever the commands below say
+   `braincentrekcl/ramm-ai` or a GitHub URL.
+   To update, download the ZIP again.
+   Version control is good practice for your study when you are ready for it,
+   but you do not need to learn git to use RAMM-AI.
 
 ## Install
 
