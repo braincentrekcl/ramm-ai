@@ -1,7 +1,7 @@
 # Reproducible environment
 
-After the analysis script is written, start reproduce (see the table in
-  [install.md](install.md)).
+After the analysis script is written, start reproduce with the command in the
+  [Quick start](../README.md#quick-start).
 It writes the definition of a pinned environment into `envs/` in your study
   folder (the environment folder of the YODA layout), and any helper scripts
   into `code/`, in one of two modes:
