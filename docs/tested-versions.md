@@ -149,3 +149,11 @@ It read `inputs/input.md`, a `toy_` file, the scripts in `code/`, the
   folder (including another folder called `inputs`), and a file outside it.
 In every acceptance run at 650904e that reached the model, OpenCode read the
   `ramm` skill's reference files and was never denied them.
+The same day, the same check in OpenCode Desktop 2.3.2 gave the same result.
+Desktop also gives every session a browser, whose file upload reads files
+  without checking the read rules (`packages/plugin-browser/src/files.ts` in
+  OpenCode's source), so the template now denies `browser`.
+With that rule, Desktop gave the model no browser tools: OpenCode leaves out
+  any tool whose last matching rule denies everything.
+The terminal version has no browser, so the rule does not change the
+  acceptance runs above.
