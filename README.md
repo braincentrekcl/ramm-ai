@@ -42,7 +42,7 @@ Install these first:
    [Reproducible environment](docs/reproducible-environment.md).
 3. **Git is optional.**
    Without it, download this repository as a ZIP from GitHub, unzip it, and use
-   the path of that folder wherever the commands below say
+   the path of that folder wherever the install steps say
    `braincentrekcl/ramm-ai` or a GitHub URL.
    To update, download the ZIP again.
    Version control is good practice for your study when you are ready for it,
@@ -50,14 +50,8 @@ Install these first:
 
 ## Install
 
-| Agent | Install | Start RAMM-AI | Start reproduce |
-|---|---|---|---|
-| Claude Code | `claude plugin marketplace add braincentrekcl/ramm-ai`, then `claude plugin install ramm@ramm-ai` | `/ramm:ramm` | `/ramm:reproduce` |
-| Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` | `$ramm:ramm` | `$ramm:reproduce` |
-| GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` | `/ramm` | `/reproduce` |
-| OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it (three places) | `@ramm` | `@reproduce` |
-
-For app installs and OpenCode notes, see [docs/install.md](docs/install.md).
+Follow [Installing RAMM-AI](docs/install.md): it has the commands for each
+  agent's terminal version, and the steps for each desktop app.
 
 ## Quick start
 
@@ -66,7 +60,14 @@ For app installs and OpenCode notes, see [docs/install.md](docs/install.md).
 3. Keep your real data out of the study folder until you run the script.
   This is for privacy: anything the assistant opens is sent to your AI
   provider, a third party.
-4. Open your agent in the study folder and start RAMM-AI with the command above.
+4. Open your agent in the study folder and type its start command:
+
+   | Agent | Start RAMM-AI | Start reproduce |
+   |---|---|---|
+   | Claude Code | `/ramm:ramm` | `/ramm:reproduce` |
+   | Codex | `$ramm:ramm` | `$ramm:reproduce` |
+   | GitHub Copilot | `/ramm` | `/reproduce` |
+   | OpenCode v2 | `@ramm` | `@reproduce` |
 
 ## Documentation
 
