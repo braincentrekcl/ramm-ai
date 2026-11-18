@@ -40,11 +40,16 @@ Then install the plugin called `ramm` from it.
 
 ## Claude Code notes
 
-Before writing the script, RAMM-AI reads its script patterns, `skills/ramm/references/script.md` in the installed plugin.
-Before writing the environment files, reproduce reads the file for the chosen route, `skills/reproduce/references/container.md` or `skills/reproduce/references/renv.md`.
-The plugin sits outside your study folder, so Claude Code asks whether it may read these files ([Working directories](https://code.claude.com/docs/en/permissions#working-directories)).
-Allow it: without it RAMM-AI writes the script without its patterns, and reproduce writes the environment files without their templates.
-These files hold RAMM-AI's own instructions, none of your data.
+RAMM-AI reads some of its own files in the installed plugin:
+
+- before writing the scripts, `skills/ramm/references/prepare.md` and `skills/ramm/references/script.md`;
+- before writing the environment files, `skills/reproduce/references/container.md` or `skills/reproduce/references/renv.md`.
+
+The plugin is outside your study folder, so Claude Code asks you before RAMM-AI reads these files ([Working directories](https://code.claude.com/docs/en/permissions#working-directories)).
+We recommend that you allow it.
+These files are RAMM-AI's own instructions, and they hold none of your data.
+Without them, RAMM-AI writes the scripts without its tested patterns, and reproduce writes the environment files without its templates.
+RAMM-AI never needs to read any other file outside your study folder, so you can refuse any other request.
 
 ## OpenCode notes
 
