@@ -53,24 +53,35 @@ RAMM-AI never needs to read any other file outside your study folder, so you can
 
 ## OpenCode notes
 
-OpenCode: RAMM-AI supports OpenCode v2 only (`brew install
-  anomalyco/tap/opencode-v2` or `npm install -g @opencode/cli`).
-OpenCode Desktop v2, from the
-  [OpenCode v2 docs](https://opencode.ai/v2/docs/#desktop), applies the
-  template too: v2 loads the study folder's config the same way for the
-  terminal and Desktop.
-Do not use the `opencode-desktop` Homebrew cask: it installs OpenCode v1, which
-  reads a different permission format, so the template would not protect your
-  data.
-OpenCode cannot currently use a GitHub Copilot Free or Student plan: it lists
-  no models for them ([anomalyco/opencode#34644](https://github.com/anomalyco/opencode/issues/34644)).
-With those plans, use the GitHub Copilot route instead.
-OpenCode's free models do not work while the template denies shell commands
+- **Use OpenCode version 2.**
+  Version 1 reads permissions in a different format, so the template would not
+  protect your data.
+  To install version 2 in a terminal, run `brew install anomalyco/tap/opencode-v2`
+  or `npm install -g @opencode/cli`, or follow the
+  [OpenCode docs](https://opencode.ai/v2/docs/).
+- **We recommend RAMM-AI's template, `opencode/opencode.jsonc`.**
+  Copy it into your study folder, as in the table above; you can change it for
+  your study if you need to.
+  It should stop OpenCode reading your data, and stop it changing files outside
+  `code/` and `envs/`.
+  To be completely sure nothing leaks, also keep your data out of the study
+  folder until you run the script.
+- **The template also works in OpenCode Desktop** (tested with version 2.3.2).
+  It turns off Desktop's built-in browser, which could otherwise send a file
+  from your study folder to a website without checking the template's rules.
+- **GitHub Copilot Free or Student plans need OpenCode 2.2.7 or later.**
+  Earlier versions show no models for these plans
+  ([anomalyco/opencode#34644](https://github.com/anomalyco/opencode/issues/34644)).
+- **OpenCode's free models do not work while the template blocks shell
+  commands**
   ([anomalyco/opencode#51241](https://github.com/anomalyco/opencode/issues/51241)).
-To use one, change `deny` to `ask` on the shell line, keep your data out of the
-  study folder as on the other agents, and decline any command that would read
-  your data.
-Free models may keep or learn from what you send, so check their terms; see
-  [What the AI assistant can see and change](privacy-and-safety.md).
-For institutionally hosted or local models, see
-  [institutional-and-local-models.md](institutional-and-local-models.md).
+  To use one, open `opencode.jsonc` in your study folder and change `deny` to
+  `ask` on the `shell` line.
+  OpenCode will then ask you before it runs any command: refuse any command
+  that would read your data.
+- **Some free models keep what you send, or use it for training.**
+  OpenCode's [list of free models](https://opencode.ai/docs/zen) says which;
+  check it before you choose one.
+  See also [What the AI assistant can see and change](privacy-and-safety.md).
+- For models hosted by your institution or on your own computer, see
+  [Institutional and local models](institutional-and-local-models.md).
