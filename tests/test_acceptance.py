@@ -415,3 +415,30 @@ def test_turn_failed_when_the_agent_did_nothing(reply: str) -> None:
 )
 def test_turn_failed_is_false_when_the_agent_did_something(done: dict) -> None:
     assert not acceptance.turn_failed(acceptance.Turn(tag="", prompt="p", **done))
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "Here is the summary.\n\n[error: usage limit reached]",
+        f"[no reply in {acceptance.TURN_TIMEOUT_S} s]",
+    ],
+)
+def test_turn_errored_finds_an_error_after_a_reply(reply: str) -> None:
+    assert acceptance.turn_errored(acceptance.Turn(tag="", prompt="p", reply=reply))
+
+
+def test_turn_errored_is_false_for_an_ordinary_reply() -> None:
+    turn = acceptance.Turn(
+        tag="", prompt="p", reply="The script stopped with an error."
+    )
+    assert not acceptance.turn_errored(turn)
+
+
+def test_parse_copilot_puts_a_session_error_in_the_reply() -> None:
+    error = {"type": "session.error", "data": {"message": "Model unavailable."}}
+    turn = acceptance.Turn(tag="", prompt="p")
+    stdout = "\n".join(json.dumps(e) for e in [error, COPILOT_EVENTS[-1]])
+    acceptance.parse_copilot(stdout, turn)
+    assert turn.reply == "[error: Model unavailable.]"
+    assert acceptance.turn_errored(turn)
