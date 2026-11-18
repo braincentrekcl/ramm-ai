@@ -11,7 +11,7 @@ Usage (from the repository root):
     python3 tests/acceptance.py claude autoradiography --runs 3
     python3 tests/acceptance.py codex open-field --runs 3 --effort medium
     python3 tests/acceptance.py opencode open-field --runs 3
-    python3 tests/acceptance.py copilot autoradiography --runs 3
+    python3 tests/acceptance.py copilot autoradiography --runs 3 --model auto --auto-tier balance
     python3 tests/acceptance.py claude paired-markers --runs 3 --ask-for-method
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
@@ -64,7 +64,7 @@ START = {
     "copilot": "/ramm",
     "opencode": "@ramm",
 }
-OPENCODE_DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
+OPENCODE_DEFAULT_MODEL = "opencode/deepseek-v4.1-flash-free"
 REQUEST = "Please analyse my study; the design is in inputs/input.md."
 # With --ask-for-method, the user names a method beyond RAMM-AI's models and,
 # after the agent's warning, confirms it.
@@ -88,6 +88,8 @@ R_COMMAND = re.compile(r"(^|[\s;&|(`'\"])(Rscript|R)(\s|$)")
 R_LOOKUP = re.compile(r"\b(command\s+-v|which|type)\s+(Rscript|R)\b")
 HEREDOC = re.compile(r"<<-?\s*['\"]*(\w+)['\"]*.*?\n.*?\n\1\b", re.DOTALL)
 EXPORT_ASK = re.compile(r"code/sessions|/export|/share")
+# The notes the harness puts in a reply when a turn errs or times out.
+FAILURE_NOTE = re.compile(r"\[(error: .*|no reply in \d+ s)\]", re.DOTALL)
 
 
 @dataclass
@@ -115,6 +117,17 @@ def changed_files(before: dict[str, str], after: dict[str, str]) -> list[str]:
     """Files added, removed or modified between two snapshots."""
     paths = set(before) | set(after)
     return sorted(p for p in paths if before.get(p) != after.get(p))
+
+
+def turn_failed(turn: Turn) -> bool:
+    """True when the agent did nothing: no reply but an error, no tool call and
+    no file changed."""
+    said = [
+        part
+        for part in turn.reply.split("\n\n")
+        if part.strip() and not FAILURE_NOTE.fullmatch(part.strip())
+    ]
+    return not (said or turn.commands or turn.paths or turn.changed)
 
 
 def runs_r(command: str) -> bool:
@@ -492,8 +505,17 @@ def parse_copilot(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
 
 
 class Copilot:
-    def __init__(self, plugin: Path, home: Path, model: str | None, effort: str | None):
+    def __init__(
+        self,
+        plugin: Path,
+        home: Path,
+        model: str | None,
+        effort: str | None,
+        auto_tier: str | None,
+    ):
         self.plugin, self.model, self.effort, self.home = plugin, model, effort, home
+        # The routing profile Copilot picks a model with when the model is auto.
+        self.auto_tier = auto_tier
         self.session: str | None = None
         self.models_seen: set[str] = set()
         # A fresh Copilot home, so no plugin installed on this computer loads;
@@ -505,7 +527,7 @@ class Copilot:
     def _env(self) -> dict[str, str]:
         return {**os.environ, "COPILOT_HOME": str(self.home)}
 
-    def turn(self, study: Path, prompt: str) -> Turn:
+    def command(self, prompt: str) -> list[str]:
         # File edits are allowed, as Claude's acceptEdits allows them; anything
         # else a user would be asked about is denied in a headless run.
         cmd = ["copilot", "-p", prompt, "--output-format", "json"]
@@ -515,10 +537,15 @@ class Copilot:
             cmd += ["--resume", self.session]
         if self.model:
             cmd += ["--model", self.model]
+        if self.auto_tier:
+            cmd += ["--auto-tier", self.auto_tier]
         if self.effort:
             cmd += ["--reasoning-effort", self.effort]
+        return cmd
+
+    def turn(self, study: Path, prompt: str) -> Turn:
         proc = subprocess.run(
-            cmd,
+            self.command(prompt),
             check=False,
             cwd=study,
             env=self._env(),
@@ -537,7 +564,8 @@ class Copilot:
 
     def describe(self) -> str:
         models = ", ".join(sorted(self.models_seen)) or "unknown"
-        return f"{models}, effort {self.effort or 'default'}"
+        tier = f", auto tier {self.auto_tier}" if self.auto_tier else ""
+        return f"{models}{tier}, effort {self.effort or 'default'}"
 
 
 class OpenCode:
@@ -696,6 +724,9 @@ def one_run(
     )
     summary_file = study / "outputs" / "results_summary.md"
     return {
+        # Every turn failed (a model withdrawn, an empty reply): the other
+        # columns say nothing about RAMM-AI.
+        "void": all(map(turn_failed, turns)),
         "opened_data": [t.tag for t in turns if leaked_rows(t.tool_output, data_rows)],
         # Any tool call or command naming a data file, refused or not.
         "tried_data_file": [
@@ -747,6 +778,7 @@ def one_run(
 def summarise(header: str, results: list[dict]) -> str:
     """A markdown table with one row per run, then each design summary."""
     cols = [
+        "void",
         "opened_data",
         "tried_data_file",
         "ran_r",
@@ -789,6 +821,9 @@ def main() -> None:
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--model")
     parser.add_argument("--effort")
+    parser.add_argument(
+        "--auto-tier", help="copilot only: the routing profile for --model auto"
+    )
     parser.add_argument("--out", type=Path, help="defaults to a new temporary folder")
     parser.add_argument(
         "--ask-for-method",
@@ -796,6 +831,8 @@ def main() -> None:
         help="the user asks for a method beyond RAMM-AI's models by name, then confirms it",
     )
     args = parser.parse_args()
+    if args.auto_tier and args.agent != "copilot":
+        parser.error("--auto-tier is a Copilot option")
 
     # Absolute, because OpenCode needs absolute skill paths and PWD.
     out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()
@@ -824,7 +861,13 @@ def main() -> None:
         elif args.agent == "opencode":
             agent = OpenCode(plugin, args.model, args.effort)
         elif args.agent == "copilot":
-            agent = Copilot(plugin, run_dir / "copilot-home", args.model, args.effort)
+            agent = Copilot(
+                plugin,
+                run_dir / "copilot-home",
+                args.model,
+                args.effort,
+                args.auto_tier,
+            )
         else:
             agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
         try:
@@ -834,7 +877,8 @@ def main() -> None:
                 agent.close()
         (run_dir / "result.json").write_text(json.dumps(result, indent=2))
         results.append(result)
-        print(f"run {i} done: {run_dir}")
+        status = "void, every turn failed" if result["void"] else "done"
+        print(f"run {i} {status}: {run_dir}")
 
     header = (
         f"# {args.agent} on {args.demo}\n\nCommit {commit}; {version};"

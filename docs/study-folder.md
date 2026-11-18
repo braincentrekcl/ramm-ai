@@ -2,7 +2,8 @@
 
 ## Set up your study folder
 
-Copy `template/my-study` and rename it for your study:
+Download the [study folder template](https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip), unzip it where you keep your
+  studies, and rename the `my-study` folder for your study:
 
 ```
 my-study/
@@ -41,6 +42,6 @@ Folders other tools write in `outputs/` are left alone: RAMM-AI never reads
   config lets the assistant read only `input.md` and `toy_` files in `inputs/`.
   This does not hold if you switched shell to `ask` for a free model.)
 3. Open your agent in the study folder and start RAMM-AI with the command in the
-  table in [install.md](install.md).
+  [Quick start](../README.md#quick-start).
 
 Next: [Running the analysis](running-the-analysis.md).

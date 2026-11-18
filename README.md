@@ -19,7 +19,7 @@ Count, proportion and binary outcomes are beyond RAMM-AI's current scope: it
   flags them and fits a linear mixed model only if you choose to continue.
 Contributions that add properly validated support are welcome.
 
-RAMM-AI works with four coding agents: Claude Code, Codex, GitHub Copilot and
+RAMM-AI works with four coding agents: Claude Code, OpenAI Codex, GitHub Copilot and
   OpenCode.
 The agent and model versions we tested are listed in
   [Tested versions](docs/tested-versions.md).
@@ -28,37 +28,48 @@ Use whichever your AI provider offers; OpenCode works with almost any provider,
 
 ## Before you start
 
-- An AI coding agent: Claude Code, Codex, GitHub Copilot or OpenCode.
-- R to run the script, or a container instead of installing R: Docker, or
-  Apptainer on an HPC cluster (see
-  [Reproducible environment](docs/reproducible-environment.md)).
-- Git is optional.
-  Without it, download this repository as a ZIP from GitHub, unzip it, and use
-  the path of that folder wherever the commands below say
-  `braincentrekcl/ramm-ai` or a GitHub URL.
-  To update, download the ZIP again.
-  Version control is good practice for your study when you are ready for it,
-  but you do not need to learn git to use RAMM-AI.
+Install these first:
+
+1. **An AI coding agent:** Claude Code, OpenAI Codex, GitHub Copilot or
+   OpenCode.
+   Use its desktop app or its terminal version.
+   Its website will not work, because it cannot open files on your computer.
+   [Installing RAMM-AI](docs/install.md) has links to each one.
+2. **[R](https://cran.r-project.org/) or
+   [Docker](https://www.docker.com/products/docker-desktop/)**, to run the
+   script on your computer.
+   If you can use an HPC cluster with Apptainer (or Singularity), you do not
+   need R or Docker: see
+   [Reproducible environment](docs/reproducible-environment.md).
+3. **Git is optional.**
+   Without it, download this repository as a ZIP from GitHub, unzip it, and use
+   the path of that folder wherever the install steps say
+   `braincentrekcl/ramm-ai` or a GitHub URL.
+   To update, download the ZIP again.
+   Version control is good practice for your study when you are ready for it,
+   but you do not need to learn git to use RAMM-AI.
 
 ## Install
 
-| Agent | Install | Start RAMM-AI | Start reproduce |
-|---|---|---|---|
-| Claude Code | `claude plugin marketplace add braincentrekcl/ramm-ai`, then `claude plugin install ramm@ramm-ai` | `/ramm:ramm` | `/ramm:reproduce` |
-| Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` | `$ramm:ramm` | `$ramm:reproduce` |
-| GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` | `/ramm` | `/reproduce` |
-| OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it (three places) | `@ramm` | `@reproduce` |
-
-For app installs and OpenCode notes, see [docs/install.md](docs/install.md).
+Follow [Installing RAMM-AI](docs/install.md): it has the commands for each
+  agent's terminal version, and the steps for each desktop app.
 
 ## Quick start
 
-1. Copy `template/my-study` and rename it for your study.
+1. Download the [study folder template](https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip), unzip it where you keep
+   your studies, and rename the `my-study` folder for your study.
 2. Fill in `inputs/input.md`.
 3. Keep your real data out of the study folder until you run the script.
   This is for privacy: anything the assistant opens is sent to your AI
   provider, a third party.
-4. Open your agent in the study folder and start RAMM-AI with the command above.
+4. Open your agent in the study folder and type its start command:
+
+   | Agent | Start RAMM-AI | Start reproduce |
+   |---|---|---|
+   | Claude Code | `/ramm:ramm` | `/ramm:reproduce` |
+   | OpenAI Codex | `$ramm:ramm` | `$ramm:reproduce` |
+   | GitHub Copilot | `/ramm` | `/reproduce` |
+   | OpenCode v2 | `@ramm` | `@reproduce` |
 
 ## Documentation
 

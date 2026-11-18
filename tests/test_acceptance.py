@@ -2,6 +2,8 @@
 
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import acceptance
@@ -362,3 +364,54 @@ def test_ramm_packages_come_from_the_skill() -> None:
 def test_beyond_ramm_allows_grid_but_not_splines() -> None:
     script = RAMM_SCRIPT + "gap <- grid::unit(2, 'mm')\nbasis <- splines::ns(age, 3)\n"
     assert acceptance.beyond_ramm(script) == ["splines"]
+
+
+def test_copilot_command_passes_the_auto_tier(tmp_path: Path) -> None:
+    copilot = acceptance.Copilot(tmp_path, tmp_path / "home", "auto", None, "balance")
+    command = copilot.command("p")
+    assert command[command.index("--model") + 1] == "auto"
+    assert command[command.index("--auto-tier") + 1] == "balance"
+
+
+def test_copilot_command_leaves_out_the_auto_tier_unless_given(tmp_path: Path) -> None:
+    copilot = acceptance.Copilot(tmp_path, tmp_path / "home", None, None, None)
+    assert "--auto-tier" not in copilot.command("p")
+
+
+def test_auto_tier_is_refused_for_other_agents(repo_root: Path) -> None:
+    proc = subprocess.run(
+        [sys.executable, "tests/acceptance.py", "claude", "open-field"]
+        + ["--auto-tier", "balance"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 2
+    assert "--auto-tier is a Copilot option" in proc.stderr
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "",
+        '[error: {"name": "ModelUnavailable", "data": {"tags": ["free"]}}]',
+        f"[no reply in {acceptance.TURN_TIMEOUT_S} s]",
+    ],
+)
+def test_turn_failed_when_the_agent_did_nothing(reply: str) -> None:
+    assert acceptance.turn_failed(acceptance.Turn(tag="", prompt="p", reply=reply))
+
+
+@pytest.mark.parametrize(
+    "done",
+    [
+        {"reply": "Here is the design summary."},
+        {"reply": "[error: {}]\n\nI could not read that file."},
+        {"commands": ["ls"]},
+        {"paths": ["inputs/input.md"]},
+        {"changed": ["code/analysis.R"]},
+    ],
+)
+def test_turn_failed_is_false_when_the_agent_did_something(done: dict) -> None:
+    assert not acceptance.turn_failed(acceptance.Turn(tag="", prompt="p", **done))
