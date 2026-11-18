@@ -55,3 +55,11 @@ Scripts use some or all of: readr, lme4, lmerTest, emmeans,
   ggplot2, broom.mixed, dplyr, tidyr (and readxl for spreadsheets).
 Scripts never install packages: if one is missing, the script stops and lists
   what to install.
+
+If you are not confident installing and updating R packages yourself, use the
+  reproduce skill instead.
+It writes the files for an environment with every package the script needs,
+  at fixed versions.
+You then set it up with one or two commands, instead of installing packages
+  one by one.
+See [Reproducible environment](reproducible-environment.md).
