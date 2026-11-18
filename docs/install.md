@@ -1,5 +1,20 @@
 # Installing RAMM-AI
 
+## First, install an agent
+
+Use the agent's desktop app or its terminal version.
+Its website will not work, because it cannot open files on your computer.
+If you have never used a terminal, use the desktop app.
+
+| Agent | Desktop app | Terminal |
+|---|---|---|
+| Claude Code | [Claude desktop app](https://code.claude.com/docs/en/desktop) (Code tab) | [Quickstart](https://code.claude.com/docs/en/quickstart) |
+| Codex | [Codex app](https://learn.chatgpt.com/docs/app) | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli) |
+| GitHub Copilot | [GitHub Copilot app](https://docs.github.com/en/copilot/get-started/quickstart-copilot-app) | [Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli) |
+| OpenCode v2 | [OpenCode Desktop](https://opencode.ai/v2/docs/#desktop) | [OpenCode](https://opencode.ai/v2/docs/) |
+
+Then install RAMM-AI into it, from the terminal or from the app, as below.
+
 ## From the command line
 
 | Agent | Install | Start RAMM-AI | Start reproduce |
