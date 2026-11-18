@@ -1,10 +1,22 @@
 # Reproducible environment
 
-After the analysis script is written, start reproduce with the command in the
-  [Quick start](../README.md#quick-start).
-It writes the definition of a pinned environment into `envs/` in your study
-  folder (the environment folder of the YODA layout), and any helper scripts
-  into `code/`, in one of two modes:
+The reproduce skill writes the files for a pinned environment: one with fixed
+  versions of the R packages (and, in a container, of R itself), so someone
+  else can run your analysis with the same versions.
+It writes them into `envs/` in your study folder (the environment folder of the
+  YODA layout), and any helper scripts into `code/`.
+
+## Step by step
+
+1. After RAMM-AI has written your analysis script, you start reproduce with
+  its command in the [Quick start](../README.md#quick-start).
+2. Reproduce tells you which mode it will use, the R version, the snapshot
+  date and the files it will write, and waits.
+  You confirm, or ask for the other mode.
+3. You follow `envs/README.md`, which reproduce writes, to set up the
+  environment and run the analysis.
+
+## The two modes
 
 - **`container`** (default): a container with a fixed R version, system
   libraries and packages from a dated snapshot, so everything is pinned.
@@ -18,10 +30,3 @@ It writes the definition of a pinned environment into `envs/` in your study
 
 Either way, every run also records the R and package versions in
   `outputs/provenance.csv`.
-
-Choose the mode in `inputs/input.md`:
-
-```markdown
-# Reproducible Environment (optional)
-- Reproducible environment: container
-```
