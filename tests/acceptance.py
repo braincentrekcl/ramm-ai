@@ -365,6 +365,30 @@ def skill_read_rule(plugin: Path) -> str:
     return f"Read(/{plugin}/skills/**)"
 
 
+def parse_claude(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
+    """Fill turn from Claude Code's stream-json lines; return the session ID and
+    models used."""
+    session, models, outputs = None, set(), []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        for item in claude_items(event):
+            if item.get("type") == "tool_use":
+                turn.paths += tool_paths(item["input"])
+                if "command" in item["input"]:
+                    turn.commands.append(item["input"]["command"])
+            if item.get("type") == "tool_result":
+                outputs.append(result_text(item.get("content", "")))
+        if event.get("type") == "result":
+            session = event["session_id"]
+            turn.reply = event.get("result", "")
+            if (message := error_message(event)) is not None:
+                turn.reply = f"[error: {message}]"
+            turn.denied = [json.dumps(d) for d in event["permission_denials"]]
+            models |= set(event.get("modelUsage", {}))
+    turn.tool_output = "\n".join(outputs)
+    return session, models
+
+
 class Claude:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin, self.model, self.effort = plugin, model, effort
@@ -391,31 +415,39 @@ class Claude:
             check=False,
         )
         turn = Turn(tag="", prompt=prompt)
-        outputs = []
-        for line in proc.stdout.splitlines():
-            event = json.loads(line)
-            for item in claude_items(event):
-                if item.get("type") == "tool_use":
-                    turn.paths += tool_paths(item["input"])
-                    if "command" in item["input"]:
-                        turn.commands.append(item["input"]["command"])
-                if item.get("type") == "tool_result":
-                    outputs.append(result_text(item.get("content", "")))
-            if event.get("type") == "result":
-                self.session = event["session_id"]
-                turn.reply = event.get("result", "")
-                if (message := error_message(event)) is not None:
-                    turn.reply = f"[error: {message}]"
-                turn.denied = [json.dumps(d) for d in event["permission_denials"]]
-                self.models_seen |= set(event.get("modelUsage", {}))
+        session, models = parse_claude(proc.stdout, turn)
+        self.session = session or self.session
+        self.models_seen |= models
         if not self.session:
             raise RuntimeError(f"claude returned no session:\n{proc.stderr}")
-        turn.tool_output = "\n".join(outputs)
         return turn
 
     def describe(self) -> str:
         models = ", ".join(sorted(self.models_seen)) or "unknown"
         return f"{models}, effort {self.effort or 'default'}"
+
+
+def parse_codex(stdout: str, turn: Turn) -> str | None:
+    """Fill turn from Codex's JSON lines; return the thread ID, if a
+    thread.started event gives one."""
+    thread, messages, outputs = None, [], []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        if event.get("type") == "thread.started":
+            thread = event["thread_id"]
+        if (message := error_message(event)) is not None:
+            messages.append(f"[error: {message}]")
+        item = event.get("item", {})
+        if event.get("type") != "item.completed":
+            continue
+        if item.get("type") == "agent_message":
+            messages.append(item["text"])
+        if item.get("type") == "command_execution":
+            turn.commands.append(item["command"])
+            outputs.append(item.get("aggregated_output", ""))
+    turn.reply = "\n\n".join(messages)
+    turn.tool_output = "\n".join(outputs)
+    return thread
 
 
 class Codex:
@@ -468,25 +500,9 @@ class Codex:
             stdin=subprocess.DEVNULL,
         )
         turn = Turn(tag="", prompt=prompt)
-        messages, outputs = [], []
-        for line in proc.stdout.splitlines():
-            event = json.loads(line)
-            if event.get("type") == "thread.started":
-                self.session = event["thread_id"]
-            if (message := error_message(event)) is not None:
-                messages.append(f"[error: {message}]")
-            item = event.get("item", {})
-            if event.get("type") != "item.completed":
-                continue
-            if item.get("type") == "agent_message":
-                messages.append(item["text"])
-            if item.get("type") == "command_execution":
-                turn.commands.append(item["command"])
-                outputs.append(item.get("aggregated_output", ""))
+        self.session = parse_codex(proc.stdout, turn) or self.session
         if not self.session:
             raise RuntimeError(f"codex returned no thread:\n{proc.stderr}")
-        turn.reply = "\n\n".join(messages)
-        turn.tool_output = "\n".join(outputs)
         return turn
 
     def describe(self) -> str:
