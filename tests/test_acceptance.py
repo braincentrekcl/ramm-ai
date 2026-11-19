@@ -442,3 +442,112 @@ def test_parse_copilot_puts_a_session_error_in_the_reply() -> None:
     acceptance.parse_copilot(stdout, turn)
     assert turn.reply == "[error: Model unavailable.]"
     assert acceptance.turn_errored(turn)
+
+
+def json_lines(events: list[dict]) -> str:
+    return "\n".join(json.dumps(e) for e in events)
+
+
+CLAUDE_EVENTS = [
+    {
+        "type": "assistant",
+        "message": {
+            "content": [
+                {"type": "tool_use", "input": {"command": "ls"}},
+                {"type": "tool_use", "input": {"file_path": "inputs/input.md"}},
+            ]
+        },
+    },
+    {
+        "type": "user",
+        "message": {"content": [{"type": "tool_result", "content": "x.R"}]},
+    },
+    {
+        "type": "result",
+        "session_id": "s1",
+        "is_error": False,
+        "result": "Done.",
+        "permission_denials": [{"tool_name": "Bash"}],
+        "modelUsage": {"claude-x": {}},
+    },
+]
+
+
+def test_parse_claude_reads_commands_paths_reply_and_session() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    session, models = acceptance.parse_claude(json_lines(CLAUDE_EVENTS), turn)
+    assert (session, models) == ("s1", {"claude-x"})
+    assert (turn.commands, turn.paths) == (["ls"], ["inputs/input.md"])
+    assert (turn.reply, turn.tool_output) == ("Done.", "x.R")
+    assert turn.denied == ['{"tool_name": "Bash"}']
+
+
+def test_parse_claude_puts_an_error_in_the_reply() -> None:
+    # As Claude Code wrote it when given a model that does not exist.
+    error = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": True,
+        "result": "There's an issue with the selected model.",
+        "session_id": "s1",
+        "permission_denials": [],
+        "modelUsage": {},
+    }
+    turn = acceptance.Turn(tag="", prompt="p")
+    acceptance.parse_claude(json_lines([error]), turn)
+    assert turn.reply == "[error: There's an issue with the selected model.]"
+    assert acceptance.turn_failed(turn)
+
+
+def test_parse_claude_returns_no_session_without_a_result() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    session, _ = acceptance.parse_claude(json_lines(CLAUDE_EVENTS[:1]), turn)
+    assert session is None
+
+
+CODEX_EVENTS = [
+    {"type": "thread.started", "thread_id": "t1"},
+    {"type": "turn.started"},
+    {
+        "type": "item.completed",
+        "item": {
+            "type": "command_execution",
+            "command": "ls",
+            "aggregated_output": "x.R",
+        },
+    },
+    {"type": "item.completed", "item": {"type": "agent_message", "text": "Done."}},
+    {"type": "turn.completed"},
+]
+
+
+def test_parse_codex_reads_commands_reply_and_thread() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    assert acceptance.parse_codex(json_lines(CODEX_EVENTS), turn) == "t1"
+    assert turn.commands == ["ls"]
+    assert (turn.reply, turn.tool_output) == ("Done.", "x.R")
+
+
+def test_parse_codex_records_a_failed_turn_once() -> None:
+    # As Codex wrote it when given a model that does not exist: a warning item,
+    # then the same error as an error event and as turn.failed.
+    message = '{"status": 400, "code": "model_not_found"}'
+    events = [
+        {"type": "thread.started", "thread_id": "t1"},
+        {
+            "type": "item.completed",
+            "item": {"type": "error", "message": "Model metadata not found."},
+        },
+        {"type": "turn.started"},
+        {"type": "error", "message": message},
+        {"type": "turn.failed", "error": {"message": message}},
+    ]
+    turn = acceptance.Turn(tag="", prompt="p")
+    acceptance.parse_codex(json_lines(events), turn)
+    assert turn.reply == f"[error: {message}]"
+    assert acceptance.turn_failed(turn)
+
+
+def test_parse_codex_returns_no_thread_without_thread_started() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    assert acceptance.parse_codex(json_lines(CODEX_EVENTS[1:]), turn) is None
