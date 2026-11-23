@@ -1,0 +1,6 @@
+{
+  "@anthropic-ai/claude-code": "2.1.304",
+  "@openai/codex": "0.163.0",
+  "@github/copilot": "1.0.112",
+  "@opencode/cli": "2.1.2"
+}
