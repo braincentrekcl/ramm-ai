@@ -391,6 +391,18 @@ def test_auto_tier_is_refused_for_other_agents(repo_root: Path) -> None:
     assert "--auto-tier is a Copilot option" in proc.stderr
 
 
+def test_runs_below_one_are_refused(repo_root: Path) -> None:
+    proc = subprocess.run(
+        [sys.executable, "tests/acceptance.py", "claude", "open-field", "--runs", "0"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 2
+    assert "--runs must be at least 1" in proc.stderr
+
+
 @pytest.mark.parametrize(
     "reply",
     [
@@ -551,3 +563,124 @@ def test_parse_codex_records_a_failed_turn_once() -> None:
 def test_parse_codex_returns_no_thread_without_thread_started() -> None:
     turn = acceptance.Turn(tag="", prompt="p")
     assert acceptance.parse_codex(json_lines(CODEX_EVENTS[1:]), turn) is None
+
+
+def test_codex_command_turns_off_the_update_check() -> None:
+    # Codex() installs the plugin into a new Codex home; the command needs none
+    # of that.
+    codex = object.__new__(acceptance.Codex)
+    codex.session, codex.model, codex.effort = None, None, None
+    command = codex.command("p")
+    flag = command.index("check_for_update_on_startup=false")
+    assert command[flag - 1] == "-c"
+    assert command[-1] == "p"
+
+
+@pytest.mark.parametrize(
+    ("line", "version"),
+    [
+        ("GitHub Copilot CLI 1.0.112.", "1.0.112"),
+        ("2.1.304 (Claude Code)", "2.1.304"),
+        ("codex-cli 0.163.0", "0.163.0"),
+        ("opencode v2.1.2", "2.1.2"),
+    ],
+)
+def test_reported_version_reads_each_agents_version_line(
+    line: str, version: str
+) -> None:
+    assert acceptance.reported_version(line) == version
+
+
+def test_reported_version_stops_without_a_version() -> None:
+    with pytest.raises(SystemExit, match="no version here"):
+        acceptance.reported_version("no version here")
+
+
+def test_agent_version_runs_with_updates_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict = {}
+
+    def run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+        seen["cmd"], seen["env"] = cmd, kwargs.get("env")
+        return subprocess.CompletedProcess(cmd, 0, stdout="Tool 1.2.3.\nmore\n")
+
+    monkeypatch.setattr(acceptance.subprocess, "run", run)
+    assert acceptance.agent_version("copilot") == "Tool 1.2.3."
+    assert seen["cmd"] == ["copilot", "--version"]
+    assert seen["env"]["COPILOT_AUTO_UPDATE"] == "false"
+    assert seen["env"]["DISABLE_AUTOUPDATER"] == "1"
+
+
+class StubAgent:
+    def __init__(self, *args: object) -> None:
+        pass
+
+    def describe(self) -> str:
+        return "stub model"
+
+
+def stub_result() -> dict:
+    result = {
+        col: None for col in ("void", "errored_turns", "opened_data", "tried_data_file")
+    }
+    result.update(void=False, formula="y ~ x", design_summary="summary")
+    return result
+
+
+def run_batch(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, versions: list[str]
+) -> list[str]:
+    """Run main() for claude with stubs; return the run folders one_run saw."""
+    ran: list[str] = []
+    reported = iter(versions)
+    monkeypatch.setattr(acceptance, "head_commit", lambda: "abc1234")
+    monkeypatch.setattr(acceptance, "reuse_plugin", lambda plugin, commit: True)
+    monkeypatch.setattr(acceptance, "Claude", StubAgent)
+    monkeypatch.setattr(acceptance, "agent_version", lambda agent: next(reported))
+    monkeypatch.setattr(acceptance, "summarise", fake_summarise)
+
+    def one_run(agent: object, demo: str, study: Path, ask: bool) -> dict:
+        study.mkdir(parents=True)
+        ran.append(study.parent.name)
+        return stub_result()
+
+    monkeypatch.setattr(acceptance, "one_run", one_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "acceptance.py",
+            "claude",
+            "open-field",
+            "--runs",
+            "2",
+            "--out",
+            str(tmp_path),
+        ],
+    )
+    acceptance.main()
+    return ran
+
+
+def fake_summarise(header: str, results: list[dict]) -> str:
+    return header + "\n" + "\n".join("| row |" for _ in results) + "\n"
+
+
+def test_batch_stops_before_any_run_when_an_agent_is_not_at_its_pin(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pin = re.escape(acceptance.pinned_version("claude"))
+    with pytest.raises(SystemExit, match=rf"0\.0\.0.*pins {pin}"):
+        run_batch(monkeypatch, tmp_path, ["0.0.0 (Claude Code)"])
+    assert not list(tmp_path.glob("claude-open-field-*"))
+
+
+def test_batch_stops_with_a_summary_when_the_version_changes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pin = acceptance.pinned_version("claude")
+    pinned, changed = f"{pin} (Claude Code)", "0.0.0 (Claude Code)"
+    with pytest.raises(SystemExit, match="run 2"):
+        run_batch(monkeypatch, tmp_path, [pinned, pinned, changed])
+    summary = (tmp_path / "summary-claude-open-field.md").read_text()
+    assert summary.count("| row |") == 1
+    assert f"pinned {pin}" in summary

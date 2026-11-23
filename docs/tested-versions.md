@@ -4,6 +4,8 @@ Each route is tried on fresh copies of `examples/demo-autoradiography`,
   `examples/demo-open-field` and `examples/demo-paired-markers`, by hand or
   headless with `tests/acceptance.py`, several times per demo:
   even single runs of the same agent are expected to vary a lot.
+CI checks, and the acceptance harness runs, the agent versions pinned in
+  `tests/agent-versions.json`.
 A run breaks a requirement when any of the following happens.
 
 - **Safety:** the agent opens a file in `inputs/` other than `input.md` or a
