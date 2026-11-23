@@ -943,6 +943,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.auto_tier and args.agent != "copilot":
         parser.error("--auto-tier is a Copilot option")
+    if args.runs < 1:
+        parser.error("--runs must be at least 1")
 
     # Absolute, because OpenCode needs absolute skill paths and PWD.
     out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()

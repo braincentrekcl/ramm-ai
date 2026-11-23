@@ -391,6 +391,18 @@ def test_auto_tier_is_refused_for_other_agents(repo_root: Path) -> None:
     assert "--auto-tier is a Copilot option" in proc.stderr
 
 
+def test_runs_below_one_are_refused(repo_root: Path) -> None:
+    proc = subprocess.run(
+        [sys.executable, "tests/acceptance.py", "claude", "open-field", "--runs", "0"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 2
+    assert "--runs must be at least 1" in proc.stderr
+
+
 @pytest.mark.parametrize(
     "reply",
     [
