@@ -365,6 +365,18 @@ def skill_read_rule(plugin: Path) -> str:
     return f"Read(/{plugin}/skills/**)"
 
 
+# Each agent's own switch for automatic updates, so a batch stays on the
+# version it records: Claude Code (code.claude.com/docs/en/setup) and Copilot
+# (`copilot help environment`). Codex's is a config key, set in Codex.command;
+# OpenCode's default only notifies.
+UPDATES_OFF = {"DISABLE_AUTOUPDATER": "1", "COPILOT_AUTO_UPDATE": "false"}
+
+
+def agent_env() -> dict[str, str]:
+    """The environment every agent runs in: this one, with updates off."""
+    return {**os.environ, **UPDATES_OFF}
+
+
 def parse_claude(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
     """Fill turn from Claude Code's stream-json lines; return the session ID and
     models used."""
@@ -395,7 +407,7 @@ class Claude:
         self.session: str | None = None
         self.models_seen: set[str] = set()
 
-    def turn(self, study: Path, prompt: str) -> Turn:
+    def command(self, prompt: str) -> list[str]:
         cmd = ["claude", "-p", prompt, "--plugin-dir", str(self.plugin)]
         cmd += ["--setting-sources", "project", "--permission-mode", "acceptEdits"]
         cmd += ["--allowedTools", skill_read_rule(self.plugin)]
@@ -406,9 +418,13 @@ class Claude:
             cmd += ["--model", self.model]
         if self.effort:
             cmd += ["--effort", self.effort]
+        return cmd
+
+    def turn(self, study: Path, prompt: str) -> Turn:
         proc = subprocess.run(
-            cmd,
+            self.command(prompt),
             cwd=study,
+            env=agent_env(),
             capture_output=True,
             text=True,
             timeout=TURN_TIMEOUT_S,
@@ -475,9 +491,9 @@ class Codex:
             )
 
     def _env(self) -> dict[str, str]:
-        return {**os.environ, "CODEX_HOME": str(self.home)}
+        return {**agent_env(), "CODEX_HOME": str(self.home)}
 
-    def turn(self, study: Path, prompt: str) -> Turn:
+    def command(self, prompt: str) -> list[str]:
         cmd = ["codex", "exec"] + (["resume", self.session] if self.session else [])
         cmd += [
             "--json",
@@ -489,8 +505,14 @@ class Codex:
             cmd += ["-m", self.model]
         if self.effort:
             cmd += ["-c", f'model_reasoning_effort="{self.effort}"']
+        # Codex's own update check (its config reference); unknown keys are
+        # ignored silently, so this one was checked in Codex 0.163.0's binary.
+        cmd += ["-c", "check_for_update_on_startup=false"]
+        return cmd + [prompt]
+
+    def turn(self, study: Path, prompt: str) -> Turn:
         proc = subprocess.run(
-            cmd + [prompt],
+            self.command(prompt),
             check=False,
             cwd=study,
             env=self._env(),
@@ -564,7 +586,7 @@ class Copilot:
         home.mkdir(parents=True)
 
     def _env(self) -> dict[str, str]:
-        return {**os.environ, "COPILOT_HOME": str(self.home)}
+        return {**agent_env(), "COPILOT_HOME": str(self.home)}
 
     def command(self, prompt: str) -> list[str]:
         # File edits are allowed, as Claude's acceptEdits allows them; anything
@@ -636,7 +658,7 @@ class OpenCode:
             cwd=study,
             # OpenCode takes its folder from PWD, which subprocess leaves
             # pointing at the repository.
-            env={**os.environ, "PWD": str(study)},
+            env={**agent_env(), "PWD": str(study)},
             capture_output=True,
             text=True,
             timeout=TURN_TIMEOUT_S,

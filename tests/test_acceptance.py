@@ -551,3 +551,14 @@ def test_parse_codex_records_a_failed_turn_once() -> None:
 def test_parse_codex_returns_no_thread_without_thread_started() -> None:
     turn = acceptance.Turn(tag="", prompt="p")
     assert acceptance.parse_codex(json_lines(CODEX_EVENTS[1:]), turn) is None
+
+
+def test_codex_command_turns_off_the_update_check() -> None:
+    # Codex() installs the plugin into a new Codex home; the command needs none
+    # of that.
+    codex = object.__new__(acceptance.Codex)
+    codex.session, codex.model, codex.effort = None, None, None
+    command = codex.command("p")
+    flag = command.index("check_for_update_on_startup=false")
+    assert command[flag - 1] == "-c"
+    assert command[-1] == "p"
