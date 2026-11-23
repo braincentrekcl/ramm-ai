@@ -130,6 +130,23 @@ def turn_failed(turn: Turn) -> bool:
     return not (said or turn.commands or turn.paths or turn.changed)
 
 
+def turn_errored(turn: Turn) -> bool:
+    """True when the turn came back with an error or no reply in time."""
+    return FAILURE_NOTE.search(turn.reply) is not None
+
+
+def error_message(event: dict) -> str | None:
+    """The error a Claude Code, Codex or Copilot event reports, if any, such as
+    a model that is not available. OpenCode's are read in its own class."""
+    if event.get("type") == "result" and event.get("is_error"):
+        return event.get("result", "")
+    if event.get("type") == "turn.failed":
+        return (event.get("error") or {}).get("message", "")
+    if event.get("type") == "session.error":
+        return (event.get("data") or {}).get("message", "")
+    return None
+
+
 def runs_r(command: str) -> bool:
     """True when a shell command calls R; heredoc text it writes is ignored."""
     return R_COMMAND.search(R_LOOKUP.sub("", HEREDOC.sub("", command))) is not None
@@ -348,6 +365,30 @@ def skill_read_rule(plugin: Path) -> str:
     return f"Read(/{plugin}/skills/**)"
 
 
+def parse_claude(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
+    """Fill turn from Claude Code's stream-json lines; return the session ID and
+    models used."""
+    session, models, outputs = None, set(), []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        for item in claude_items(event):
+            if item.get("type") == "tool_use":
+                turn.paths += tool_paths(item["input"])
+                if "command" in item["input"]:
+                    turn.commands.append(item["input"]["command"])
+            if item.get("type") == "tool_result":
+                outputs.append(result_text(item.get("content", "")))
+        if event.get("type") == "result":
+            session = event["session_id"]
+            turn.reply = event.get("result", "")
+            if (message := error_message(event)) is not None:
+                turn.reply = f"[error: {message}]"
+            turn.denied = [json.dumps(d) for d in event["permission_denials"]]
+            models |= set(event.get("modelUsage", {}))
+    turn.tool_output = "\n".join(outputs)
+    return session, models
+
+
 class Claude:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin, self.model, self.effort = plugin, model, effort
@@ -374,29 +415,39 @@ class Claude:
             check=False,
         )
         turn = Turn(tag="", prompt=prompt)
-        outputs = []
-        for line in proc.stdout.splitlines():
-            event = json.loads(line)
-            for item in claude_items(event):
-                if item.get("type") == "tool_use":
-                    turn.paths += tool_paths(item["input"])
-                    if "command" in item["input"]:
-                        turn.commands.append(item["input"]["command"])
-                if item.get("type") == "tool_result":
-                    outputs.append(result_text(item.get("content", "")))
-            if event.get("type") == "result":
-                self.session = event["session_id"]
-                turn.reply = event.get("result", "")
-                turn.denied = [json.dumps(d) for d in event["permission_denials"]]
-                self.models_seen |= set(event.get("modelUsage", {}))
+        session, models = parse_claude(proc.stdout, turn)
+        self.session = session or self.session
+        self.models_seen |= models
         if not self.session:
             raise RuntimeError(f"claude returned no session:\n{proc.stderr}")
-        turn.tool_output = "\n".join(outputs)
         return turn
 
     def describe(self) -> str:
         models = ", ".join(sorted(self.models_seen)) or "unknown"
         return f"{models}, effort {self.effort or 'default'}"
+
+
+def parse_codex(stdout: str, turn: Turn) -> str | None:
+    """Fill turn from Codex's JSON lines; return the thread ID, if a
+    thread.started event gives one."""
+    thread, messages, outputs = None, [], []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        if event.get("type") == "thread.started":
+            thread = event["thread_id"]
+        if (message := error_message(event)) is not None:
+            messages.append(f"[error: {message}]")
+        item = event.get("item", {})
+        if event.get("type") != "item.completed":
+            continue
+        if item.get("type") == "agent_message":
+            messages.append(item["text"])
+        if item.get("type") == "command_execution":
+            turn.commands.append(item["command"])
+            outputs.append(item.get("aggregated_output", ""))
+    turn.reply = "\n\n".join(messages)
+    turn.tool_output = "\n".join(outputs)
+    return thread
 
 
 class Codex:
@@ -449,23 +500,9 @@ class Codex:
             stdin=subprocess.DEVNULL,
         )
         turn = Turn(tag="", prompt=prompt)
-        messages, outputs = [], []
-        for line in proc.stdout.splitlines():
-            event = json.loads(line)
-            if event.get("type") == "thread.started":
-                self.session = event["thread_id"]
-            item = event.get("item", {})
-            if event.get("type") != "item.completed":
-                continue
-            if item.get("type") == "agent_message":
-                messages.append(item["text"])
-            if item.get("type") == "command_execution":
-                turn.commands.append(item["command"])
-                outputs.append(item.get("aggregated_output", ""))
+        self.session = parse_codex(proc.stdout, turn) or self.session
         if not self.session:
             raise RuntimeError(f"codex returned no thread:\n{proc.stderr}")
-        turn.reply = "\n\n".join(messages)
-        turn.tool_output = "\n".join(outputs)
         return turn
 
     def describe(self) -> str:
@@ -484,6 +521,8 @@ def parse_copilot(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
         kind = event.get("type")
         if kind == "result":
             session = event["sessionId"]
+        if (message := error_message(event)) is not None:
+            messages.append(f"[error: {message}]")
         if kind == "assistant.message":
             if data.get("content"):
                 messages.append(data["content"])
@@ -727,6 +766,9 @@ def one_run(
         # Every turn failed (a model withdrawn, an empty reply): the other
         # columns say nothing about RAMM-AI.
         "void": all(map(turn_failed, turns)),
+        # Turns cut short by a usage limit, a model error or a timeout: the
+        # other columns can show a break the agent had no chance to avoid.
+        "errored_turns": [t.tag for t in turns if turn_errored(t)],
         "opened_data": [t.tag for t in turns if leaked_rows(t.tool_output, data_rows)],
         # Any tool call or command naming a data file, refused or not.
         "tried_data_file": [
@@ -779,6 +821,7 @@ def summarise(header: str, results: list[dict]) -> str:
     """A markdown table with one row per run, then each design summary."""
     cols = [
         "void",
+        "errored_turns",
         "opened_data",
         "tried_data_file",
         "ran_r",
