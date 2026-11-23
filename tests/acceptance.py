@@ -377,6 +377,40 @@ def agent_env() -> dict[str, str]:
     return {**os.environ, **UPDATES_OFF}
 
 
+# Each agent's npm package in tests/agent-versions.json, the versions CI checks.
+AGENT_PACKAGES = {
+    "claude": "@anthropic-ai/claude-code",
+    "codex": "@openai/codex",
+    "copilot": "@github/copilot",
+    "opencode": "@opencode/cli",
+}
+
+
+def pinned_version(agent: str) -> str:
+    """The version tests/agent-versions.json pins the agent at."""
+    pins = json.loads((REPO_ROOT / "tests" / "agent-versions.json").read_text())
+    return pins[AGENT_PACKAGES[agent]]
+
+
+def agent_version(agent: str) -> str:
+    """The first line of the agent's --version, run as the turns run it."""
+    return subprocess.run(
+        [agent, "--version"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=agent_env(),
+    ).stdout.splitlines()[0]
+
+
+def reported_version(line: str) -> str:
+    """The version number in an agent's --version line."""
+    match = re.search(r"\d+\.\d+\.\d+", line)
+    if match is None:
+        raise SystemExit(f"Found no version number in {line!r}.")
+    return match.group()
+
+
 def parse_claude(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
     """Fill turn from Claude Code's stream-json lines; return the session ID and
     models used."""
@@ -696,6 +730,17 @@ class OpenCode:
 PLUGIN_STAMP = ".ramm-commit"
 
 
+def head_commit() -> str:
+    """The short hash of the commit the runs test."""
+    return subprocess.run(
+        ["git", "rev-parse", "--short", "HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+
 def reuse_plugin(plugin: Path, commit: str) -> bool:
     """True when plugin is a copy of this commit; stops when it is a copy of
     another, so a report never stamps a commit its runs did not use."""
@@ -902,16 +947,14 @@ def main() -> None:
     # Absolute, because OpenCode needs absolute skill paths and PWD.
     out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    commit = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
-    version = subprocess.run(
-        [args.agent, "--version"], capture_output=True, text=True, check=True
-    ).stdout.splitlines()[0]
+    commit = head_commit()
+    version = agent_version(args.agent)
+    pin = pinned_version(args.agent)
+    if reported_version(version) != pin:
+        raise SystemExit(
+            f"{args.agent} is {version!r}, but tests/agent-versions.json pins"
+            f" {pin}: install {AGENT_PACKAGES[args.agent]}@{pin} first."
+        )
     plugin = out / "plugin"
     if not reuse_plugin(plugin, commit):
         archive(".", plugin, strip=0)
@@ -919,6 +962,18 @@ def main() -> None:
 
     name = f"{args.agent}-{args.demo}" + ("-ask" if args.ask_for_method else "")
     results = []
+
+    def write_summary() -> Path:
+        header = (
+            f"# {args.agent} on {args.demo}\n\nCommit {commit}; {version}"
+            f" (pinned {pin}); {agent.describe()}; {date.today()};"
+            f" {len(results)} runs."
+            + (" The user asked for a method by name." if args.ask_for_method else "")
+        )
+        summary = out / f"summary-{name}.md"
+        summary.write_text(summarise(header, results))
+        return summary
+
     for i in range(1, args.runs + 1):
         run_dir = out / f"{name}-{i}"
         if args.agent == "claude":
@@ -941,18 +996,21 @@ def main() -> None:
             if isinstance(agent, Codex):
                 agent.close()
         (run_dir / "result.json").write_text(json.dumps(result, indent=2))
+        # The summary names one version, so a change mid-batch (a reinstall,
+        # or an update the settings did not stop) ends the batch here.
+        now = agent_version(args.agent)
+        if reported_version(now) != pin:
+            summary = write_summary()
+            raise SystemExit(
+                f"{args.agent} changed from {version!r} to {now!r} during run {i},"
+                f" so run {i} may have used both. {summary} holds the"
+                f" {len(results)} runs before it; redo the rest."
+            )
         results.append(result)
         status = "void, every turn failed" if result["void"] else "done"
         print(f"run {i} {status}: {run_dir}")
 
-    header = (
-        f"# {args.agent} on {args.demo}\n\nCommit {commit}; {version};"
-        f" {agent.describe()}; {date.today()}; {args.runs} runs."
-        + (" The user asked for a method by name." if args.ask_for_method else "")
-    )
-    summary = out / f"summary-{name}.md"
-    summary.write_text(summarise(header, results))
-    print(f"summary: {summary}")
+    print(f"summary: {write_summary()}")
 
 
 if __name__ == "__main__":
