@@ -371,8 +371,8 @@ Use this pattern, adapting the formula to the study design:
 ```r
 # --- 5. Model Fitting ---
 
-# Start from the full model confirmed in the design summary, with a random
-# intercept for each grouping level (Barr et al., 2013).
+# Start from the full model confirmed in the design summary, with the random
+# intercepts it named (Barr et al., 2013).
 # If it fails to converge or gives a singular fit warning, do NOT ignore it —
 # review the diagnostics in Section 6 and consider the simplification options
 # commented below.

@@ -235,6 +235,8 @@ For each level, determine:
 - Which measurements share each unit (for example striatum and sensory cortex on the same sections of one slide)?
   Show it in the tree; if input.md does not make it clear, ask.
 
+In the design summary, say in plain words which grouping levels get a random intercept; if you leave one out, raise it as an open decision with your recommendation.
+
 #### Post-hoc comparisons
 
 - What comparisons does the user want?
@@ -362,7 +364,8 @@ It needs a random intercept only when more than one analysed observation remains
 You write the script without the data, so you cannot fit the model, see a singular fit or simplify it yourself.
 The script carries the strategy instead, so the user can apply it when they run it (Barr et al., 2013):
 
-- **Starting model:** the full model the user confirmed: a random intercept for each grouping level, and a random slope only if the user chose one (see [Random slopes](#random-slopes)).
+- **Starting model:** the full model the user confirmed: the random intercepts the design summary named, and a random slope only if the user chose one (see [Random slopes](#random-slopes)).
+  If a grouping level was neither given a random intercept nor raised as a decision in the summary, ask before writing the script; never add one yourself.
 - **Fallbacks:** commented-out simpler models the user can enable, one at a time, after inspecting the Section 6 diagnostics (see Section 5 for the exact pattern), in this order:
    1. Remove the correlations between random effects (`||` in lme4), if the model has a slope.
    2. Remove the random effect with the smallest variance component (from `VarCorr()`), but **never the individual's random intercept while there are repeated measurements per individual**: it accounts for pseudoreplication.
