@@ -669,7 +669,7 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   Keep the user's choice if they still want one point per replicate when individuals are hard to tell apart; the strips below are the fallback.
   - **One point per replicate**, marked by individual: shows how spread each individual's replicates are.
 - Mark the individual with a visual feature no other factor is using.
-  Use colour if it is free.
+  Use colour if it is free and there are up to about 8 individuals per group.
   If colour already shows another factor (for example group), use shape with 6 or fewer individuals per group, and only if shape is not already showing another factor (see below); shapes become hard to tell apart beyond that.
   Otherwise give each individual its own vertical strip: a thin line spanning its replicates, with its points on the line, strips ordered by individual mean and spread within the violin's width.
   Say in the subtitle that each strip is one individual.
