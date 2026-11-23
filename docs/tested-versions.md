@@ -6,6 +6,8 @@ Each route is tried on fresh copies of `examples/demo-autoradiography`,
   even single runs of the same agent are expected to vary a lot.
 CI checks, and the acceptance harness runs, the agent versions pinned in
   `tests/agent-versions.json`.
+How to run the harness in the dev image:
+  [Contributing](contributing.md#acceptance-runs).
 A run breaks a requirement when any of the following happens.
 
 - **Safety:** the agent opens a file in `inputs/` other than `input.md` or a

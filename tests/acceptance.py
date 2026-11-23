@@ -7,12 +7,13 @@ The criteria are in docs/tested-versions.md.
 Whether the design summary raised every model term needs reading: the
 summary file puts each run's summary next to the formula it fitted.
 
-Usage (from the repository root):
-    python3 tests/acceptance.py claude autoradiography --runs 3
-    python3 tests/acceptance.py codex open-field --runs 3 --effort medium
-    python3 tests/acceptance.py opencode open-field --runs 3
-    python3 tests/acceptance.py copilot autoradiography --runs 3 --model auto --auto-tier balance
-    python3 tests/acceptance.py claude paired-markers --runs 3 --ask-for-method
+It runs only in the dev image, through tests/acceptance_docker.py, which takes
+the same arguments plus --out (from the repository root):
+    python3 tests/acceptance_docker.py claude autoradiography --runs 3 --out <folder>
+    python3 tests/acceptance_docker.py codex open-field --runs 3 --effort medium --out <folder>
+    python3 tests/acceptance_docker.py opencode open-field --runs 3 --out <folder>
+    python3 tests/acceptance_docker.py copilot autoradiography --runs 3 --model auto --auto-tier balance --out <folder>
+    python3 tests/acceptance_docker.py claude paired-markers --runs 3 --ask-for-method --out <folder>
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
 with shell set to "ask" as the template says for free models; a headless run
@@ -29,7 +30,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import tomllib
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -502,13 +502,9 @@ def parse_codex(stdout: str, turn: Turn) -> str | None:
 
 class Codex:
     def __init__(self, plugin: Path, home: Path, model: str | None, effort: str | None):
-        user_config = Path.home() / ".codex" / "config.toml"
-        defaults = (
-            tomllib.loads(user_config.read_text()) if user_config.exists() else {}
-        )
-        self.model = model or defaults.get("model")
-        # Not the user's effort setting: without --effort, Codex uses the
-        # model's own default, as every other agent here does.
+        # Without --model or --effort, Codex uses its own defaults, as every
+        # other agent here does; the dev image has no user config.
+        self.model = model
         self.effort = effort
         self.home = home
         self.session: str | None = None
@@ -945,6 +941,13 @@ def main() -> None:
         parser.error("--auto-tier is a Copilot option")
     if args.runs < 1:
         parser.error("--runs must be at least 1")
+    # The dev image sets this; outside it, installed agents drift from the pins
+    # and run with access to everything on the computer.
+    if os.environ.get("RAMM_AI_DEV_IMAGE") != "1":
+        raise SystemExit(
+            "Run acceptance batches in the dev image: python3"
+            " tests/acceptance_docker.py, with the same arguments and --out."
+        )
 
     # Absolute, because OpenCode needs absolute skill paths and PWD.
     out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()
@@ -991,12 +994,16 @@ def main() -> None:
                 args.auto_tier,
             )
         else:
-            agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
+            # Outside --out, which a container writes back to the host, so the
+            # copy of the login never lands there; removed after the run.
+            codex_home = Path(tempfile.mkdtemp(prefix="ramm-codex-home-"))
+            agent = Codex(plugin, codex_home / "home", args.model, args.effort)
         try:
             result = one_run(agent, args.demo, run_dir / "study", args.ask_for_method)
         finally:
             if isinstance(agent, Codex):
                 agent.close()
+                shutil.rmtree(codex_home)
         (run_dir / "result.json").write_text(json.dumps(result, indent=2))
         # The summary names one version, so a change mid-batch (a reinstall,
         # or an update the settings did not stop) ends the batch here.

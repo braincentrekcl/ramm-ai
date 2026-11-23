@@ -110,6 +110,7 @@ Each demo is a study folder: copy it somewhere new, open your agent in it and
 
 Open pull requests against the `develop` branch, not `main`.
 `main` changes only at a release, so every install gets a tested version.
+How to run the checks and the acceptance runs: [Contributing](docs/contributing.md).
 
 ## Licence
 

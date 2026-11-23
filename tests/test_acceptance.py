@@ -627,11 +627,20 @@ def stub_result() -> dict:
 
 
 def run_batch(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, versions: list[str]
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    versions: list[str],
+    agent: str = "claude",
+    in_dev_image: bool = True,
 ) -> list[str]:
-    """Run main() for claude with stubs; return the run folders one_run saw."""
+    """Run main() for an agent with stubs, so no real agent ever starts; return
+    the run folders one_run saw."""
     ran: list[str] = []
     reported = iter(versions)
+    if in_dev_image:
+        monkeypatch.setenv("RAMM_AI_DEV_IMAGE", "1")
+    else:
+        monkeypatch.delenv("RAMM_AI_DEV_IMAGE", raising=False)
     monkeypatch.setattr(acceptance, "head_commit", lambda: "abc1234")
     monkeypatch.setattr(acceptance, "reuse_plugin", lambda plugin, commit: True)
     monkeypatch.setattr(acceptance, "Claude", StubAgent)
@@ -649,7 +658,7 @@ def run_batch(
         "argv",
         [
             "acceptance.py",
-            "claude",
+            agent,
             "open-field",
             "--runs",
             "2",
@@ -684,3 +693,38 @@ def test_batch_stops_with_a_summary_when_the_version_changes(
     summary = (tmp_path / "summary-claude-open-field.md").read_text()
     assert summary.count("| row |") == 1
     assert f"pinned {pin}" in summary
+
+
+CODEX_HOMES: list[Path] = []
+
+
+class RecordingCodex(StubAgent):
+    def __init__(self, plugin: Path, home: Path, model: object, effort: object) -> None:
+        home.mkdir(parents=True)
+        (home / "auth.json").write_text("login")
+        CODEX_HOMES.append(home)
+
+    def close(self) -> None:
+        pass
+
+
+def test_codex_login_copy_stays_out_of_the_output_folder(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    out = tmp_path / "out"
+    CODEX_HOMES.clear()
+    monkeypatch.setattr(acceptance, "Codex", RecordingCodex)
+    pinned = f"codex-cli {acceptance.pinned_version('codex')}"
+    run_batch(monkeypatch, out, [pinned, pinned, pinned], agent="codex")
+    assert len(CODEX_HOMES) == 2
+    for home in CODEX_HOMES:
+        assert not home.is_relative_to(out)
+        assert not home.exists()
+
+
+def test_harness_refuses_to_run_outside_the_dev_image(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    with pytest.raises(SystemExit, match="acceptance_docker.py"):
+        run_batch(monkeypatch, tmp_path, [], in_dev_image=False)
+    assert not list(tmp_path.iterdir())
