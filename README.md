@@ -83,18 +83,18 @@ Follow [Installing RAMM-AI](docs/install.md): it has the commands for each
 
 ## Examples
 
-- **`examples/demo-autoradiography/`**: simulated receptor autoradiography,
+- **[`demo-autoradiography`](https://github.com/braincentrekcl/ramm-ai/raw/main/examples/demo-autoradiography.zip)**: simulated receptor autoradiography,
   three genotypes, three regions, slides and sections, uneven tissue loss
-- **`examples/demo-open-field/`**: simulated open-field crossover (vehicle vs
+- **[`demo-open-field`](https://github.com/braincentrekcl/ramm-ai/raw/main/examples/demo-open-field.zip)**: simulated open-field crossover (vehicle vs
   diazepam) with missing sessions
-- **`examples/demo-paired-markers/`**: simulated development of two synaptic
+- **[`demo-paired-markers`](https://github.com/braincentrekcl/ramm-ai/raw/main/examples/demo-paired-markers.zip)**: simulated development of two synaptic
   markers across seven ages, with a transient dip, each compared with its own
   adult level; the question invites methods beyond RAMM-AI, so it shows how
   RAMM-AI answers within its models
 - **`examples/input-*.md`**: further example `input.md` files
 
-Each demo is a study folder: copy it somewhere new, open your agent in it and
-  start RAMM-AI.
+Each demo is a study folder: download it, unzip it where you keep your studies,
+  open your agent in it and start RAMM-AI.
 
 ## Principles
 
