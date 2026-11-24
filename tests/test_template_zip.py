@@ -1,18 +1,22 @@
-"""Checks that template/my-study.zip, which users download, matches the folder."""
+"""Checks that each ZIP users download matches its folder."""
 
 import zipfile
 from pathlib import Path
 
-REBUILD = (
-    "git archive --format=zip --prefix=my-study/ "
-    "HEAD:template/my-study -o template/my-study.zip"
-)
+import pytest
+
+ZIPPED_FOLDERS = [
+    "template/my-study",
+    "examples/demo-autoradiography",
+    "examples/demo-open-field",
+    "examples/demo-paired-markers",
+]
 
 
 def zip_differences(archive: Path, folder: Path) -> list[str]:
     """Paths that are missing from, extra in, or different in the ZIP.
 
-    Line endings are ignored: git on Windows can check the template out with
+    Line endings are ignored: git on Windows can check the folder out with
     CRLF while the ZIP keeps LF.
     """
     with zipfile.ZipFile(archive) as zf:
@@ -31,12 +35,16 @@ def zip_differences(archive: Path, folder: Path) -> list[str]:
     )
 
 
-def test_template_zip_matches_the_folder(repo_root: Path) -> None:
-    template = repo_root / "template"
-    differences = zip_differences(template / "my-study.zip", template / "my-study")
+@pytest.mark.parametrize("folder", ZIPPED_FOLDERS)
+def test_zip_matches_the_folder(repo_root: Path, folder: str) -> None:
+    differences = zip_differences(repo_root / f"{folder}.zip", repo_root / folder)
+    rebuild = (
+        f"git archive --format=zip --prefix={Path(folder).name}/ "
+        f"HEAD:{folder} -o {folder}.zip"
+    )
     assert differences == [], (
-        f"template/my-study.zip differs from the folder in {differences}; "
-        f"commit the folder, then rebuild the ZIP with: {REBUILD}"
+        f"{folder}.zip differs from the folder in {differences}; "
+        f"commit the folder, then rebuild the ZIP with: {rebuild}"
     )
 
 
