@@ -50,8 +50,9 @@ The script writes into `outputs/`:
 - `prepared/data.csv`: your data files rearranged into the one table the model
   used, for you to check; the log lists each step with its counts
 - the log of the run, and `provenance.csv`: a checksum of both scripts, every
-  input and every output, with the R and package versions, so anyone can check
-  the results came from this script and these inputs
+  input and every output, with the version of RAMM-AI that wrote the script
+  and the R and package versions, so anyone can check the results came from
+  this script and these inputs
 
 ## R packages
 
