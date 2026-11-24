@@ -182,7 +182,7 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
 1. Look for `inputs/input.md` (or the input file the user named when starting the skill, if it is in `inputs/`).
    Read it by its path: a folder listing may be refused, and a refused listing does not mean the file is missing.
    Never proceed without it, even if the user describes the design in the chat: input.md makes the analysis transparent by recording the questions before any results exist; kept under version control, with a dated commit before the analysis is run, it serves as a preregistration-style record.
-   - No `inputs/` folder: stop and tell the user, in one sentence, to open you in their study folder, or to copy the template folder `template/my-study` from RAMM-AI.
+   - No `inputs/` folder: stop and tell the user, in one sentence, to open you in their study folder, or to download the study folder template (https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip), unzip it and fill in `inputs/input.md`.
    - `inputs/` exists but `input.md` is missing: stop, explain in plain language why input.md is required, and ask them to fill in the template and save it as `inputs/input.md`.
      You may help: from what they tell you, suggest text for each heading for them to add themselves (see [Input file format](#input-file-format)).
      Never write in `inputs/`.
@@ -429,7 +429,7 @@ Always specify the optimizer explicitly in the script, as in the Section 5 patte
 ## Input file format
 
 Use this when helping users fill in input.md.
-The template is `template/my-study/inputs/input.md` in RAMM-AI.
+The template is `inputs/input.md` in the study folder template (https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip).
 Users may add headings of their own.
 
 ```markdown
@@ -463,9 +463,6 @@ each data file; references/prepare.md lists what they must cover]
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
 - Centring: mean, zero or a value such as 8 weeks (for each continuous fixed effect)
-
-# Reproducible Environment (optional)
-- Reproducible environment: container or renv
 
 # Toy Data (optional)
 - File: `toy_data.csv` (same columns as one of the data files; name starts with toy_; sent to the AI provider)

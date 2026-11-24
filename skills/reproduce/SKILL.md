@@ -91,7 +91,7 @@ Possible values:
   It pins package versions only, not R itself or the system libraries.
   Its files are `code/setup_environment.R`, `code/run_analysis.R` and `envs/README.md`.
 
-If input.md gives no preference (the template's unedited line, listing both, is no preference), use `container`.
+If input.md gives no preference, use `container`.
 It needs no R on the computer, and fixes every version.
 If the user has neither Docker, Apptainer nor R, say they need one of them, and suggest asking their IT or HPC team which one they can use.
 
