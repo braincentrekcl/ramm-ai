@@ -388,7 +388,6 @@ A grouping factor above the measurement is either nested or crossed, and that de
   If its labels restart in every individual, the script makes them unique (see [The non-unique ID problem](#the-non-unique-id-problem)); it goes inside the tree, and the grouping checks in Section 2 of the script check it.
 - **Crossed:** each unit holds measurements from several individuals, such as a staining batch or scanner session, whether or not every individual appears in every unit → `(1 | subject) + (1 | batch)`.
   Its labels are shared across individuals, so they stay as they are; it goes beside the tree, in the design summary and in Section 4 of the script, and the grouping checks leave it out, since they expect each label to belong to one unit of the level above.
-- **Regions as observation-level:** if regions are the unit of measurement and not a random sample from a larger set, they are typically a within-subject fixed or observation-level factor, not a random effect.
 
 When building unique IDs for nested factors, always nest from the top down:
 ```r
