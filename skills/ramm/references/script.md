@@ -371,8 +371,8 @@ Use this pattern, adapting the formula to the study design:
 ```r
 # --- 5. Model Fitting ---
 
-# Start from the full model confirmed in the design summary, with a random
-# intercept for each grouping level (Barr et al., 2013).
+# Start from the full model confirmed in the design summary, with the random
+# intercepts it named (Barr et al., 2013).
 # If it fails to converge or gives a singular fit warning, do NOT ignore it —
 # review the diagnostics in Section 6 and consider the simplification options
 # commented below.
@@ -669,7 +669,7 @@ Generate publication-ready plots using ggplot2, saved as 300 dpi PNG:
   Keep the user's choice if they still want one point per replicate when individuals are hard to tell apart; the strips below are the fallback.
   - **One point per replicate**, marked by individual: shows how spread each individual's replicates are.
 - Mark the individual with a visual feature no other factor is using.
-  Use colour if it is free.
+  Use colour if it is free and there are up to about 8 individuals per group.
   If colour already shows another factor (for example group), use shape with 6 or fewer individuals per group, and only if shape is not already showing another factor (see below); shapes become hard to tell apart beyond that.
   Otherwise give each individual its own vertical strip: a thin line spanning its replicates, with its points on the line, strips ordered by individual mean and spread within the violin's width.
   Say in the subtitle that each strip is one individual.
@@ -831,6 +831,20 @@ For an `lm()`, export the fixed effects with `broom::tidy(model)` (add `broom` t
 
 Rename columns in every other exported table the same way (for example the ANOVA table: `F_value`, `p_value`, `numerator_df`, `denominator_df`).
 
+Read back the degrees-of-freedom method emmeans used, from `emm` (from `slopes` when the model has no categorical factor), for `results_summary.md`:
+
+<!-- chunk: df-method -->
+```r
+# The degrees-of-freedom method behind the tests and intervals, read back
+# from the comparisons rather than typed in, so a script that lost the
+# setting in Section 8 says so in results_summary.md.
+# An lm() has exact residual degrees of freedom, and emmeans names no method.
+df_method_line <- grep("^Degrees-of-freedom method: ",
+                       attr(summary(emm), "mesg"), value = TRUE)
+df_method <- if (length(df_method_line) == 0) "residual (linear model)" else
+  tools::toTitleCase(sub("^Degrees-of-freedom method: ", "", df_method_line))
+```
+
 Finally, the script writes `outputs/results_summary.md`, the file a user opens first.
 Build it from the fitted results, never from hard-coded numbers, in plain language:
 - At the top, with any **Check first** lines: a line saying the results come from a script an AI assistant wrote from the design its user confirmed; the user is responsible for checking it, and RAMM-AI does not replace review by a statistician.
@@ -841,6 +855,7 @@ Build it from the fitted results, never from hard-coded numbers, in plain langua
 - Each requested comparison as a sentence: the difference with its units, its 95% confidence interval and the adjusted p-value (for example "het mice had 14.6 µCi/g lower binding than WT in striatum (95% CI 0.3 to 28.8; adjusted p = 0.044)").
 - Each slope as a sentence, with its units per unit of the predictor (for example "binding in WT mice rose by 2.1 µCi/g per mg/kg of dose (95% CI 1.9 to 2.3; adjusted p < 0.001)"), and each difference in slope the same way.
 - If input.md asked for no comparisons, say so ("No comparisons between groups were requested: the main effect answers the question") and give each fixed effect's F-test as a sentence, with its two degrees of freedom and p-value; for a two-level factor, follow it with the difference as above, with an unadjusted p-value.
+- The degrees-of-freedom method, from `df_method` (for example "Degrees of freedom: Satterthwaite").
 - The subgroup disclaimer from Section 8, if subgroups were compared.
 - A **How the data were prepared** list: the steps `prepare.R` recorded in `preparation_steps`, one per line.
 - Each value calculated from the measurements (see [Calculated values](../SKILL.md#calculated-values)), with its formula, so a reader sees how it was made without the script.

@@ -29,9 +29,3 @@ Most subjects have all the regions but not all regions are on all slides or sect
 
 - Package: lme4
 - Alpha: 0.05
-
-# Reproducible environment
-
-- Reproducible environment: container
-- R version: 4.4.2
-- Snapshot date: 2025-01-15

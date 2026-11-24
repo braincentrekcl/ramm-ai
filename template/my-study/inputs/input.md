@@ -1,23 +1,29 @@
-<!--
-RAMM-AI study design.
-Fill in every heading marked (required) before you start RAMM-AI; headings
-  marked (optional) can be deleted.
-You can add headings of your own for anything else that describes the study.
-This file records your questions before any results exist.
-Kept under version control, with a dated commit before you run the analysis,
-  it serves as a preregistration-style record.
--->
+**Before you start (delete this paragraph when you have read it):**
+Keep every heading marked (required) and answer it; delete headings marked
+  (optional) that you do not need, and add headings of your own for anything
+  else relevant to your study.
+Under each heading, replace the guidance and examples with your own answer,
+  in plain English.
+RAMM-AI reads everything in this file, so leftover template text can confuse
+  it.
+If you are not sure about a choice, leave it out or say so rather than
+  guessing: RAMM-AI asks you about it.
+This file records your questions before any results exist; kept under version
+  control, with a dated commit before you run the analysis, it serves as a
+  preregistration-style record.
 
 # Study Design (required)
 
-In plain English: how many individuals (mice, participants, donors…) are in
-  each group, what was measured, and how the measurements are organised (for
-  example individual, then a measurement within it, then a repeat of that
-  measurement).
+Replace this text with: how many individuals (mice, participants, donors…)
+  are in each group, what was measured, and how the measurements are
+  organised (for example individual, then a measurement within it, then a
+  repeat of that measurement).
 Mention anything unusual, such as IDs that restart for every individual, or
   measurements you know are missing.
 
 # Column Mappings (required)
+
+Replace these examples with one line for each column the analysis uses:
 
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread, for example a long tail of high values or many zeros)
 - Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
@@ -29,13 +35,14 @@ Mention anything unusual, such as IDs that restart for every individual, or
 
 # Post-Hoc Comparisons (required)
 
-- For example: compare each treatment with vehicle
-- Or write none, if the main effect answers your question (for example a factor
-  with only two levels)
+Replace this text with the comparisons you want, for example "compare each
+  treatment with vehicle".
+Or write none, if the main effect answers your question (for example a factor
+  with only two levels).
 
 # Data (required)
 
-For each data file, say in your own words:
+Replace this text with, for each data file, in your own words:
 - its name (and the sheet, for a spreadsheet); if the data is split into
   several files of the same kind (for example one per individual), how the
   files are named
@@ -58,18 +65,20 @@ Put the files in this inputs folder when you are ready to run the script.
 
 # QC Rules (optional)
 
-- For example: exclude rows where `qc_flag` is "torn"
+Replace this text with the rows to exclude before the analysis, for example
+  "exclude rows where `qc_flag` is torn".
 
 # Exclusions and Attrition (optional)
 
-Individuals lost or excluded after you wrote the Study Design: who, why, and
-  the date you recorded it.
+Replace this text with the individuals lost or excluded after you wrote the
+  Study Design: who, why, and the date you recorded it, for example
+  "individual_07 withdrew before the second session (recorded 2026-03-02)".
 Keep the Study Design numbers as planned; the script reports planned and actual
   numbers side by side.
 
-- For example: individual_07 withdrew before the second session (recorded 2026-03-02)
-
 # Preferences (optional)
+
+Replace these examples with the choices you have made:
 
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
@@ -77,12 +86,9 @@ Keep the Study Design numbers as planned; the script reports planned and actual
   effect: group means, and with an interaction group comparisons, are given at
   that value; if you leave it out, RAMM-AI asks)
 
-# Reproducible Environment (optional)
-
-- Reproducible environment: container or renv
-
 # Toy Data (optional)
 
-- File: `toy_data.csv` (a few made-up rows with the same columns as one of
-  your data files; the name must start with toy_, and everything in it is
-  sent to the AI provider)
+Replace this text with the name of your toy file, for example `toy_data.csv`:
+  a few made-up rows with the same columns as one of your data files.
+The name must start with toy_, and everything in it is sent to the AI
+  provider.

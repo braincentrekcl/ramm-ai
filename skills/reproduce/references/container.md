@@ -68,9 +68,6 @@ RUN R -e "pkgs <- c('readr', 'lme4', 'lmerTest', 'emmeans', 'ggplot2', \
 
 WORKDIR /analysis
 
-# Copy the analysis script into the image
-COPY code/ /analysis/code/
-
 # By default, run the analysis. Users can override with `docker run ... bash` to enter interactively.
 CMD ["Rscript", "code/analysis.R"]
 ```
@@ -80,7 +77,7 @@ Replace the package list with the actual list parsed from the analysis script, t
 ## File: `envs/Dockerfile.dockerignore`
 
 ```
-# The image holds the software and the script, not your data or results:
+# The image holds the software only, not your script, data or results:
 # the study folder is mounted when the analysis runs.
 inputs/
 outputs/
@@ -141,7 +138,9 @@ Use `Dockerfile` on a computer with Docker, or `apptainer.def` on an HPC
   cluster with Apptainer (Singularity).
 You do not need R on your computer.
 
-The container holds the software and the script, not your data or results.
+The container holds the software only, not your script, data or results:
+  the study folder is mounted when the analysis runs, so editing
+  `code/analysis.R` needs no rebuild.
 Share those with the study folder as your data policy allows, for example
   results with the study's repository and data in a data repository.
 
