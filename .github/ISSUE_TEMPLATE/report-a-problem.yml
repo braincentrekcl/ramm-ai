@@ -1,0 +1,52 @@
+name: Report a problem
+description: Something went wrong while using RAMM-AI or running its script.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Never paste your data, or any part of it, here: issues are public."
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent
+      options:
+        - Claude Code
+        - OpenAI Codex
+        - GitHub Copilot
+        - OpenCode
+    validations:
+      required: true
+  - type: dropdown
+    id: used-in
+    attributes:
+      label: Used in
+      options:
+        - A terminal
+        - A desktop app
+        - VS Code
+    validations:
+      required: true
+  - type: input
+    id: agent-version
+    attributes:
+      label: Agent version, if you can find it
+      description: "In a terminal, run the agent's command with `--version`, for example `claude --version`. In Claude Code in the Claude desktop app or VS Code, type `/status` and copy the version in the Claude Code row."
+  - type: input
+    id: model
+    attributes:
+      label: AI model
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you asked for and what went wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message
+      description: Copied in full.
+      render: text
