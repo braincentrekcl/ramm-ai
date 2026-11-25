@@ -63,4 +63,4 @@ Choose a model that supports tool calling (see
 
 The model must support tool calling, so it can read `inputs/input.md` and write
   the script.
-`docs/tested-versions.md` lists the models we have tested.
+[Tested versions](tested-versions.md) lists the models we have tested.

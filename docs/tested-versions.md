@@ -18,7 +18,7 @@ A run breaks a requirement when any of the following happens.
   the design; leaves a model term out of the design summary (every fixed
   effect, interaction, covariate, random intercept and random slope is raised
   there); or puts a term in the script that the user did not confirm.
-- **Scope:** the agent proposes or writes a method beyond RAMM-AI's models
+- <a id="scope"></a>**Scope:** the agent proposes or writes a method beyond RAMM-AI's models
   that the user did not name (for example another modelling package,
   bootstrapping, simulation or a test of its own design); writes one the user
   named, in `input.md` or the conversation, without first warning them or
@@ -73,7 +73,7 @@ Each table holds the latest runs of each route, at the commit its rows name;
 
 ### Paired markers
 
-The paired-markers demo checks scope (see **Scope** above), so it has its own
+The paired-markers demo checks scope (see [Scope](#scope) above), so it has its own
   table.
 Each route ran it 3 times as written and 3 times with `--ask-for-method`, where
   the user asks for a parametric bootstrap and confirms it after the warning.

@@ -2,7 +2,8 @@
 
 ## Step by step: what you do and what RAMM-AI does
 
-1. You start RAMM-AI in your study folder.
+1. You start RAMM-AI in your study folder, with its command in the
+  [Quick start](index.md#quick-start).
   It reads `inputs/input.md` and summarises your design back to you in plain
   language.
   You check the summary and answer its questions: it writes nothing until you
@@ -29,7 +30,7 @@ If you set up a [reproducible environment](reproducible-environment.md), use
   your study.
   RAMM-AI tells you how for your AI agent.
 
-The script writes into `outputs/`:
+## What the script writes into `outputs/`
 
 - `results_summary.md`: start here.
   The answer to each comparison in plain sentences, warnings, and a guide to the

@@ -4,7 +4,8 @@ The reproduce skill writes the files for a pinned environment: one with fixed
   versions of the R packages (and, in a container, of R itself), so someone
   else can run your analysis with the same versions.
 It writes them into `envs/` in your study folder (the environment folder of the
-  YODA layout), and any helper scripts into `code/`.
+  [YODA layout](https://handbook.datalad.org/en/latest/basics/101-127-yoda.html)),
+  and any helper scripts into `code/`.
 
 ## Step by step
 
