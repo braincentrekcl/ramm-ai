@@ -25,7 +25,7 @@ Follow the steps for how you use your agent: in a terminal, or in its desktop
 | Claude Code | `claude plugin marketplace add braincentrekcl/ramm-ai`, then `claude plugin install ramm@ramm-ai` |
 | OpenAI Codex | `codex plugin marketplace add braincentrekcl/ramm-ai`, then `codex plugin add ramm@ramm-ai` |
 | GitHub Copilot (CLI and VS Code) | `copilot plugin marketplace add braincentrekcl/ramm-ai`, then `copilot plugin install ramm@ramm-ai` |
-| OpenCode v2 | Download this repository, then copy `opencode/opencode.jsonc` into your study folder and set the path to this repository's `skills` folder in it (three places) |
+| OpenCode v2 | See the [OpenCode notes](#opencode) below |
 
 ### From an app, without the command line
 
@@ -64,16 +64,26 @@ RAMM-AI never needs to read any other file outside your study folder, so you can
   To install version 2 in a terminal, run `brew install anomalyco/tap/opencode-v2`
   or `npm install -g @opencode/cli`, or follow the
   [OpenCode docs](https://opencode.ai/v2/docs/).
-- **We recommend RAMM-AI's template, `opencode/opencode.jsonc`.**
-  Copy it into your study folder, as in the table above; you can change it for
-  your study if you need to.
-  It should stop OpenCode reading your data, and stop it changing files outside
-  `code/` and `envs/`.
-  To be completely sure nothing leaks, also keep your data out of the study
-  folder until you run the script.
-- **The template also works in OpenCode Desktop** (tested with version 2.3.2).
-  It turns off Desktop's built-in browser, which could otherwise send a file
-  from your study folder to a website without checking the template's rules.
+- **We provide a recommended template**, as part of the repository you downloaded or [here](https://github.com/braincentrekcl/ramm-ai/raw/main/opencode/opencode.jsonc).
+  To use it:
+
+    1. [Download this repository](https://github.com/braincentrekcl/ramm-ai/archive/refs/heads/main.zip) and unzip it.
+    2. Copy `opencode/opencode.jsonc` from it into your study folder.
+    3. Open the copy in a text editor and replace `/path/to/ramm-ai` (it appears
+       three times) with the full path of the unzipped folder, for example
+       `/Users/yourname/Documents/ramm-ai-main`.
+
+    You can change the template for your study if you need to.
+    It should stop OpenCode reading your data, and stop it changing files outside
+    `code/` and `envs/`.
+    To be completely sure nothing leaks, also keep your data out of the study
+    folder until you run the script, as
+    [What the AI assistant can see and change](privacy-and-safety.md) explains.
+
+- **The template works for the command line and the desktop app.**
+  In the desktop app, it turns off the built-in browser, which could otherwise
+  send a file from your study folder to a website without checking the
+  template's rules.
 - **GitHub Copilot Free or Student plans need OpenCode 2.2.7 or later.**
   Earlier versions show no models for these plans
   ([anomalyco/opencode#34644](https://github.com/anomalyco/opencode/issues/34644)).
