@@ -1,6 +1,7 @@
 # Reporting a problem
 
-Open an issue at <https://github.com/braincentrekcl/ramm-ai/issues/new/choose>; you need a free GitHub account.
+Open an issue at <https://github.com/braincentrekcl/ramm-ai/issues/new/choose>.
+You need a free GitHub account to do so.
 The form asks for:
 
 - which agent you used, and whether in a terminal, a desktop app or VS Code
@@ -11,4 +12,4 @@ The form asks for:
 - what you asked for and what went wrong
 - the error message, copied in full
 
-Never paste your data, or any part of it, into an issue: issues are public.
+Issues are public, so never paste your data, or any part of it, into one.

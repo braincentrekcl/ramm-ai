@@ -15,7 +15,7 @@ If you have never used a terminal, use the desktop app.
 
 ## Second, install RAMM-AI in your agent
 
-Follow the steps for how you use your agent: in a terminal, or in its desktop
+Follow the steps for how you use your agent, in a terminal or in its desktop
   app.
 
 ### From the command line
@@ -29,9 +29,9 @@ Follow the steps for how you use your agent: in a terminal, or in its desktop
 
 ### From an app, without the command line
 
-Each app has its own steps for plugins; follow its documentation below.
-When it asks for a marketplace, add RAMM-AI's: `braincentrekcl/ramm-ai` (some
-  apps want the full address, `https://github.com/braincentrekcl/ramm-ai`).
+Each app has its own steps for plugins, in its documentation below.
+When it asks for a marketplace, add `braincentrekcl/ramm-ai` (some apps want
+  the full address, `https://github.com/braincentrekcl/ramm-ai`).
 Then install the plugin called `ramm` from it.
 
 | App | Its documentation |
@@ -92,10 +92,10 @@ RAMM-AI never needs to read any other file outside your study folder, so you can
   ([anomalyco/opencode#51241](https://github.com/anomalyco/opencode/issues/51241)).
   To use one, open `opencode.jsonc` in your study folder and change `deny` to
   `ask` on the `shell` line.
-  OpenCode will then ask you before it runs any command: refuse any command
-  that would read your data.
+  OpenCode will then ask you before it runs any command.
+  Refuse any command that would read your data.
 - **Some free models keep what you send, or use it for training.**
-  OpenCode's [list of free models](https://opencode.ai/docs/zen) says which;
+  OpenCode's [list of free models](https://opencode.ai/docs/zen) says which, so
   check it before you choose one.
   See also [What the AI assistant can see and change](privacy-and-safety.md).
 - For models hosted by your institution or on your own computer, see

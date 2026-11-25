@@ -1,7 +1,7 @@
 # Reproducible environment
 
-The reproduce skill writes the files for a pinned environment: one with fixed
-  versions of the R packages (and, in a container, of R itself), so someone
+The reproduce skill writes the files for a pinned environment, which fixes the
+  versions of the R packages (and, in a container, of R itself) so someone
   else can run your analysis with the same versions.
 It writes them into `envs/` in your study folder (the environment folder of the
   [YODA layout](https://handbook.datalad.org/en/latest/basics/101-127-yoda.html)),
@@ -26,8 +26,8 @@ It writes them into `envs/` in your study folder (the environment folder of the
   You do not need R on your computer.
 - **`renv`**: an renv lockfile, for when you have R and do not need a
   container.
-  It pins the package versions; you install the recorded R version yourself
-  (for example with [rig](https://github.com/r-lib/rig)).
+  It pins the package versions, and you install the recorded R version
+  yourself (for example with [rig](https://github.com/r-lib/rig)).
 
 Either way, every run also records the R and package versions in
   `outputs/provenance.csv`.

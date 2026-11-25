@@ -4,7 +4,7 @@ labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: "Never paste your data, or any part of it, here: issues are public."
+      value: "Issues are public, so never paste your data, or any part of it, here."
   - type: dropdown
     id: agent
     attributes:
