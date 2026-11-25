@@ -52,7 +52,8 @@ Replace this text with, for each data file, in your own words:
   individual?)
 - where each ID is written (the individual's, and each sub-measurement's, if
   it has one)
-- which columns you need and what each one is
+- any columns you need that are not listed in Column Mappings, and
+  what each one is
 - if one kind of measurement is spread over several columns (for example one
   column per condition or time point), which columns, and what to call them
   together

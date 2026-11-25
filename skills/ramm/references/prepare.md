@@ -33,7 +33,7 @@ For each file, input.md must say:
 2. Whether it has column names and on which row; if it has none, what each column is by position, including an unnamed index column; any rows above or below the table that are not data.
 3. What one row is.
 4. Where each ID is written: in a column, or only in the file name or sheet name.
-5. Which columns are needed and what each one is, by name or by position.
+5. Any columns needed that are not already listed in `Column Mappings`, and what each one is, by name or by position.
 6. Any measurement spread across columns: which columns, and what to call them together.
 7. How it connects to the other files: the ID they share, and any difference in how IDs are written that an allowed ID change fixes.
 8. How a missing value is written.
