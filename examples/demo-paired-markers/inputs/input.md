@@ -21,6 +21,12 @@ This non-monotonic pattern is a key feature of the data and the analysis should 
 
 Age is treated as a categorical factor (seven discrete age groups), not as a continuous variable.
 
+# Data
+
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `mouse_id`; missing
+  values are empty cells.
+
 # Column Mappings
 
 - Dependent variable: `fluorescence` (continuous, mean fluorescence in arbitrary units; always positive, with a long tail of high values)
@@ -33,9 +39,3 @@ Age is treated as a categorical factor (seven discrete age groups), not as a con
 
 - For each marker, compare every age with adult.
 - Test whether the two markers differ in how far each age is from adult, relative to each marker's own adult level (proportional divergence).
-
-# Data
-
-- `data.csv`: column names on row 1, nothing else above or below the table;
-  one row is one measurement; the individual's ID is in `mouse_id`; missing
-  values are empty cells.

@@ -8,6 +8,12 @@ Order was counterbalanced: 6 mice received vehicle first and 6 received diazepam
 Video tracking scored time spent in the centre zone during each 10-minute session.
 Three videos were corrupted and could not be scored, so three mice have a result for only one of the two conditions.
 
+# Data
+
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `mouse_id`; missing
+  values are empty cells.
+
 # Column Mappings
 
 - Dependent variable: `centre_time_s` (continuous, seconds in the centre zone per 10-minute session)
@@ -23,12 +29,6 @@ Three videos were corrupted and could not be scored, so three mice have a result
 # Quality Control
 
 - Keep every mouse, including those with only one condition; do not exclude mice for a missing session.
-
-# Data
-
-- `data.csv`: column names on row 1, nothing else above or below the table;
-  one row is one measurement; the individual's ID is in `mouse_id`; missing
-  values are empty cells.
 
 # Preferences
 

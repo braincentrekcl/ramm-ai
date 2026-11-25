@@ -2,6 +2,12 @@
 
 A longitudinal study with 30 rats across 3 treatment groups (vehicle, low dose, high dose; n=10 per group). Body weight was measured weekly over 8 weeks (baseline + 7 follow-up timepoints). Each animal has one measurement per timepoint. We expect both group and time effects, and a group-by-time interaction.
 
+# Data
+
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `rat_id`; missing
+  values are empty cells.
+
 # Column Mappings
 
 - Dependent variable: `weight_g` (continuous, grams)
@@ -13,12 +19,6 @@ A longitudinal study with 30 rats across 3 treatment groups (vehicle, low dose, 
 
 - Compare low dose and high dose to vehicle at each timepoint
 - Test the group-by-time interaction
-
-# Data
-
-- `data.csv`: column names on row 1, nothing else above or below the table;
-  one row is one measurement; the individual's ID is in `rat_id`; missing
-  values are empty cells.
 
 # Preferences
 
