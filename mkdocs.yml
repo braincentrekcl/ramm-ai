@@ -1,0 +1,15 @@
+# Built with Zensical, which reads this file: uvx zensical==0.1.3 build --strict
+site_name: RAMM-AI
+site_url: https://braincentrekcl.github.io/ramm-ai/
+
+# The pages in reading order.
+nav:
+  - index.md
+  - install.md
+  - study-folder.md
+  - running-the-analysis.md
+  - privacy-and-safety.md
+  - reproducible-environment.md
+  - institutional-and-local-models.md
+  - tested-versions.md
+  - contributing.md
