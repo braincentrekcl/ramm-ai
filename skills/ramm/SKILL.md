@@ -436,6 +436,10 @@ Users may add headings of their own.
 [Plain English: total N, groups, group sizes, what was measured, hierarchy,
 nesting, any known issues like non-unique IDs or missing data]
 
+# Data (required)
+[The user's answers, in their own words, to the template's questions about
+each data file; references/prepare.md lists what they must cover]
+
 # Column Mappings (required)
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread)
 - Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
@@ -447,10 +451,6 @@ nesting, any known issues like non-unique IDs or missing data]
 - Compare each treatment to vehicle
 - Pairwise comparisons within genotype
 - Or: none (the main effect answers the question, for example a factor with two levels)
-
-# Data (required)
-[The user's answers, in their own words, to the template's questions about
-each data file; references/prepare.md lists what they must cover]
 
 # QC Rules (optional)
 - Exclude rows where `qc_flag` is "torn" (torn sections)

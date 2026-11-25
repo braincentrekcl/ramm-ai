@@ -21,27 +21,9 @@ Replace this text with: how many individuals (mice, participants, donors…)
 Mention anything unusual, such as IDs that restart for every individual, or
   measurements you know are missing.
 
-# Column Mappings (required)
-
-Replace these examples with one line for each column the analysis uses:
-
-- Dependent variable: `column_name` (type, units; optionally, how the values usually spread, for example a long tail of high values or many zeros)
-- Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
-- Fixed effect: `column_name` (continuous, units); for a quantity such as dose
-  or weeks, say whether you want one trend (continuous) or an estimate at each
-  value (categorical)
-- Subject ID: `column_name` (globally unique)
-- Nesting level: `column_name` (unique or NOT unique across subjects)
-
-# Post-Hoc Comparisons (required)
-
-Replace this text with the comparisons you want, for example "compare each
-  treatment with vehicle".
-Or write none, if the main effect answers your question (for example a factor
-  with only two levels).
-
 # Data (required)
 
+This section says what each data file looks like, so the script can read it.
 Replace this text with, for each data file, in your own words:
 - its name (and the sheet, for a spreadsheet); if the data is split into
   several files of the same kind (for example one per individual), how the
@@ -63,6 +45,27 @@ Replace this text with, for each data file, in your own words:
   how IDs are written (upper or lower case, zero padding, a prefix)
 
 Put the files in this inputs folder when you are ready to run the script.
+
+# Column Mappings (required)
+
+This section says what each column means for the analysis: the outcome, the
+  fixed effects, the individual's ID and the nesting levels.
+Replace these examples with one line for each column the analysis uses:
+
+- Dependent variable: `column_name` (type, units; optionally, how the values usually spread, for example a long tail of high values or many zeros)
+- Fixed effect: `column_name` (categorical; levels: a, b, c; reference = a)
+- Fixed effect: `column_name` (continuous, units); for a quantity such as dose
+  or weeks, say whether you want one trend (continuous) or an estimate at each
+  value (categorical)
+- Subject ID: `column_name` (globally unique)
+- Nesting level: `column_name` (unique or NOT unique across subjects)
+
+# Post-Hoc Comparisons (required)
+
+Replace this text with the comparisons you want, for example "compare each
+  treatment with vehicle".
+Or write none, if the main effect answers your question (for example a factor
+  with only two levels).
 
 # QC Rules (optional)
 
