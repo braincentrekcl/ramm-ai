@@ -42,6 +42,6 @@ Folders other tools write in `outputs/` are left alone: RAMM-AI never reads
   config lets the assistant read only `input.md` and `toy_` files in `inputs/`.
   This does not hold if you switched shell to `ask` for a free model.)
 3. Open your agent in the study folder and start RAMM-AI with the command in the
-  [Quick start](../README.md#quick-start).
+  [Quick start](index.md#quick-start).
 
 Next: [Running the analysis](running-the-analysis.md).

@@ -9,7 +9,7 @@ It writes them into `envs/` in your study folder (the environment folder of the
 ## Step by step
 
 1. After RAMM-AI has written your analysis script, you start reproduce with
-  its command in the [Quick start](../README.md#quick-start).
+  its command in the [Quick start](index.md#quick-start).
 2. Reproduce tells you which mode it will use, the R version, the snapshot
   date and the files it will write, and waits.
   You confirm, or ask for the other mode.
