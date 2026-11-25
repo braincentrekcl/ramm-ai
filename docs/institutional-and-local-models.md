@@ -56,11 +56,11 @@ To run a model on your own computer, install
   [Ollama](https://ollama.com/download) and follow OpenCode's
   [Ollama instructions](https://opencode.ai/docs/providers#ollama).
 Choose a model that supports tool calling (see
-  [What the model needs](#what-the-model-needs)); Ollama lists them under
-  [Tools](https://ollama.com/search?c=tools).
+  [What the model needs](#what-the-model-needs)).
+Ollama lists them under [Tools](https://ollama.com/search?c=tools).
 
 ## What the model needs
 
 The model must support tool calling, so it can read `inputs/input.md` and write
   the script.
-`docs/tested-versions.md` lists the models we have tested.
+[Tested versions](tested-versions.md) lists the models we have tested.

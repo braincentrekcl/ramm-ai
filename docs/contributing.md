@@ -13,7 +13,8 @@ Run them from the repository root:
 uv run --with pytest pytest tests
 ```
 
-The R chunk tests need R and the R packages installed in `.github/ci/Dockerfile`; CI runs them in that image.
+The R chunk tests need R and the R packages installed in `.github/ci/Dockerfile`.
+CI runs them in that image.
 
 ## Acceptance runs
 
@@ -29,7 +30,8 @@ Runs use your own subscriptions, and you need one only for the agents you test.
 Check these settings before you start, so that reaching your plan's limit cannot charge you more:
 
 - **Claude:** extra usage, in your claude.ai settings.
-- **ChatGPT (Codex):** credits and automatic reload, under Settings > Usage; once a plan's Codex limit is reached, Codex spends any credits you hold.
+- **ChatGPT (Codex):** credits and automatic reload, under Settings > Usage.
+  Once a plan's Codex limit is reached, Codex spends any credits you hold.
 - **GitHub Copilot:** a spending budget, in your GitHub billing settings.
 
 ### Running a batch
@@ -41,7 +43,8 @@ From the repository root:
 python3 tests/acceptance_docker.py claude open-field --runs 3 --out <folder> --model <model> --effort <effort>
 ```
 
-The first run builds the image, which takes several minutes; later runs reuse it.
+The first run builds the image, which takes several minutes.
+Later runs reuse it.
 The repository is mounted read-only, and only the `--out` folder is writable.
 
 Each agent signs in inside the container through your own subscription:

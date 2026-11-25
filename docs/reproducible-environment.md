@@ -1,15 +1,16 @@
 # Reproducible environment
 
-The reproduce skill writes the files for a pinned environment: one with fixed
-  versions of the R packages (and, in a container, of R itself), so someone
+The reproduce skill writes the files for a pinned environment, which fixes the
+  versions of the R packages (and, in a container, of R itself) so someone
   else can run your analysis with the same versions.
 It writes them into `envs/` in your study folder (the environment folder of the
-  YODA layout), and any helper scripts into `code/`.
+  [YODA layout](https://handbook.datalad.org/en/latest/basics/101-127-yoda.html)),
+  and any helper scripts into `code/`.
 
 ## Step by step
 
 1. After RAMM-AI has written your analysis script, you start reproduce with
-  its command in the [Quick start](../README.md#quick-start).
+  its command in the [Quick start](index.md#quick-start).
 2. Reproduce tells you which mode it will use, the R version, the snapshot
   date and the files it will write, and waits.
   You confirm, or ask for the other mode.
@@ -25,8 +26,8 @@ It writes them into `envs/` in your study folder (the environment folder of the
   You do not need R on your computer.
 - **`renv`**: an renv lockfile, for when you have R and do not need a
   container.
-  It pins the package versions; you install the recorded R version yourself
-  (for example with [rig](https://github.com/r-lib/rig)).
+  It pins the package versions, and you install the recorded R version
+  yourself (for example with [rig](https://github.com/r-lib/rig)).
 
 Either way, every run also records the R and package versions in
   `outputs/provenance.csv`.
