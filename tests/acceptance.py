@@ -528,8 +528,11 @@ class Codex:
         cmd += [
             "--json",
             "--skip-git-repo-check",
+            # Codex's own sandbox cannot start in the dev image, so the
+            # container isolates it instead, as Codex's docs advise for Docker
+            # (learn.chatgpt.com/docs/agent-approvals-security).
             "-c",
-            'sandbox_mode="workspace-write"',
+            'sandbox_mode="danger-full-access"',
         ]
         if self.model:
             cmd += ["-m", self.model]

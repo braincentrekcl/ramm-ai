@@ -21,8 +21,35 @@ Replace this text with: how many individuals (mice, participants, donors…)
 Mention anything unusual, such as IDs that restart for every individual, or
   measurements you know are missing.
 
+# Data (required)
+
+This section says what each data file looks like, so the script can read it.
+Replace this text with, for each data file, in your own words:
+- its name (and the sheet, for a spreadsheet); if the data is split into
+  several files of the same kind (for example one per individual), how the
+  files are named
+- whether it has column names, and on which row; anything above or below the
+  table that is not data (settings, a summary row)
+- what one row is (one individual, or one of several measurements of an
+  individual?)
+- where each ID is written (the individual's, and each sub-measurement's, if
+  it has one)
+- any columns you need that are not listed in Column Mappings, and
+  what each one is
+- if one kind of measurement is spread over several columns (for example one
+  column per condition or time point), which columns, and what to call them
+  together
+- how a missing value is written (empty, NA, -, -999…)
+- if you have more than one file, how they connect (for example "the ID
+  column in the second file is the individual's ID"), and any difference in
+  how IDs are written (upper or lower case, zero padding, a prefix)
+
+Put the files in this inputs folder when you are ready to run the script.
+
 # Column Mappings (required)
 
+This section says what each column means for the analysis: the outcome, the
+  fixed effects, the individual's ID and the nesting levels.
 Replace these examples with one line for each column the analysis uses:
 
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread, for example a long tail of high values or many zeros)
@@ -39,29 +66,6 @@ Replace this text with the comparisons you want, for example "compare each
   treatment with vehicle".
 Or write none, if the main effect answers your question (for example a factor
   with only two levels).
-
-# Data (required)
-
-Replace this text with, for each data file, in your own words:
-- its name (and the sheet, for a spreadsheet); if the data is split into
-  several files of the same kind (for example one per individual), how the
-  files are named
-- whether it has column names, and on which row; anything above or below the
-  table that is not data (settings, a summary row)
-- what one row is (one individual, or one of several measurements of an
-  individual?)
-- where each ID is written (the individual's, and each sub-measurement's, if
-  it has one)
-- which columns you need and what each one is
-- if one kind of measurement is spread over several columns (for example one
-  column per condition or time point), which columns, and what to call them
-  together
-- how a missing value is written (empty, NA, -, -999…)
-- if you have more than one file, how they connect (for example "the ID
-  column in the second file is the individual's ID"), and any difference in
-  how IDs are written (upper or lower case, zero padding, a prefix)
-
-Put the files in this inputs folder when you are ready to run the script.
 
 # QC Rules (optional)
 

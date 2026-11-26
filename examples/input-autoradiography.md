@@ -6,6 +6,12 @@ Measurements are of uCi/g per brain region (quantitative autoradiography). There
 
 Most subjects have all the regions but not all regions are on all slides or sections, and not all sections will have all regions. There might be slide-batch and subject effects.
 
+# Data
+
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `subject_id`; missing
+  values are empty cells.
+
 # Column Mappings
 
 - Dependent variable: `uci_g` (continuous, uCi/g radioligand binding density)
@@ -18,12 +24,6 @@ Most subjects have all the regions but not all regions are on all slides or sect
 # Post-Hoc Comparisons
 
 - Compare each drug group (drugA, drugB, drugC) to vehicle
-
-# Data
-
-- `data.csv`: column names on row 1, nothing else above or below the table;
-  one row is one measurement; the individual's ID is in `subject_id`; missing
-  values are empty cells.
 
 # Preferences
 
