@@ -1,7 +1,7 @@
 {
   "name": "ramm",
   "description": "Generate self-contained, glass-box R scripts for linear mixed-effects models (lme4) in experimental research with repeated or nested measurements",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "Eilidh MacNicol"
   },
