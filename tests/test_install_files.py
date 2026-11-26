@@ -29,8 +29,14 @@ def test_codex_manifest_matches_claude_manifest(repo_root: Path) -> None:
         assert codex[key] == claude[key]
 
 
-def test_skill_file_headers_name_the_plugin_version(repo_root: Path) -> None:
-    version = read_json(repo_root / ".claude-plugin" / "plugin.json")["version"]
+def test_manifests_hold_the_version(repo_root: Path) -> None:
+    version = (repo_root / "VERSION").read_text(encoding="utf-8").strip()
+    for manifest in (".claude-plugin", ".codex-plugin"):
+        assert read_json(repo_root / manifest / "plugin.json")["version"] == version
+
+
+def test_skill_file_headers_name_the_version(repo_root: Path) -> None:
+    version = (repo_root / "VERSION").read_text(encoding="utf-8").strip()
     for path in (
         repo_root / "skills" / "ramm" / "references" / "script.md",
         repo_root / "skills" / "reproduce" / "references" / "container.md",

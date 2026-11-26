@@ -58,3 +58,16 @@ Each agent signs in inside the container through your own subscription:
 
 Keep tokens however you already keep secrets, never in the repository.
 The script needs the variable set when it runs, and passes it into the container by name, so the token never appears on a command line.
+
+## Releasing
+
+RAMM-AI's version is held in `VERSION` at the repository root.
+Maintainers bump it with `version.py`, which changes it there and copies it to the plugin manifests and to the headers and provenance row the skills write:
+
+```bash
+python3 version.py 0.3.1
+```
+
+It stops with nothing changed if any of those places does not hold the current version.
+Do not edit `VERSION` by hand first.
+The script would then look for the new version everywhere else, and stop.
