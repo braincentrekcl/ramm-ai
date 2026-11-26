@@ -391,6 +391,18 @@ def test_auto_tier_is_refused_for_other_agents(repo_root: Path) -> None:
     assert "--auto-tier is a Copilot option" in proc.stderr
 
 
+def test_runs_below_one_are_refused(repo_root: Path) -> None:
+    proc = subprocess.run(
+        [sys.executable, "tests/acceptance.py", "claude", "open-field", "--runs", "0"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 2
+    assert "--runs must be at least 1" in proc.stderr
+
+
 @pytest.mark.parametrize(
     "reply",
     [
@@ -415,3 +427,304 @@ def test_turn_failed_when_the_agent_did_nothing(reply: str) -> None:
 )
 def test_turn_failed_is_false_when_the_agent_did_something(done: dict) -> None:
     assert not acceptance.turn_failed(acceptance.Turn(tag="", prompt="p", **done))
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "Here is the summary.\n\n[error: usage limit reached]",
+        f"[no reply in {acceptance.TURN_TIMEOUT_S} s]",
+    ],
+)
+def test_turn_errored_finds_an_error_after_a_reply(reply: str) -> None:
+    assert acceptance.turn_errored(acceptance.Turn(tag="", prompt="p", reply=reply))
+
+
+def test_turn_errored_is_false_for_an_ordinary_reply() -> None:
+    turn = acceptance.Turn(
+        tag="", prompt="p", reply="The script stopped with an error."
+    )
+    assert not acceptance.turn_errored(turn)
+
+
+def test_parse_copilot_puts_a_session_error_in_the_reply() -> None:
+    error = {"type": "session.error", "data": {"message": "Model unavailable."}}
+    turn = acceptance.Turn(tag="", prompt="p")
+    stdout = "\n".join(json.dumps(e) for e in [error, COPILOT_EVENTS[-1]])
+    acceptance.parse_copilot(stdout, turn)
+    assert turn.reply == "[error: Model unavailable.]"
+    assert acceptance.turn_errored(turn)
+
+
+def json_lines(events: list[dict]) -> str:
+    return "\n".join(json.dumps(e) for e in events)
+
+
+CLAUDE_EVENTS = [
+    {
+        "type": "assistant",
+        "message": {
+            "content": [
+                {"type": "tool_use", "input": {"command": "ls"}},
+                {"type": "tool_use", "input": {"file_path": "inputs/input.md"}},
+            ]
+        },
+    },
+    {
+        "type": "user",
+        "message": {"content": [{"type": "tool_result", "content": "x.R"}]},
+    },
+    {
+        "type": "result",
+        "session_id": "s1",
+        "is_error": False,
+        "result": "Done.",
+        "permission_denials": [{"tool_name": "Bash"}],
+        "modelUsage": {"claude-x": {}},
+    },
+]
+
+
+def test_parse_claude_reads_commands_paths_reply_and_session() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    session, models = acceptance.parse_claude(json_lines(CLAUDE_EVENTS), turn)
+    assert (session, models) == ("s1", {"claude-x"})
+    assert (turn.commands, turn.paths) == (["ls"], ["inputs/input.md"])
+    assert (turn.reply, turn.tool_output) == ("Done.", "x.R")
+    assert turn.denied == ['{"tool_name": "Bash"}']
+
+
+def test_parse_claude_puts_an_error_in_the_reply() -> None:
+    # As Claude Code wrote it when given a model that does not exist.
+    error = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": True,
+        "result": "There's an issue with the selected model.",
+        "session_id": "s1",
+        "permission_denials": [],
+        "modelUsage": {},
+    }
+    turn = acceptance.Turn(tag="", prompt="p")
+    acceptance.parse_claude(json_lines([error]), turn)
+    assert turn.reply == "[error: There's an issue with the selected model.]"
+    assert acceptance.turn_failed(turn)
+
+
+def test_parse_claude_returns_no_session_without_a_result() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    session, _ = acceptance.parse_claude(json_lines(CLAUDE_EVENTS[:1]), turn)
+    assert session is None
+
+
+CODEX_EVENTS = [
+    {"type": "thread.started", "thread_id": "t1"},
+    {"type": "turn.started"},
+    {
+        "type": "item.completed",
+        "item": {
+            "type": "command_execution",
+            "command": "ls",
+            "aggregated_output": "x.R",
+        },
+    },
+    {"type": "item.completed", "item": {"type": "agent_message", "text": "Done."}},
+    {"type": "turn.completed"},
+]
+
+
+def test_parse_codex_reads_commands_reply_and_thread() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    assert acceptance.parse_codex(json_lines(CODEX_EVENTS), turn) == "t1"
+    assert turn.commands == ["ls"]
+    assert (turn.reply, turn.tool_output) == ("Done.", "x.R")
+
+
+def test_parse_codex_records_a_failed_turn_once() -> None:
+    # As Codex wrote it when given a model that does not exist: a warning item,
+    # then the same error as an error event and as turn.failed.
+    message = '{"status": 400, "code": "model_not_found"}'
+    events = [
+        {"type": "thread.started", "thread_id": "t1"},
+        {
+            "type": "item.completed",
+            "item": {"type": "error", "message": "Model metadata not found."},
+        },
+        {"type": "turn.started"},
+        {"type": "error", "message": message},
+        {"type": "turn.failed", "error": {"message": message}},
+    ]
+    turn = acceptance.Turn(tag="", prompt="p")
+    acceptance.parse_codex(json_lines(events), turn)
+    assert turn.reply == f"[error: {message}]"
+    assert acceptance.turn_failed(turn)
+
+
+def test_parse_codex_returns_no_thread_without_thread_started() -> None:
+    turn = acceptance.Turn(tag="", prompt="p")
+    assert acceptance.parse_codex(json_lines(CODEX_EVENTS[1:]), turn) is None
+
+
+def test_codex_command_turns_off_the_update_check() -> None:
+    # Codex() installs the plugin into a new Codex home; the command needs none
+    # of that.
+    codex = object.__new__(acceptance.Codex)
+    codex.session, codex.model, codex.effort = None, None, None
+    command = codex.command("p")
+    flag = command.index("check_for_update_on_startup=false")
+    assert command[flag - 1] == "-c"
+    assert command[-1] == "p"
+
+
+@pytest.mark.parametrize(
+    ("line", "version"),
+    [
+        ("GitHub Copilot CLI 1.0.112.", "1.0.112"),
+        ("2.1.304 (Claude Code)", "2.1.304"),
+        ("codex-cli 0.163.0", "0.163.0"),
+        ("opencode v2.1.2", "2.1.2"),
+    ],
+)
+def test_reported_version_reads_each_agents_version_line(
+    line: str, version: str
+) -> None:
+    assert acceptance.reported_version(line) == version
+
+
+def test_reported_version_stops_without_a_version() -> None:
+    with pytest.raises(SystemExit, match="no version here"):
+        acceptance.reported_version("no version here")
+
+
+def test_agent_version_runs_with_updates_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict = {}
+
+    def run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+        seen["cmd"], seen["env"] = cmd, kwargs.get("env")
+        return subprocess.CompletedProcess(cmd, 0, stdout="Tool 1.2.3.\nmore\n")
+
+    monkeypatch.setattr(acceptance.subprocess, "run", run)
+    assert acceptance.agent_version("copilot") == "Tool 1.2.3."
+    assert seen["cmd"] == ["copilot", "--version"]
+    assert seen["env"]["COPILOT_AUTO_UPDATE"] == "false"
+    assert seen["env"]["DISABLE_AUTOUPDATER"] == "1"
+
+
+class StubAgent:
+    def __init__(self, *args: object) -> None:
+        pass
+
+    def describe(self) -> str:
+        return "stub model"
+
+
+def stub_result() -> dict:
+    result = {
+        col: None for col in ("void", "errored_turns", "opened_data", "tried_data_file")
+    }
+    result.update(void=False, formula="y ~ x", design_summary="summary")
+    return result
+
+
+def run_batch(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    versions: list[str],
+    agent: str = "claude",
+    in_dev_image: bool = True,
+) -> list[str]:
+    """Run main() for an agent with stubs, so no real agent ever starts; return
+    the run folders one_run saw."""
+    ran: list[str] = []
+    reported = iter(versions)
+    if in_dev_image:
+        monkeypatch.setenv("RAMM_AI_DEV_IMAGE", "1")
+    else:
+        monkeypatch.delenv("RAMM_AI_DEV_IMAGE", raising=False)
+    monkeypatch.setattr(acceptance, "head_commit", lambda: "abc1234")
+    monkeypatch.setattr(acceptance, "reuse_plugin", lambda plugin, commit: True)
+    monkeypatch.setattr(acceptance, "Claude", StubAgent)
+    monkeypatch.setattr(acceptance, "agent_version", lambda agent: next(reported))
+    monkeypatch.setattr(acceptance, "summarise", fake_summarise)
+
+    def one_run(agent: object, demo: str, study: Path, ask: bool) -> dict:
+        study.mkdir(parents=True)
+        ran.append(study.parent.name)
+        return stub_result()
+
+    monkeypatch.setattr(acceptance, "one_run", one_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "acceptance.py",
+            agent,
+            "open-field",
+            "--runs",
+            "2",
+            "--out",
+            str(tmp_path),
+        ],
+    )
+    acceptance.main()
+    return ran
+
+
+def fake_summarise(header: str, results: list[dict]) -> str:
+    return header + "\n" + "\n".join("| row |" for _ in results) + "\n"
+
+
+def test_batch_stops_before_any_run_when_an_agent_is_not_at_its_pin(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pin = re.escape(acceptance.pinned_version("claude"))
+    with pytest.raises(SystemExit, match=rf"0\.0\.0.*pins {pin}"):
+        run_batch(monkeypatch, tmp_path, ["0.0.0 (Claude Code)"])
+    assert not list(tmp_path.glob("claude-open-field-*"))
+
+
+def test_batch_stops_with_a_summary_when_the_version_changes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    pin = acceptance.pinned_version("claude")
+    pinned, changed = f"{pin} (Claude Code)", "0.0.0 (Claude Code)"
+    with pytest.raises(SystemExit, match="run 2"):
+        run_batch(monkeypatch, tmp_path, [pinned, pinned, changed])
+    summary = (tmp_path / "summary-claude-open-field.md").read_text()
+    assert summary.count("| row |") == 1
+    assert f"pinned {pin}" in summary
+
+
+CODEX_HOMES: list[Path] = []
+
+
+class RecordingCodex(StubAgent):
+    def __init__(self, plugin: Path, home: Path, model: object, effort: object) -> None:
+        home.mkdir(parents=True)
+        (home / "auth.json").write_text("login")
+        CODEX_HOMES.append(home)
+
+    def close(self) -> None:
+        pass
+
+
+def test_codex_login_copy_stays_out_of_the_output_folder(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    out = tmp_path / "out"
+    CODEX_HOMES.clear()
+    monkeypatch.setattr(acceptance, "Codex", RecordingCodex)
+    pinned = f"codex-cli {acceptance.pinned_version('codex')}"
+    run_batch(monkeypatch, out, [pinned, pinned, pinned], agent="codex")
+    assert len(CODEX_HOMES) == 2
+    for home in CODEX_HOMES:
+        assert not home.is_relative_to(out)
+        assert not home.exists()
+
+
+def test_harness_refuses_to_run_outside_the_dev_image(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    with pytest.raises(SystemExit, match="acceptance_docker.py"):
+        run_batch(monkeypatch, tmp_path, [], in_dev_image=False)
+    assert not list(tmp_path.iterdir())

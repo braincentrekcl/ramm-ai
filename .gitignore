@@ -8,3 +8,6 @@ examples/*/outputs/*
 !examples/*/outputs/.gitkeep
 examples/*/envs/
 __pycache__/
+
+# The documentation site, which zensical build writes.
+site/

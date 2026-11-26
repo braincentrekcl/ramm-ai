@@ -182,7 +182,7 @@ This is the YODA layout (https://handbook.datalad.org/en/latest/basics/101-127-y
 1. Look for `inputs/input.md` (or the input file the user named when starting the skill, if it is in `inputs/`).
    Read it by its path: a folder listing may be refused, and a refused listing does not mean the file is missing.
    Never proceed without it, even if the user describes the design in the chat: input.md makes the analysis transparent by recording the questions before any results exist; kept under version control, with a dated commit before the analysis is run, it serves as a preregistration-style record.
-   - No `inputs/` folder: stop and tell the user, in one sentence, to open you in their study folder, or to copy the template folder `template/my-study` from RAMM-AI.
+   - No `inputs/` folder: stop and tell the user, in one sentence, to open you in their study folder, or to download the study folder template (https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip), unzip it and fill in `inputs/input.md`.
    - `inputs/` exists but `input.md` is missing: stop, explain in plain language why input.md is required, and ask them to fill in the template and save it as `inputs/input.md`.
      You may help: from what they tell you, suggest text for each heading for them to add themselves (see [Input file format](#input-file-format)).
      Never write in `inputs/`.
@@ -235,6 +235,8 @@ For each level, determine:
 - Which measurements share each unit (for example striatum and sensory cortex on the same sections of one slide)?
   Show it in the tree; if input.md does not make it clear, ask.
 
+In the design summary, say in plain words which grouping levels get a random intercept; if you leave one out, raise it as an open decision with your recommendation.
+
 #### Post-hoc comparisons
 
 - What comparisons does the user want?
@@ -248,7 +250,8 @@ For each level, determine:
 - Alpha level (0.05 default)
 - Plot points: one per replicate, or one per individual (see Section 9); ask if input.md does not say.
   For a continuous predictor that varies within individuals, one per individual means one at each value of the predictor, so say that when you ask.
-  If neither colour nor shape can mark the individual (colour shows another factor, and shape either shows another factor or there are more than 6 individuals per group), flag this in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, and recommend one point per individual.
+  Colours become hard to tell apart beyond about 8 individuals per group, and shapes beyond about 6.
+  If neither is a good way to mark the individual, because another factor already uses it or the groups are larger, mention it once in the design summary's question, even when the user has stated a preference: say in plain words that individuals will be hard to tell apart when every replicate is plotted, suggest one point per individual, and follow the user's answer.
 - P-value adjustment: Dunnett for comparisons with a control, Tukey for all pairwise comparisons, Holm for any other, unless input.md names another method (see Section 8)
 - Centring of each continuous predictor: its mean, zero (no centring, for example when dose 0 is the vehicle), or a value in the predictor's units (for example 8 weeks, the age at baseline); see Section 5.
   It sets the value of the predictor at which group means are given and, when the predictor interacts with a factor, at which groups are compared, so it is the researcher's decision: never choose it yourself.
@@ -361,7 +364,8 @@ It needs a random intercept only when more than one analysed observation remains
 You write the script without the data, so you cannot fit the model, see a singular fit or simplify it yourself.
 The script carries the strategy instead, so the user can apply it when they run it (Barr et al., 2013):
 
-- **Starting model:** the full model the user confirmed: a random intercept for each grouping level, and a random slope only if the user chose one (see [Random slopes](#random-slopes)).
+- **Starting model:** the full model the user confirmed: the random intercepts the design summary named, and a random slope only if the user chose one (see [Random slopes](#random-slopes)).
+  If a grouping level was neither given a random intercept nor raised as a decision in the summary, ask before writing the script; never add one yourself.
 - **Fallbacks:** commented-out simpler models the user can enable, one at a time, after inspecting the Section 6 diagnostics (see Section 5 for the exact pattern), in this order:
    1. Remove the correlations between random effects (`||` in lme4), if the model has a slope.
    2. Remove the random effect with the smallest variance component (from `VarCorr()`), but **never the individual's random intercept while there are repeated measurements per individual**: it accounts for pseudoreplication.
@@ -379,8 +383,11 @@ This is critical — using non-unique IDs as random effects will silently pool v
 
 ### Nesting and crossed random effects
 
-- **Nested:** sections within slides within subjects → `(1 | subject) + (1 | slide_uid) + (1 | section_uid)`
-- **Regions as observation-level:** if regions are the unit of measurement and not a random sample from a larger set, they are typically a within-subject fixed or observation-level factor, not a random effect.
+A grouping factor above the measurement is either nested or crossed, and that decides how the script labels, shows and checks it:
+- **Nested:** each unit belongs to one individual, such as a slide or a section → `(1 | subject) + (1 | slide_uid) + (1 | section_uid)`.
+  If its labels restart in every individual, the script makes them unique (see [The non-unique ID problem](#the-non-unique-id-problem)); it goes inside the tree, and the grouping checks in Section 2 of the script check it.
+- **Crossed:** each unit holds measurements from several individuals, such as a staining batch or scanner session, whether or not every individual appears in every unit → `(1 | subject) + (1 | batch)`.
+  Its labels are shared across individuals, so they stay as they are; it goes beside the tree, in the design summary and in Section 4 of the script, and the grouping checks leave it out, since they expect each label to belong to one unit of the level above.
 
 When building unique IDs for nested factors, always nest from the top down:
 ```r
@@ -421,13 +428,17 @@ Always specify the optimizer explicitly in the script, as in the Section 5 patte
 ## Input file format
 
 Use this when helping users fill in input.md.
-The template is `template/my-study/inputs/input.md` in RAMM-AI.
+The template is `inputs/input.md` in the study folder template (https://github.com/braincentrekcl/ramm-ai/raw/main/template/my-study.zip).
 Users may add headings of their own.
 
 ```markdown
 # Study Design (required)
 [Plain English: total N, groups, group sizes, what was measured, hierarchy,
 nesting, any known issues like non-unique IDs or missing data]
+
+# Data (required)
+[The user's answers, in their own words, to the template's questions about
+each data file; references/prepare.md lists what they must cover]
 
 # Column Mappings (required)
 - Dependent variable: `column_name` (type, units; optionally, how the values usually spread)
@@ -441,10 +452,6 @@ nesting, any known issues like non-unique IDs or missing data]
 - Pairwise comparisons within genotype
 - Or: none (the main effect answers the question, for example a factor with two levels)
 
-# Data (required)
-[The user's answers, in their own words, to the template's questions about
-each data file; references/prepare.md lists what they must cover]
-
 # QC Rules (optional)
 - Exclude rows where `qc_flag` is "torn" (torn sections)
 
@@ -455,9 +462,6 @@ each data file; references/prepare.md lists what they must cover]
 - P-value adjustment: Holm, Tukey, Bonferroni, none
 - Alpha: 0.05
 - Centring: mean, zero or a value such as 8 weeks (for each continuous fixed effect)
-
-# Reproducible Environment (optional)
-- Reproducible environment: container or renv
 
 # Toy Data (optional)
 - File: `toy_data.csv` (same columns as one of the data files; name starts with toy_; sent to the AI provider)

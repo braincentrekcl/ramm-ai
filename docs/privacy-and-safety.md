@@ -6,23 +6,24 @@ Anything the assistant opens is sent to your AI provider.
   names one.
   It is told never to open any other file in `inputs/`.
 - It reads the files it writes in `code/`.
-- When you ask it to explain results or an error, it reads what the script
-  wrote in `outputs/`: the log, the results tables, the summary and the plots.
+- When you ask it to explain results or an error, it reads the log, the
+  results tables, the summary and the plots the script wrote in `outputs/`.
   These hold no measurements from your data, but `results_exclusions.csv` and
   the replicate audit list your individuals' IDs.
   If those IDs could identify someone (for example participant codes linked to
   names), use coded IDs in your data.
-- It is told never to open anything inside a folder in `outputs/`: once the
-  script has run, `outputs/prepared/` holds your data, rearranged into one
+- It is told never to open anything inside a folder in `outputs/`.
+  Once the script has run, `outputs/prepared/` holds your data, rearranged into one
   table, and a folder another tool wrote holds that tool's data.
 - Only OpenCode with the template config enforces these limits.
   On Claude Code, Codex and Copilot they are instructions the agent follows,
-  not a lock: keeping the real data out of the folder until you run the script
-  is what keeps it from the assistant.
+  not a lock.
+  Keeping the real data out of the folder until you run the script is what
+  keeps it from the assistant.
 - Anything you paste into the chat or ask the assistant to read (errors,
   results, plots) is sent to your AI provider too.
-- With default settings, every agent asks before changing a file; the OpenCode
-  template lets it change files in `code/` and `envs/` only.
+- With default settings, every agent asks before changing a file.
+  The OpenCode template lets it change files in `code/` and `envs/` only.
   Do not mark your study folder as trusted in Codex, and do not use "allow
   everything" modes for RAMM-AI (Claude Code auto or bypass, Copilot
   `--allow-all`).

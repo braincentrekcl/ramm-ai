@@ -7,12 +7,13 @@ The criteria are in docs/tested-versions.md.
 Whether the design summary raised every model term needs reading: the
 summary file puts each run's summary next to the formula it fitted.
 
-Usage (from the repository root):
-    python3 tests/acceptance.py claude autoradiography --runs 3
-    python3 tests/acceptance.py codex open-field --runs 3 --effort medium
-    python3 tests/acceptance.py opencode open-field --runs 3
-    python3 tests/acceptance.py copilot autoradiography --runs 3 --model auto --auto-tier balance
-    python3 tests/acceptance.py claude paired-markers --runs 3 --ask-for-method
+It runs only in the dev image, through tests/acceptance_docker.py, which takes
+the same arguments plus --out (from the repository root):
+    python3 tests/acceptance_docker.py claude autoradiography --runs 3 --out <folder>
+    python3 tests/acceptance_docker.py codex open-field --runs 3 --effort medium --out <folder>
+    python3 tests/acceptance_docker.py opencode open-field --runs 3 --out <folder>
+    python3 tests/acceptance_docker.py copilot autoradiography --runs 3 --model auto --auto-tier balance --out <folder>
+    python3 tests/acceptance_docker.py claude paired-markers --runs 3 --ask-for-method --out <folder>
 
 OpenCode runs with the study's opencode.jsonc from opencode/opencode.jsonc,
 with shell set to "ask" as the template says for free models; a headless run
@@ -29,7 +30,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import tomllib
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -128,6 +128,23 @@ def turn_failed(turn: Turn) -> bool:
         if part.strip() and not FAILURE_NOTE.fullmatch(part.strip())
     ]
     return not (said or turn.commands or turn.paths or turn.changed)
+
+
+def turn_errored(turn: Turn) -> bool:
+    """True when the turn came back with an error or no reply in time."""
+    return FAILURE_NOTE.search(turn.reply) is not None
+
+
+def error_message(event: dict) -> str | None:
+    """The error a Claude Code, Codex or Copilot event reports, if any, such as
+    a model that is not available. OpenCode's are read in its own class."""
+    if event.get("type") == "result" and event.get("is_error"):
+        return event.get("result", "")
+    if event.get("type") == "turn.failed":
+        return (event.get("error") or {}).get("message", "")
+    if event.get("type") == "session.error":
+        return (event.get("data") or {}).get("message", "")
+    return None
 
 
 def runs_r(command: str) -> bool:
@@ -348,13 +365,83 @@ def skill_read_rule(plugin: Path) -> str:
     return f"Read(/{plugin}/skills/**)"
 
 
+# Each agent's own switch for automatic updates, so a batch stays on the
+# version it records: Claude Code (code.claude.com/docs/en/setup) and Copilot
+# (`copilot help environment`). Codex's is a config key, set in Codex.command;
+# OpenCode's default only notifies.
+UPDATES_OFF = {"DISABLE_AUTOUPDATER": "1", "COPILOT_AUTO_UPDATE": "false"}
+
+
+def agent_env() -> dict[str, str]:
+    """The environment every agent runs in: this one, with updates off."""
+    return {**os.environ, **UPDATES_OFF}
+
+
+# Each agent's npm package in tests/agent-versions.json, the versions CI checks.
+AGENT_PACKAGES = {
+    "claude": "@anthropic-ai/claude-code",
+    "codex": "@openai/codex",
+    "copilot": "@github/copilot",
+    "opencode": "@opencode/cli",
+}
+
+
+def pinned_version(agent: str) -> str:
+    """The version tests/agent-versions.json pins the agent at."""
+    pins = json.loads((REPO_ROOT / "tests" / "agent-versions.json").read_text())
+    return pins[AGENT_PACKAGES[agent]]
+
+
+def agent_version(agent: str) -> str:
+    """The first line of the agent's --version, run as the turns run it."""
+    return subprocess.run(
+        [agent, "--version"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=agent_env(),
+    ).stdout.splitlines()[0]
+
+
+def reported_version(line: str) -> str:
+    """The version number in an agent's --version line."""
+    match = re.search(r"\d+\.\d+\.\d+", line)
+    if match is None:
+        raise SystemExit(f"Found no version number in {line!r}.")
+    return match.group()
+
+
+def parse_claude(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
+    """Fill turn from Claude Code's stream-json lines; return the session ID and
+    models used."""
+    session, models, outputs = None, set(), []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        for item in claude_items(event):
+            if item.get("type") == "tool_use":
+                turn.paths += tool_paths(item["input"])
+                if "command" in item["input"]:
+                    turn.commands.append(item["input"]["command"])
+            if item.get("type") == "tool_result":
+                outputs.append(result_text(item.get("content", "")))
+        if event.get("type") == "result":
+            session = event["session_id"]
+            turn.reply = event.get("result", "")
+            if (message := error_message(event)) is not None:
+                turn.reply = f"[error: {message}]"
+            turn.denied = [json.dumps(d) for d in event["permission_denials"]]
+            models |= set(event.get("modelUsage", {}))
+    turn.tool_output = "\n".join(outputs)
+    return session, models
+
+
 class Claude:
     def __init__(self, plugin: Path, model: str | None, effort: str | None):
         self.plugin, self.model, self.effort = plugin, model, effort
         self.session: str | None = None
         self.models_seen: set[str] = set()
 
-    def turn(self, study: Path, prompt: str) -> Turn:
+    def command(self, prompt: str) -> list[str]:
         cmd = ["claude", "-p", prompt, "--plugin-dir", str(self.plugin)]
         cmd += ["--setting-sources", "project", "--permission-mode", "acceptEdits"]
         cmd += ["--allowedTools", skill_read_rule(self.plugin)]
@@ -365,33 +452,24 @@ class Claude:
             cmd += ["--model", self.model]
         if self.effort:
             cmd += ["--effort", self.effort]
+        return cmd
+
+    def turn(self, study: Path, prompt: str) -> Turn:
         proc = subprocess.run(
-            cmd,
+            self.command(prompt),
             cwd=study,
+            env=agent_env(),
             capture_output=True,
             text=True,
             timeout=TURN_TIMEOUT_S,
             check=False,
         )
         turn = Turn(tag="", prompt=prompt)
-        outputs = []
-        for line in proc.stdout.splitlines():
-            event = json.loads(line)
-            for item in claude_items(event):
-                if item.get("type") == "tool_use":
-                    turn.paths += tool_paths(item["input"])
-                    if "command" in item["input"]:
-                        turn.commands.append(item["input"]["command"])
-                if item.get("type") == "tool_result":
-                    outputs.append(result_text(item.get("content", "")))
-            if event.get("type") == "result":
-                self.session = event["session_id"]
-                turn.reply = event.get("result", "")
-                turn.denied = [json.dumps(d) for d in event["permission_denials"]]
-                self.models_seen |= set(event.get("modelUsage", {}))
+        session, models = parse_claude(proc.stdout, turn)
+        self.session = session or self.session
+        self.models_seen |= models
         if not self.session:
             raise RuntimeError(f"claude returned no session:\n{proc.stderr}")
-        turn.tool_output = "\n".join(outputs)
         return turn
 
     def describe(self) -> str:
@@ -399,15 +477,34 @@ class Claude:
         return f"{models}, effort {self.effort or 'default'}"
 
 
+def parse_codex(stdout: str, turn: Turn) -> str | None:
+    """Fill turn from Codex's JSON lines; return the thread ID, if a
+    thread.started event gives one."""
+    thread, messages, outputs = None, [], []
+    for line in stdout.splitlines():
+        event = json.loads(line)
+        if event.get("type") == "thread.started":
+            thread = event["thread_id"]
+        if (message := error_message(event)) is not None:
+            messages.append(f"[error: {message}]")
+        item = event.get("item", {})
+        if event.get("type") != "item.completed":
+            continue
+        if item.get("type") == "agent_message":
+            messages.append(item["text"])
+        if item.get("type") == "command_execution":
+            turn.commands.append(item["command"])
+            outputs.append(item.get("aggregated_output", ""))
+    turn.reply = "\n\n".join(messages)
+    turn.tool_output = "\n".join(outputs)
+    return thread
+
+
 class Codex:
     def __init__(self, plugin: Path, home: Path, model: str | None, effort: str | None):
-        user_config = Path.home() / ".codex" / "config.toml"
-        defaults = (
-            tomllib.loads(user_config.read_text()) if user_config.exists() else {}
-        )
-        self.model = model or defaults.get("model")
-        # Not the user's effort setting: without --effort, Codex uses the
-        # model's own default, as every other agent here does.
+        # Without --model or --effort, Codex uses its own defaults, as every
+        # other agent here does; the dev image has no user config.
+        self.model = model
         self.effort = effort
         self.home = home
         self.session: str | None = None
@@ -424,22 +521,31 @@ class Codex:
             )
 
     def _env(self) -> dict[str, str]:
-        return {**os.environ, "CODEX_HOME": str(self.home)}
+        return {**agent_env(), "CODEX_HOME": str(self.home)}
 
-    def turn(self, study: Path, prompt: str) -> Turn:
+    def command(self, prompt: str) -> list[str]:
         cmd = ["codex", "exec"] + (["resume", self.session] if self.session else [])
         cmd += [
             "--json",
             "--skip-git-repo-check",
+            # Codex's own sandbox cannot start in the dev image, so the
+            # container isolates it instead, as Codex's docs advise for Docker
+            # (learn.chatgpt.com/docs/agent-approvals-security).
             "-c",
-            'sandbox_mode="workspace-write"',
+            'sandbox_mode="danger-full-access"',
         ]
         if self.model:
             cmd += ["-m", self.model]
         if self.effort:
             cmd += ["-c", f'model_reasoning_effort="{self.effort}"']
+        # Codex's own update check (its config reference); unknown keys are
+        # ignored silently, so this one was checked in Codex 0.163.0's binary.
+        cmd += ["-c", "check_for_update_on_startup=false"]
+        return cmd + [prompt]
+
+    def turn(self, study: Path, prompt: str) -> Turn:
         proc = subprocess.run(
-            cmd + [prompt],
+            self.command(prompt),
             check=False,
             cwd=study,
             env=self._env(),
@@ -449,23 +555,9 @@ class Codex:
             stdin=subprocess.DEVNULL,
         )
         turn = Turn(tag="", prompt=prompt)
-        messages, outputs = [], []
-        for line in proc.stdout.splitlines():
-            event = json.loads(line)
-            if event.get("type") == "thread.started":
-                self.session = event["thread_id"]
-            item = event.get("item", {})
-            if event.get("type") != "item.completed":
-                continue
-            if item.get("type") == "agent_message":
-                messages.append(item["text"])
-            if item.get("type") == "command_execution":
-                turn.commands.append(item["command"])
-                outputs.append(item.get("aggregated_output", ""))
+        self.session = parse_codex(proc.stdout, turn) or self.session
         if not self.session:
             raise RuntimeError(f"codex returned no thread:\n{proc.stderr}")
-        turn.reply = "\n\n".join(messages)
-        turn.tool_output = "\n".join(outputs)
         return turn
 
     def describe(self) -> str:
@@ -484,6 +576,8 @@ def parse_copilot(stdout: str, turn: Turn) -> tuple[str | None, set[str]]:
         kind = event.get("type")
         if kind == "result":
             session = event["sessionId"]
+        if (message := error_message(event)) is not None:
+            messages.append(f"[error: {message}]")
         if kind == "assistant.message":
             if data.get("content"):
                 messages.append(data["content"])
@@ -525,7 +619,7 @@ class Copilot:
         home.mkdir(parents=True)
 
     def _env(self) -> dict[str, str]:
-        return {**os.environ, "COPILOT_HOME": str(self.home)}
+        return {**agent_env(), "COPILOT_HOME": str(self.home)}
 
     def command(self, prompt: str) -> list[str]:
         # File edits are allowed, as Claude's acceptEdits allows them; anything
@@ -597,7 +691,7 @@ class OpenCode:
             cwd=study,
             # OpenCode takes its folder from PWD, which subprocess leaves
             # pointing at the repository.
-            env={**os.environ, "PWD": str(study)},
+            env={**agent_env(), "PWD": str(study)},
             capture_output=True,
             text=True,
             timeout=TURN_TIMEOUT_S,
@@ -633,6 +727,17 @@ class OpenCode:
 
 # The commit a plugin copy was taken from, kept inside the copy.
 PLUGIN_STAMP = ".ramm-commit"
+
+
+def head_commit() -> str:
+    """The short hash of the commit the runs test."""
+    return subprocess.run(
+        ["git", "rev-parse", "--short", "HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
 
 
 def reuse_plugin(plugin: Path, commit: str) -> bool:
@@ -727,6 +832,9 @@ def one_run(
         # Every turn failed (a model withdrawn, an empty reply): the other
         # columns say nothing about RAMM-AI.
         "void": all(map(turn_failed, turns)),
+        # Turns cut short by a usage limit, a model error or a timeout: the
+        # other columns can show a break the agent had no chance to avoid.
+        "errored_turns": [t.tag for t in turns if turn_errored(t)],
         "opened_data": [t.tag for t in turns if leaked_rows(t.tool_output, data_rows)],
         # Any tool call or command naming a data file, refused or not.
         "tried_data_file": [
@@ -779,6 +887,7 @@ def summarise(header: str, results: list[dict]) -> str:
     """A markdown table with one row per run, then each design summary."""
     cols = [
         "void",
+        "errored_turns",
         "opened_data",
         "tried_data_file",
         "ran_r",
@@ -833,20 +942,27 @@ def main() -> None:
     args = parser.parse_args()
     if args.auto_tier and args.agent != "copilot":
         parser.error("--auto-tier is a Copilot option")
+    if args.runs < 1:
+        parser.error("--runs must be at least 1")
+    # The dev image sets this; outside it, installed agents drift from the pins
+    # and run with access to everything on the computer.
+    if os.environ.get("RAMM_AI_DEV_IMAGE") != "1":
+        raise SystemExit(
+            "Run acceptance batches in the dev image: python3"
+            " tests/acceptance_docker.py, with the same arguments and --out."
+        )
 
     # Absolute, because OpenCode needs absolute skill paths and PWD.
     out = (args.out or Path(tempfile.mkdtemp(prefix="ramm-acceptance-"))).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    commit = subprocess.run(
-        ["git", "rev-parse", "--short", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
-    version = subprocess.run(
-        [args.agent, "--version"], capture_output=True, text=True, check=True
-    ).stdout.splitlines()[0]
+    commit = head_commit()
+    version = agent_version(args.agent)
+    pin = pinned_version(args.agent)
+    if reported_version(version) != pin:
+        raise SystemExit(
+            f"{args.agent} is {version!r}, but tests/agent-versions.json pins"
+            f" {pin}: install {AGENT_PACKAGES[args.agent]}@{pin} first."
+        )
     plugin = out / "plugin"
     if not reuse_plugin(plugin, commit):
         archive(".", plugin, strip=0)
@@ -854,6 +970,18 @@ def main() -> None:
 
     name = f"{args.agent}-{args.demo}" + ("-ask" if args.ask_for_method else "")
     results = []
+
+    def write_summary() -> Path:
+        header = (
+            f"# {args.agent} on {args.demo}\n\nCommit {commit}; {version}"
+            f" (pinned {pin}); {agent.describe()}; {date.today()};"
+            f" {len(results)} runs."
+            + (" The user asked for a method by name." if args.ask_for_method else "")
+        )
+        summary = out / f"summary-{name}.md"
+        summary.write_text(summarise(header, results))
+        return summary
+
     for i in range(1, args.runs + 1):
         run_dir = out / f"{name}-{i}"
         if args.agent == "claude":
@@ -869,25 +997,32 @@ def main() -> None:
                 args.auto_tier,
             )
         else:
-            agent = Codex(plugin, run_dir / "codex-home", args.model, args.effort)
+            # Outside --out, which a container writes back to the host, so the
+            # copy of the login never lands there; removed after the run.
+            codex_home = Path(tempfile.mkdtemp(prefix="ramm-codex-home-"))
+            agent = Codex(plugin, codex_home / "home", args.model, args.effort)
         try:
             result = one_run(agent, args.demo, run_dir / "study", args.ask_for_method)
         finally:
             if isinstance(agent, Codex):
                 agent.close()
+                shutil.rmtree(codex_home)
         (run_dir / "result.json").write_text(json.dumps(result, indent=2))
+        # The summary names one version, so a change mid-batch (a reinstall,
+        # or an update the settings did not stop) ends the batch here.
+        now = agent_version(args.agent)
+        if reported_version(now) != pin:
+            summary = write_summary()
+            raise SystemExit(
+                f"{args.agent} changed from {version!r} to {now!r} during run {i},"
+                f" so run {i} may have used both. {summary} holds the"
+                f" {len(results)} runs before it; redo the rest."
+            )
         results.append(result)
         status = "void, every turn failed" if result["void"] else "done"
         print(f"run {i} {status}: {run_dir}")
 
-    header = (
-        f"# {args.agent} on {args.demo}\n\nCommit {commit}; {version};"
-        f" {agent.describe()}; {date.today()}; {args.runs} runs."
-        + (" The user asked for a method by name." if args.ask_for_method else "")
-    )
-    summary = out / f"summary-{name}.md"
-    summary.write_text(summarise(header, results))
-    print(f"summary: {summary}")
+    print(f"summary: {write_summary()}")
 
 
 if __name__ == "__main__":

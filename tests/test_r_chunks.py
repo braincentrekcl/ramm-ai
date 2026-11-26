@@ -224,7 +224,7 @@ def run_provenance(
 
 
 def test_provenance_records_script_inputs_outputs(
-    skill_text: str, tmp_path: Path
+    skill_text: str, tmp_path: Path, repo_root: Path
 ) -> None:
     study = make_study(tmp_path)
     rows = run_provenance(skill_text, study)
@@ -237,7 +237,10 @@ def test_provenance_records_script_inputs_outputs(
     assert files[("output", "outputs/results_new.csv")] == md5(
         study / "outputs" / "results_new.csv"
     )
-    assert {r["name"] for r in rows if r["type"] == "software"} == {"R"}
+    software = {r["name"]: r["value"] for r in rows if r["type"] == "software"}
+    assert software.keys() == {"RAMM-AI", "R"}
+    version = (repo_root / "VERSION").read_text(encoding="utf-8").strip()
+    assert software["RAMM-AI"] == version
     assert len({r["recorded_at"] for r in rows}) == 1
 
 

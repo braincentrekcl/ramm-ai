@@ -10,6 +10,12 @@ On every section we drew one region of interest per region in the left hemispher
 Some sections were torn (all measurements on that section lost), some hemispheres were damaged (that side's measurements on that section lost), and one slide cracked, so mice have between 0 and 6 usable measurements per region.
 We want to know whether binding differs between genotypes, and whether the genotype difference depends on brain region.
 
+# Data
+
+- `data.csv`: column names on row 1, nothing else above or below the table;
+  one row is one measurement; the individual's ID is in `mouse_id`; missing
+  values are empty cells.
+
 # Column Mappings
 
 - Dependent variable: `specific_binding` (continuous, µCi/g tissue equivalent)
@@ -28,12 +34,6 @@ We want to know whether binding differs between genotypes, and whether the genot
 # Quality Control
 
 - Keep every mouse and every usable measurement; do not exclude mice for having few measurements.
-
-# Data
-
-- `data.csv`: column names on row 1, nothing else above or below the table;
-  one row is one measurement; the individual's ID is in `mouse_id`; missing
-  values are empty cells.
 
 # Preferences
 
