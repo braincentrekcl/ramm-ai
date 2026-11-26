@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 import pytest
-from conftest import extract_r_chunk, read_json, run_r
+from conftest import extract_r_chunk, run_r
 
 
 @pytest.fixture
@@ -239,8 +239,8 @@ def test_provenance_records_script_inputs_outputs(
     )
     software = {r["name"]: r["value"] for r in rows if r["type"] == "software"}
     assert software.keys() == {"RAMM-AI", "R"}
-    plugin = read_json(repo_root / ".claude-plugin" / "plugin.json")
-    assert software["RAMM-AI"] == plugin["version"]
+    version = (repo_root / "VERSION").read_text(encoding="utf-8").strip()
+    assert software["RAMM-AI"] == version
     assert len({r["recorded_at"] for r in rows}) == 1
 
 
